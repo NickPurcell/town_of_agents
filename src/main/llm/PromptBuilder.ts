@@ -18,6 +18,8 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   DOCTOR_CHOICE: 'doctor_choice.md',
   SHERIFF_CHOICE: 'sheriff_choice.md',
   SHERIFF_POST_SPEECH: 'sheriff_post.md',
+  LOOKOUT_CHOICE: 'lookout_choice.md',
+  LOOKOUT_POST_SPEECH: 'lookout_post.md',
   NIGHT_DISCUSSION: 'discuss_night.md',
   NIGHT_VOTE: 'vote_night.md',
 };
@@ -28,9 +30,10 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   SHERIFF: 'You are the Sheriff. Each night you can investigate one player to learn their role. Use this information to help the town.',
   DOCTOR: 'You are the Doctor. Each night you can protect one player. If the mafia targets them, they will survive. You can protect yourself.',
   CITIZEN: 'You are a Citizen. You have no special abilities, but your vote is crucial. Watch behavior and voting patterns to identify mafia.',
+  LOOKOUT: 'You are the Lookout. Each night you can watch one player. If anyone visits that player during the night, you will see who visited them. Use this information to identify suspicious behavior.',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'SHERIFF', 'DOCTOR', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'CITIZEN'];
 
 export class PromptBuilder {
   // Build system prompt for an agent based on phase
@@ -166,8 +169,15 @@ export class PromptBuilder {
       case 'CHOICE':
         // Choice events are private - show only to the agent who made the choice
         if (event.agentId === agent.id) {
-          const action = event.choiceType === 'DOCTOR_PROTECT' ? 'protecting' : 'investigating';
-          return { role: 'user', content: `SYSTEM: You chose to ${action.slice(0, -3)} ${event.targetName}.` };
+          let action: string;
+          if (event.choiceType === 'DOCTOR_PROTECT') {
+            action = 'protect';
+          } else if (event.choiceType === 'SHERIFF_INVESTIGATE') {
+            action = 'investigate';
+          } else {
+            action = 'watch';
+          }
+          return { role: 'user', content: `SYSTEM: You chose to ${action} ${event.targetName}.` };
         }
         return null;
 

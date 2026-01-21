@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR';
+export type Role = 'MAFIA' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT';
 
 // Faction types
 export type Faction = 'MAFIA' | 'TOWN';
@@ -13,6 +13,8 @@ export type Phase =
   | 'DOCTOR_CHOICE'
   | 'SHERIFF_CHOICE'
   | 'SHERIFF_POST_SPEECH'
+  | 'LOOKOUT_CHOICE'
+  | 'LOOKOUT_POST_SPEECH'
   | 'NIGHT_DISCUSSION'
   | 'NIGHT_VOTE';
 
@@ -39,6 +41,7 @@ export type Visibility =
   | { kind: 'mafia' }
   | { kind: 'sheriff_private'; agentId: string }
   | { kind: 'doctor_private'; agentId: string }
+  | { kind: 'lookout_private'; agentId: string }
   | { kind: 'host' };
 
 // Game event types
@@ -87,7 +90,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -170,6 +173,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   CITIZEN: '#fdd835',  // Yellow
   SHERIFF: '#1e88e5',  // Blue
   DOCTOR: '#ffffff',   // White
+  LOOKOUT: '#9c27b0',  // Purple
 };
 
 // Helper to get visible events for an agent
@@ -184,6 +188,8 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'sheriff_private':
       return visibility.agentId === agent.id;
     case 'doctor_private':
+      return visibility.agentId === agent.id;
+    case 'lookout_private':
       return visibility.agentId === agent.id;
     case 'host':
       return false; // Only visible to host/narrator

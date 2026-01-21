@@ -289,6 +289,7 @@ export class GameController extends EventEmitter {
 
       case 'SHERIFF_CHOICE':
       case 'DOCTOR_CHOICE':
+      case 'LOOKOUT_CHOICE':
         await this.phaseRunner.startChoicePhase();
         break;
 
@@ -298,6 +299,10 @@ export class GameController extends EventEmitter {
 
       case 'SHERIFF_POST_SPEECH':
         await this.handleSheriffPostSpeech();
+        break;
+
+      case 'LOOKOUT_POST_SPEECH':
+        await this.handleLookoutPostSpeech();
         break;
     }
   }
@@ -789,6 +794,92 @@ export class GameController extends EventEmitter {
       this.engine.nextPhase();
     } finally {
       this.emitAgentThinkingDone(sheriff);
+    }
+  }
+
+  private async handleLookoutPostSpeech(): Promise<void> {
+    const lookout = this.engine.getAgentManager().getAliveLookout();
+    if (!lookout) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(lookout.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(lookout, 'LOOKOUT_POST_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      lookout,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(lookout);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, lookout.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', lookout.id, content);
+
+          // Success - break out of retry loop
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${lookout.name}] LLM error on lookout post speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${lookout.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(`Error getting lookout post speech from ${lookout.name} (after ${MAX_LLM_RETRIES} attempts):`, lastError);
+        // Skip speech and proceed to next phase
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseSpeakResponse(content);
+      if (result.success && result.data) {
+        // Emit the speech event (lookout private visibility)
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: lookout.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'lookout_private', agentId: lookout.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(lookout);
     }
   }
 }

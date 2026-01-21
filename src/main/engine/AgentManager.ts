@@ -72,6 +72,11 @@ export class AgentManager {
     return doctors.length > 0 ? doctors[0] : undefined;
   }
 
+  getAliveLookout(): GameAgent | undefined {
+    const lookouts = this.getAliveAgentsByRole('LOOKOUT');
+    return lookouts.length > 0 ? lookouts[0] : undefined;
+  }
+
   markAgentDead(agentId: string): void {
     const agent = this.agents.get(agentId);
     if (agent) {
@@ -127,6 +132,11 @@ export class AgentManager {
   // Get eligible targets for doctor protection (alive agents)
   getDoctorTargets(): GameAgent[] {
     return this.getAliveAgents();
+  }
+
+  // Get eligible targets for lookout watching (alive agents except self)
+  getLookoutTargets(lookoutId: string): GameAgent[] {
+    return this.getAliveAgents().filter((a) => a.id !== lookoutId);
   }
 
   // Reset all agents to alive for new game

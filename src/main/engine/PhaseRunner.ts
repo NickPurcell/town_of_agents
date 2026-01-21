@@ -132,7 +132,7 @@ export class PhaseRunner extends EventEmitter {
     } else {
       // Timeout during choice phases - skip action
       const phase = this.engine.getCurrentPhase();
-      if (phase === 'SHERIFF_CHOICE' || phase === 'DOCTOR_CHOICE') {
+      if (phase === 'SHERIFF_CHOICE' || phase === 'DOCTOR_CHOICE' || phase === 'LOOKOUT_CHOICE') {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
         this.currentTurnId = 0;
@@ -461,6 +461,11 @@ export class PhaseRunner extends EventEmitter {
         // Unanimous vote
         this.mafiaVoteAttempts = 0;
         this.engine.setPendingNightKillTarget(result.target);
+        // Track mafia visit for lookout (all alive mafia members visit the target)
+        const aliveMafia = agentManager.getAliveMafia();
+        for (const mafia of aliveMafia) {
+          this.engine.addNightVisit(mafia.id, result.target);
+        }
         this.engine.nextPhase(); // Go to SHERIFF_CHOICE
       } else {
         // Not unanimous
@@ -488,7 +493,7 @@ export class PhaseRunner extends EventEmitter {
     }
   }
 
-  // Start special choice phase (Sheriff/Doctor)
+  // Start special choice phase (Sheriff/Doctor/Lookout)
   async startChoicePhase(): Promise<void> {
     const phase = this.engine.getCurrentPhase();
     const agentManager = this.engine.getAgentManager();
@@ -500,6 +505,8 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveSheriff();
     } else if (phase === 'DOCTOR_CHOICE') {
       choiceAgent = agentManager.getAliveDoctor();
+    } else if (phase === 'LOOKOUT_CHOICE') {
+      choiceAgent = agentManager.getAliveLookout();
     }
 
     if (choiceAgent) {
@@ -538,6 +545,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getSheriffTargets(agent.id);
     } else if (phase === 'DOCTOR_CHOICE') {
       eligibleTargets = agentManager.getDoctorTargets();
+    } else if (phase === 'LOOKOUT_CHOICE') {
+      eligibleTargets = agentManager.getLookoutTargets(agent.id);
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -559,6 +568,9 @@ export class PhaseRunner extends EventEmitter {
       };
       this.engine.appendEvent(choiceEvent);
 
+      // Track sheriff visit for lookout
+      this.engine.addNightVisit(agent.id, target.id);
+
       // Emit immediate investigation result
       const isMafia = target.faction === 'MAFIA';
       const resultMessage = isMafia
@@ -578,8 +590,32 @@ export class PhaseRunner extends EventEmitter {
       };
       this.engine.appendEvent(choiceEvent);
 
+      // Track doctor visit for lookout
+      this.engine.addNightVisit(agent.id, target.id);
+
       // Record protection
       this.engine.setPendingDoctorProtectTarget(target.id);
+    } else if (phase === 'LOOKOUT_CHOICE') {
+      // Emit choice event for lookout watching
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'LOOKOUT_WATCH',
+        visibility: VisibilityFilter.lookoutPrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Record watch target
+      this.engine.setPendingLookoutWatchTarget(target.id);
+
+      // Immediate feedback that the watch is set
+      this.engine.appendNarration(
+        `**You are now watching ${target.name}. You will see anyone who visits them tonight.**`,
+        VisibilityFilter.lookoutPrivate(agent.id)
+      );
     }
 
     this.engine.nextPhase();

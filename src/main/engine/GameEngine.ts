@@ -25,6 +25,8 @@ const PHASE_ORDER: Phase[] = [
   'DOCTOR_CHOICE',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
+  'LOOKOUT_CHOICE',
+  'LOOKOUT_POST_SPEECH',
   'NIGHT_DISCUSSION',
   'NIGHT_VOTE',
 ];
@@ -45,7 +47,11 @@ export class GameEngine extends EventEmitter {
   private phase: Phase = 'DAY_DISCUSSION';
   private pendingNightKillTarget?: string;
   private pendingDoctorProtectTarget?: string;
+  private pendingLookoutWatchTarget?: string;
   private sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]> = {};
+  private lookoutIntelQueue: Record<string, { watchedId: string; visitors: string[] }[]> = {};
+  // Track who visited whom during the night (visitor -> target)
+  private nightVisits: { visitorId: string; targetId: string }[] = [];
   private winner?: Faction;
   private lastWordsAgentId?: string;
   private isRunning: boolean = false;
@@ -65,7 +71,10 @@ export class GameEngine extends EventEmitter {
     this.phase = 'DAY_DISCUSSION';
     this.pendingNightKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
+    this.pendingLookoutWatchTarget = undefined;
     this.sheriffIntelQueue = {};
+    this.lookoutIntelQueue = {};
+    this.nightVisits = [];
     this.winner = undefined;
     this.lastWordsAgentId = undefined;
     this.isRunning = false;
@@ -227,7 +236,23 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'SHERIFF_POST_SPEECH':
-        // After sheriff speech, go to mafia discussion
+        // After sheriff speech, go to lookout choice
+        const lookout = this.agentManager.getAliveLookout();
+        if (!lookout) {
+          this.skipLookoutPhase();
+          return;
+        }
+        this.emitPhaseChange('LOOKOUT_CHOICE');
+        this.appendNarration('**Lookout, choose your target to watch.**', VisibilityFilter.lookoutPrivate(lookout.id));
+        return;
+
+      case 'LOOKOUT_CHOICE':
+        // After lookout choice, go to lookout post-speech
+        this.emitPhaseChange('LOOKOUT_POST_SPEECH');
+        return;
+
+      case 'LOOKOUT_POST_SPEECH':
+        // After lookout speech, go to mafia discussion
         this.emitPhaseChange('NIGHT_DISCUSSION');
         this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
         return;
@@ -264,8 +289,19 @@ export class GameEngine extends EventEmitter {
     this.appendNarration('**Doctor, choose your target.**', VisibilityFilter.doctorPrivate(doctor.id));
   }
 
-  // Skip sheriff phase if dead - go directly to mafia discussion
+  // Skip sheriff phase if dead - go to lookout choice
   private skipSheriffPhase(): void {
+    const lookout = this.agentManager.getAliveLookout();
+    if (!lookout) {
+      this.skipLookoutPhase();
+      return;
+    }
+    this.emitPhaseChange('LOOKOUT_CHOICE');
+    this.appendNarration('**Lookout, choose your target to watch.**', VisibilityFilter.lookoutPrivate(lookout.id));
+  }
+
+  // Skip lookout phase if dead - go directly to mafia discussion
+  private skipLookoutPhase(): void {
     this.emitPhaseChange('NIGHT_DISCUSSION');
     this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
   }
@@ -284,6 +320,9 @@ export class GameEngine extends EventEmitter {
   // Resolve night and start new day
   private resolveNight(): void {
     this.dayNumber++;
+
+    // Process lookout intel before clearing night visits
+    this.processLookoutIntel();
 
     // Resolve night kill
     let killMessage: string;
@@ -308,6 +347,8 @@ export class GameEngine extends EventEmitter {
     // Clear pending actions
     this.pendingNightKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
+    this.pendingLookoutWatchTarget = undefined;
+    this.nightVisits = [];
 
     // Check win condition
     if (this.winner) return;
@@ -318,6 +359,9 @@ export class GameEngine extends EventEmitter {
 
     // Deliver sheriff intel
     this.deliverSheriffIntel();
+
+    // Deliver lookout intel
+    this.deliverLookoutIntel();
 
     this.emitPhaseChange('DAY_DISCUSSION');
   }
@@ -336,6 +380,67 @@ export class GameEngine extends EventEmitter {
       }
     }
     this.sheriffIntelQueue = {};
+  }
+
+  // Process lookout intel from night visits
+  private processLookoutIntel(): void {
+    if (!this.pendingLookoutWatchTarget) return;
+
+    const lookout = this.agentManager.getAliveLookout();
+    if (!lookout) return;
+
+    // Find all visitors to the watched target
+    const visitors = this.nightVisits
+      .filter((visit) => visit.targetId === this.pendingLookoutWatchTarget)
+      .map((visit) => visit.visitorId);
+
+    // Add intel to queue
+    this.addLookoutIntel(lookout.id, this.pendingLookoutWatchTarget, visitors);
+  }
+
+  // Deliver pending lookout intel
+  private deliverLookoutIntel(): void {
+    for (const [lookoutId, intel] of Object.entries(this.lookoutIntelQueue)) {
+      for (const item of intel) {
+        const watched = this.agentManager.getAgent(item.watchedId);
+        if (watched) {
+          if (item.visitors.length === 0) {
+            this.appendNarration(
+              `**SYSTEM (private):** Last night you watched ${watched.name}. No one visited them.`,
+              VisibilityFilter.lookoutPrivate(lookoutId)
+            );
+          } else {
+            const visitorNames = item.visitors
+              .map((id) => this.agentManager.getAgent(id)?.name)
+              .filter((name) => name)
+              .join(', ');
+            this.appendNarration(
+              `**SYSTEM (private):** Last night you watched ${watched.name}. They were visited by: ${visitorNames}.`,
+              VisibilityFilter.lookoutPrivate(lookoutId)
+            );
+          }
+        }
+      }
+    }
+    this.lookoutIntelQueue = {};
+  }
+
+  // Add lookout intel to queue
+  addLookoutIntel(lookoutId: string, watchedId: string, visitors: string[]): void {
+    if (!this.lookoutIntelQueue[lookoutId]) {
+      this.lookoutIntelQueue[lookoutId] = [];
+    }
+    this.lookoutIntelQueue[lookoutId].push({ watchedId, visitors });
+  }
+
+  // Set pending lookout watch target
+  setPendingLookoutWatchTarget(targetId: string | undefined): void {
+    this.pendingLookoutWatchTarget = targetId;
+  }
+
+  // Add a night visit (visitor visited target)
+  addNightVisit(visitorId: string, targetId: string): void {
+    this.nightVisits.push({ visitorId, targetId });
   }
 
   // Set pending night kill target

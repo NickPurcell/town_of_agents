@@ -23,6 +23,9 @@ export class VisibilityFilter {
       case 'doctor_private':
         return visibility.agentId === agent.id;
 
+      case 'lookout_private':
+        return visibility.agentId === agent.id;
+
       case 'host':
         return false; // Only visible to host/UI
     }
@@ -46,6 +49,11 @@ export class VisibilityFilter {
   // Create visibility for doctor private events
   static doctorPrivate(agentId: string): Visibility {
     return { kind: 'doctor_private', agentId };
+  }
+
+  // Create visibility for lookout private events
+  static lookoutPrivate(agentId: string): Visibility {
+    return { kind: 'lookout_private', agentId };
   }
 
   // Create visibility for host-only events
@@ -72,6 +80,10 @@ export class VisibilityFilter {
 
       case 'DOCTOR_CHOICE':
         return agent ? this.doctorPrivate(agent.id) : this.host();
+
+      case 'LOOKOUT_CHOICE':
+      case 'LOOKOUT_POST_SPEECH':
+        return agent ? this.lookoutPrivate(agent.id) : this.host();
     }
   }
 

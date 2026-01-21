@@ -9,6 +9,7 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'MAFIA', label: 'Mafia' },
   { value: 'SHERIFF', label: 'Sheriff' },
   { value: 'DOCTOR', label: 'Doctor' },
+  { value: 'LOOKOUT', label: 'Lookout' },
   { value: 'CITIZEN', label: 'Citizen' },
 ];
 
@@ -78,6 +79,7 @@ export function GameSetupScreen() {
     MAFIA: pendingAgents.filter(a => a.role === 'MAFIA'),
     SHERIFF: pendingAgents.filter(a => a.role === 'SHERIFF'),
     DOCTOR: pendingAgents.filter(a => a.role === 'DOCTOR'),
+    LOOKOUT: pendingAgents.filter(a => a.role === 'LOOKOUT'),
     CITIZEN: pendingAgents.filter(a => a.role === 'CITIZEN'),
   };
 

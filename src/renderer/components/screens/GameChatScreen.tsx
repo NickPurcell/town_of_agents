@@ -15,6 +15,8 @@ const PHASE_LABELS: Record<Phase, string> = {
   DOCTOR_CHOICE: 'Night - Doctor Protection',
   SHERIFF_CHOICE: 'Night - Sheriff Investigation',
   SHERIFF_POST_SPEECH: "Sheriff's Reaction",
+  LOOKOUT_CHOICE: 'Night - Lookout Watch',
+  LOOKOUT_POST_SPEECH: "Lookout's Reaction",
   NIGHT_DISCUSSION: 'Night - Mafia Discussion',
   NIGHT_VOTE: 'Night - Mafia Voting',
 };
@@ -64,7 +66,9 @@ export function GameChatScreen() {
   const isNightPhase = gameState.phase.startsWith('NIGHT') ||
     gameState.phase === 'SHERIFF_CHOICE' ||
     gameState.phase === 'DOCTOR_CHOICE' ||
-    gameState.phase === 'SHERIFF_POST_SPEECH';
+    gameState.phase === 'SHERIFF_POST_SPEECH' ||
+    gameState.phase === 'LOOKOUT_CHOICE' ||
+    gameState.phase === 'LOOKOUT_POST_SPEECH';
 
   const visibleEvents = gameState.events;
   const thinkingAgentModel = thinkingAgent ? getAgentById(thinkingAgent.agentId) : null;
