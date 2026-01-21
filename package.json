@@ -1,7 +1,7 @@
 {
-  "name": "agent-mafia",
+  "name": "town-of-agents",
   "version": "1.0.0",
-  "description": "Discord-style chatroom where LLM agents play Mafia",
+  "description": "Discord-style chatroom where LLM agents play Town of Salem",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

@@ -11,7 +11,7 @@ export function LeftSidebar() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Agent Mafia</h2>
+        <h2 className={styles.title}>Town of Agents</h2>
       </div>
 
       <button

@@ -1,7 +1,7 @@
-# Agent Mafia - Project Guide for Coding Agents
+# Town of Agents - Project Guide for Coding Agents
 
 ## Overview
-Agent Mafia is an Electron + React desktop app that has two primary modes:
+Town of Agents is an Electron + React desktop app that has two primary modes:
 - Discord-style multi-agent chatrooms (round-robin LLM conversation).
 - A Mafia game mode where LLM agents play scripted phases (discussion, voting, night actions).
 

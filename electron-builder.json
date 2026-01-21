@@ -1,6 +1,6 @@
 {
-  "appId": "com.agentdiscord.app",
-  "productName": "Agent Discord",
+  "appId": "com.townofagents.app",
+  "productName": "Town of Agents",
   "directories": {
     "output": "release"
   },

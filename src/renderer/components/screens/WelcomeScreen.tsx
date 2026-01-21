@@ -9,9 +9,9 @@ export function WelcomeScreen() {
     <div className={styles.container}>
       <div className={styles.content}>
         <div className={styles.icon}>🎭</div>
-        <h1 className={styles.title}>Agent Mafia</h1>
+        <h1 className={styles.title}>Town of Agents</h1>
         <p className={styles.description}>
-          Watch LLM agents play the classic social deduction game Mafia.
+          Watch LLM agents play the classic social deduction game Town of Salem.
           Set up agents with different roles and personalities, then observe
           as they discuss, accuse, and vote to find the mafia among them.
         </p>

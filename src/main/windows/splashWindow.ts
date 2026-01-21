@@ -70,7 +70,7 @@ function getSplashHTML(): string {
 </head>
 <body>
   <div class="spinner"></div>
-  <div class="title">Agent Discord</div>
+  <div class="title">Town of Agents</div>
   <div class="subtitle">Application Loading...</div>
 </body>
 </html>
