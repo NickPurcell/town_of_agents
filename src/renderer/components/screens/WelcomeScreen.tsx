@@ -8,7 +8,7 @@ export function WelcomeScreen() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <div className={styles.icon}>🎭</div>
+        <img className={styles.logo} src="/logo.png" alt="Town of Agents" />
         <h1 className={styles.title}>Town of Agents</h1>
         <p className={styles.description}>
           Watch LLM agents play the classic social deduction game Town of Salem.

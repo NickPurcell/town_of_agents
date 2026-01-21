@@ -23,11 +23,17 @@
   animation: fade-in-up var(--transition-dramatic) both;
 }
 
-.icon {
-  font-size: 68px;
+.logo {
+  width: 180px;
+  height: auto;
   margin-bottom: 18px;
   filter: drop-shadow(0 0 20px rgba(196, 30, 58, 0.45));
   animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(196, 30, 58, 0.45)); }
+  50% { filter: drop-shadow(0 0 30px rgba(196, 30, 58, 0.7)); }
 }
 
 .title {
