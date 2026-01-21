@@ -1,0 +1,102 @@
+import { GameAgent, GameEvent, Visibility, Phase } from '../../shared/types';
+
+export class VisibilityFilter {
+  // Filter events based on what an agent can see
+  static getVisibleEvents(agent: GameAgent, events: GameEvent[]): GameEvent[] {
+    return events.filter((event) => this.canSee(agent, event));
+  }
+
+  // Check if an agent can see a specific event
+  static canSee(agent: GameAgent, event: GameEvent): boolean {
+    const visibility = event.visibility;
+
+    switch (visibility.kind) {
+      case 'public':
+        return true;
+
+      case 'mafia':
+        return agent.faction === 'MAFIA';
+
+      case 'sheriff_private':
+        return visibility.agentId === agent.id;
+
+      case 'doctor_private':
+        return visibility.agentId === agent.id;
+
+      case 'host':
+        return false; // Only visible to host/UI
+    }
+  }
+
+  // Create visibility for public events
+  static public(): Visibility {
+    return { kind: 'public' };
+  }
+
+  // Create visibility for mafia-only events
+  static mafia(): Visibility {
+    return { kind: 'mafia' };
+  }
+
+  // Create visibility for sheriff private events
+  static sheriffPrivate(agentId: string): Visibility {
+    return { kind: 'sheriff_private', agentId };
+  }
+
+  // Create visibility for doctor private events
+  static doctorPrivate(agentId: string): Visibility {
+    return { kind: 'doctor_private', agentId };
+  }
+
+  // Create visibility for host-only events
+  static host(): Visibility {
+    return { kind: 'host' };
+  }
+
+  // Get appropriate visibility for a phase
+  static forPhase(phase: Phase, agent?: GameAgent): Visibility {
+    switch (phase) {
+      case 'DAY_DISCUSSION':
+      case 'DAY_VOTE':
+      case 'LAST_WORDS':
+      case 'POST_EXECUTION_DISCUSSION':
+        return this.public();
+
+      case 'NIGHT_DISCUSSION':
+      case 'NIGHT_VOTE':
+        return this.mafia();
+
+      case 'SHERIFF_CHOICE':
+      case 'SHERIFF_POST_SPEECH':
+        return agent ? this.sheriffPrivate(agent.id) : this.host();
+
+      case 'DOCTOR_CHOICE':
+        return agent ? this.doctorPrivate(agent.id) : this.host();
+    }
+  }
+
+  // Get events visible to host (all events except none)
+  static getHostVisibleEvents(events: GameEvent[]): GameEvent[] {
+    // Host can see everything
+    return events;
+  }
+
+  // Filter events for UI display based on current viewing mode
+  static getUIVisibleEvents(
+    events: GameEvent[],
+    viewMode: 'public' | 'host' | 'agent',
+    viewingAgent?: GameAgent
+  ): GameEvent[] {
+    switch (viewMode) {
+      case 'public':
+        return events.filter((e) => e.visibility.kind === 'public');
+
+      case 'host':
+        return events; // Host sees everything
+
+      case 'agent':
+        if (!viewingAgent) return events.filter((e) => e.visibility.kind === 'public');
+        return this.getVisibleEvents(viewingAgent, events);
+    }
+  }
+}

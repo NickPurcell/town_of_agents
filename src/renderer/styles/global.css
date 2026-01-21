@@ -1,0 +1,247 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Core palette - Deep noir with blood red accents */
+  --bg-void: #0a0a0f;
+  --bg-primary: #0d0d14;
+  --bg-secondary: #14141f;
+  --bg-tertiary: #1a1a28;
+  --bg-elevated: #1f1f30;
+  --bg-hover: #252538;
+
+  /* Text hierarchy */
+  --text-primary: #f0f0f5;
+  --text-secondary: #9898a8;
+  --text-muted: #5a5a6a;
+  --text-dim: #3a3a48;
+
+  /* Accent colors - Blood & Shadow */
+  --accent-blood: #c41e3a;
+  --accent-blood-bright: #e63950;
+  --accent-blood-glow: rgba(196, 30, 58, 0.6);
+  --accent-blood-dim: rgba(196, 30, 58, 0.15);
+
+  /* Role colors */
+  --role-mafia: #c41e3a;
+  --role-mafia-glow: rgba(196, 30, 58, 0.5);
+  --role-sheriff: #3b82f6;
+  --role-sheriff-glow: rgba(59, 130, 246, 0.5);
+  --role-doctor: #10b981;
+  --role-doctor-glow: rgba(16, 185, 129, 0.5);
+  --role-citizen: #a78bfa;
+  --role-citizen-glow: rgba(167, 139, 250, 0.5);
+
+  /* Status colors */
+  --success: #22c55e;
+  --success-glow: rgba(34, 197, 94, 0.5);
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.5);
+  --warning: #f59e0b;
+  --warning-glow: rgba(245, 158, 11, 0.5);
+  --info: #3b82f6;
+  --info-glow: rgba(59, 130, 246, 0.5);
+
+  /* Borders & Surfaces */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.03);
+  --border-accent: rgba(196, 30, 58, 0.3);
+
+  /* Scrollbar */
+  --scrollbar: #2a2a3a;
+  --scrollbar-hover: #3a3a4a;
+
+  /* Shadows & Glows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow-blood: 0 0 20px var(--accent-blood-glow), 0 0 40px rgba(196, 30, 58, 0.3);
+  --shadow-glow-subtle: 0 0 15px rgba(255, 255, 255, 0.05);
+
+  /* Typography */
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-dramatic: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Legacy compatibility aliases */
+  --accent: var(--accent-blood);
+  --accent-hover: var(--accent-blood-bright);
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow: hidden;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Noise texture overlay for atmosphere */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 4px;
+  border: 2px solid var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* Button base styles */
+button {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all var(--transition-smooth);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* Input base styles */
+input, textarea, select {
+  font-family: var(--font-body);
+  font-size: 15px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 10px 14px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent-blood);
+  box-shadow: 0 0 0 3px var(--accent-blood-dim), var(--shadow-glow-blood);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Code blocks */
+pre, code {
+  font-family: var(--font-mono);
+}
+
+/* Links */
+a {
+  color: var(--accent-blood-bright);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--text-primary);
+  text-shadow: 0 0 10px var(--accent-blood-glow);
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-blood);
+  color: white;
+}
+
+/* Keyframe animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.8;
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes blood-drip {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+}
+
+/* Utility classes for glow effects */
+.glow-blood {
+  box-shadow: var(--shadow-glow-blood);
+}
+
+.glow-text-blood {
+  text-shadow: 0 0 10px var(--accent-blood-glow), 0 0 20px rgba(196, 30, 58, 0.3);
+}

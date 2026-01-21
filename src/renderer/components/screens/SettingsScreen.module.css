@@ -1,0 +1,159 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.content {
+  max-width: 600px;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.sectionDescription {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.apiKeySection {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.inputRow {
+  display: flex;
+  gap: 12px;
+}
+
+.input {
+  flex: 1;
+}
+
+.testButton {
+  padding: 8px 16px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 13px;
+  min-width: 80px;
+  transition: background-color 0.2s;
+}
+
+.testButton:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.testResult {
+  margin-top: 8px;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.testResult.success {
+  background-color: rgba(87, 242, 135, 0.1);
+  color: var(--success);
+}
+
+.testResult.error {
+  background-color: rgba(237, 66, 69, 0.1);
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.cancelButton {
+  padding: 10px 24px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: var(--bg-hover);
+}
+
+.saveButton {
+  padding: 10px 24px;
+  background-color: var(--accent);
+  color: white;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Game settings */
+.warning {
+  color: #ffa000;
+  font-weight: 500;
+}
+
+.gameSettingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.settingItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.numberInput {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.numberInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.numberInput:focus {
+  border-color: var(--accent);
+  outline: none;
+}

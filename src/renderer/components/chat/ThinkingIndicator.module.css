@@ -1,0 +1,37 @@
+.container {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+
+.compact {
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.text {
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.letter {
+  display: inline-block;
+  animation: glowWave 1.5s ease-in-out infinite;
+}
+
+@keyframes glowWave {
+  0%, 100% {
+    color: var(--text-muted);
+    text-shadow: none;
+  }
+  50% {
+    color: var(--thinking-color, var(--accent));
+    text-shadow:
+      0 0 2px var(--thinking-glow, var(--accent)),
+      0 0 4px var(--thinking-glow, var(--accent)),
+      0 0 6px var(--thinking-glow, var(--accent));
+  }
+}

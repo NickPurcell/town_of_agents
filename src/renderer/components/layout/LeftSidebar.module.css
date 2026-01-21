@@ -1,0 +1,186 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px 16px;
+}
+
+.header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px var(--accent-blood-glow);
+}
+
+/* Main action button - New Game */
+.newGameButton {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, var(--accent-blood) 0%, #8b1528 100%);
+  color: white;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all var(--transition-smooth);
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 15px rgba(196, 30, 58, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.newGameButton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.newGameButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-blood-bright) 0%, var(--accent-blood) 100%);
+  box-shadow:
+    0 6px 25px rgba(196, 30, 58, 0.5),
+    0 0 40px rgba(196, 30, 58, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.newGameButton:hover::before {
+  transform: translateX(100%);
+}
+
+.newGameButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.newGameButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* View current game button */
+.viewGameButton {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--accent-blood-dim);
+  color: var(--accent-blood-bright);
+  border: 1px solid var(--border-accent);
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all var(--transition-smooth);
+  margin-bottom: 10px;
+}
+
+.viewGameButton:hover {
+  background: rgba(196, 30, 58, 0.25);
+  border-color: var(--accent-blood);
+  box-shadow: 0 0 20px var(--accent-blood-glow);
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--border) 20%,
+    var(--border) 80%,
+    transparent 100%
+  );
+  margin: 12px 0 20px 0;
+}
+
+/* New Chat button */
+.newChatButton {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all var(--transition-smooth);
+  margin-bottom: 20px;
+}
+
+.newChatButton:hover {
+  background: var(--bg-elevated);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.chatListContainer {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
+
+.footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.settingsButton {
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  transition: all var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settingsButton::before {
+  content: '⚙';
+  font-size: 14px;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+}
+
+.settingsButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.settingsButton:hover::before {
+  opacity: 1;
+}

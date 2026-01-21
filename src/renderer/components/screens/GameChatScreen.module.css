@@ -1,0 +1,299 @@
+.container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(800px circle at 20% -10%, rgba(196, 30, 58, 0.14), transparent 60%),
+    linear-gradient(180deg, rgba(12, 12, 20, 0.98), rgba(6, 6, 10, 0.98));
+  transition: background-color 0.5s, background 0.5s;
+  position: relative;
+  overflow: hidden;
+}
+
+.container.nightMode {
+  background:
+    radial-gradient(800px circle at 20% -10%, rgba(59, 130, 246, 0.18), transparent 60%),
+    linear-gradient(180deg, #0b0e1b, #090a12);
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(500px circle at 80% 0%, rgba(196, 30, 58, 0.08), transparent 60%),
+    radial-gradient(300px circle at 10% 90%, rgba(255, 255, 255, 0.04), transparent 65%);
+  opacity: 0.7;
+}
+
+.container.nightMode::before {
+  background:
+    radial-gradient(500px circle at 80% 0%, rgba(59, 130, 246, 0.12), transparent 60%),
+    radial-gradient(320px circle at 10% 90%, rgba(255, 255, 255, 0.05), transparent 65%);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(10, 10, 16, 0.9));
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gameName {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.phaseInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dayNumber {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.phaseName {
+  font-size: 14px;
+  color: var(--accent-blood-bright);
+  font-weight: 500;
+  text-shadow: 0 0 12px var(--accent-blood-glow);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusBadge {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.statusBadge.active {
+  color: #65d46e;
+  background-color: rgba(67, 160, 71, 0.15);
+  border-color: rgba(67, 160, 71, 0.35);
+  box-shadow: 0 0 14px rgba(67, 160, 71, 0.35);
+}
+
+.statusBadge.inactive {
+  color: var(--text-muted);
+  background-color: var(--bg-tertiary);
+}
+
+.winnerBadge {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+}
+
+.winnerBadge.townWin {
+  color: #fdd835;
+  background-color: rgba(253, 216, 53, 0.2);
+  border-color: rgba(253, 216, 53, 0.5);
+  box-shadow: 0 0 16px rgba(253, 216, 53, 0.35);
+}
+
+.winnerBadge.mafiaWin {
+  color: #e53935;
+  background-color: rgba(229, 57, 53, 0.2);
+  border-color: rgba(229, 57, 53, 0.5);
+  box-shadow: 0 0 16px rgba(229, 57, 53, 0.35);
+}
+
+.stopButton {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border);
+}
+
+.stopButton:hover {
+  background: linear-gradient(135deg, #e53935, #8b1528);
+  color: white;
+  box-shadow: 0 0 16px rgba(229, 57, 53, 0.45);
+}
+
+.pauseButton {
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border);
+}
+
+.pauseButton:hover {
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+  color: white;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+}
+
+.resumeButton:hover {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  color: white;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.45);
+}
+
+.events {
+  flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Custom scrollbar styling - always visible */
+.events::-webkit-scrollbar {
+  width: 10px;
+}
+
+.events::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 5px;
+}
+
+.events::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 5px;
+  border: 2px solid var(--bg-secondary);
+}
+
+.events::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.newGameButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--accent-blood), #8b1528);
+  color: white;
+  border-radius: 6px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.newGameButton:hover {
+  background: linear-gradient(135deg, var(--accent-blood-bright), var(--accent-blood));
+  box-shadow: 0 0 16px rgba(196, 30, 58, 0.4);
+}
+
+.emptyEvents {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+.streamingMessage {
+  padding: 12px 16px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  margin-top: 12px;
+  border-left: 3px solid var(--accent);
+}
+
+.streamingAgent {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.streamingContent {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.thinkingIndicator {
+  padding: 12px 16px;
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.thinkingAgent {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.statsBar {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(10, 10, 16, 0.9));
+  border-top: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.35);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}

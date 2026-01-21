@@ -1,0 +1,151 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 0 14px rgba(196, 30, 58, 0.35);
+}
+
+.empty {
+  padding: 12px 0;
+}
+
+.emptyText {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.gameRoster {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.factionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.factionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--faction-color);
+  color: var(--faction-color);
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.1));
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.35), 0 0 18px var(--faction-color);
+}
+
+.factionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.factionLabel::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--faction-color);
+  box-shadow: 0 0 10px var(--faction-color);
+}
+
+.factionCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.agentList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gameAgentItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25));
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  border-left: 2px solid var(--agent-color);
+  transition: opacity 0.2s, transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gameAgentItem.dead {
+  opacity: 0.5;
+  border-left-color: var(--text-muted);
+}
+
+.gameAgentItem:not(.dead):hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 20px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(255, 255, 255, 0.05),
+    0 0 16px var(--agent-color);
+}
+
+.selected {
+  border-color: rgba(196, 30, 58, 0.5);
+  box-shadow:
+    0 12px 20px rgba(0, 0, 0, 0.35),
+    0 0 16px rgba(196, 30, 58, 0.3);
+}
+
+.gameAgentName {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.gameAgentItem.dead .gameAgentName {
+  text-decoration: line-through;
+}
+
+.gameAgentRole {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-family: var(--font-mono);
+}
+
+.deadMarker {
+  margin-left: auto;
+  font-size: 10px;
+  color: #ff6b6b;
+  background-color: rgba(229, 57, 53, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(229, 57, 53, 0.4);
+}

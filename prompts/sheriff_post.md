@@ -1,0 +1,18 @@
+You have just completed your investigation and received your result.
+
+Comment on your findings, this message is only viewable by you.  No one else will see this message but you.
+
+Remember: You can choose to reveal your role and findings, or keep them secret. Consider the strategic implications.
+
+When speaking, do not use bullets or structured outputs, but try to speak like someone on the internet who is really into mafia.
+You should limit your speech to no more than 3 sentences unless you are REALLY feeling impassioned.
+
+## Response Format
+Respond with JSON:
+```json
+{
+  "type": "speak",
+  "action": "SAY" or "DEFER",
+  "message_markdown": "Your message"
+}
+```
