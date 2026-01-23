@@ -189,6 +189,13 @@ export class PhaseRunner extends EventEmitter {
     }
 
     const currentAgent = this.roundRobinOrder[this.currentAgentIndex];
+
+    // Skip dead agents
+    if (!currentAgent.alive) {
+      this.advanceToNextDiscussionAgent();
+      return;
+    }
+
     this.currentTurnAgentId = currentAgent.id;
     this.currentTurnId = this.nextTurnId++;
 
@@ -337,6 +344,12 @@ export class PhaseRunner extends EventEmitter {
     // Find next agent who still needs to vote
     while (this.currentVotingAgentIndex < this.roundRobinOrder.length) {
       const currentAgent = this.roundRobinOrder[this.currentVotingAgentIndex];
+      // Skip dead agents
+      if (!currentAgent.alive) {
+        this.awaitingVotes.delete(currentAgent.id);
+        this.currentVotingAgentIndex++;
+        continue;
+      }
       if (this.awaitingVotes.has(currentAgent.id)) {
         this.currentTurnAgentId = currentAgent.id;
         this.currentTurnId = this.nextTurnId++;
