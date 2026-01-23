@@ -15,11 +15,14 @@ You should limit your speech to no more than 3 sentences unless you are REALLY f
 Your goal is to win and have fun!
 
 ## Response Format
-Respond with JSON:
-```json
-{
-  "type": "speak",
-  "action": "SAY" or "DEFER",
-  "message_markdown": "Your chat message"
-}
-```
+
+**Step 1: Output action header as JSON:**
+{"type":"speak","action":"SAY"}
+
+**Step 2: If SAY, output message body:**
+---MESSAGE_MARKDOWN---
+Your message here
+---END---
+
+**DEFER example:**
+{"type":"speak","action":"DEFER"}

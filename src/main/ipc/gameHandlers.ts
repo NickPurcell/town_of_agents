@@ -51,6 +51,10 @@ export function registerGameHandlers(mainWindow: BrowserWindow): void {
       mainWindow.webContents.send('game:streamingMessage', { agentId, content });
     });
 
+    gameController.on('streaming_chunk', (agentId: string, chunk: string, isComplete: boolean) => {
+      mainWindow.webContents.send('game:streamingChunk', { agentId, chunk, isComplete });
+    });
+
     gameController.on('game_state_update', (state: any) => {
       mainWindow.webContents.send('game:stateUpdate', state);
     });

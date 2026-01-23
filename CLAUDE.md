@@ -49,14 +49,40 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 ### LLM System (`src/main/llm/`)
 - **PromptBuilder.ts**: Builds system prompts dynamically based on agent role, phase, and game state. Maps phase types (including `MAYOR_REVEAL_CHOICE` for pre-speech reveal) to prompt files.
 - **PromptLoader.ts**: Loads and caches prompt MD files with template variable injection (`{{variableName}}`).
-- **ResponseParser.ts**: Parses LLM responses into typed game actions.
+- **ResponseParser.ts**: Parses LLM responses into typed game actions. Supports both legacy JSON format and two-phase streaming protocol.
+
+### Two-Phase Streaming Protocol
+Speak responses use a two-phase streaming protocol for progressive UI updates:
+
+**Format:**
+```
+{"type":"speak","action":"SAY"}
+---MESSAGE_MARKDOWN---
+Your message here
+---END---
+```
+
+**DEFER example (no message body):**
+```
+{"type":"speak","action":"DEFER"}
+```
+
+**Key methods in ResponseParser:**
+- `parseStreamingHeader()`: Parse JSON header from partial content
+- `extractStreamingMessageBody()`: Extract message between markers
+- `isStreamingComplete()`: Check for `---END---` or DEFER
+- `parseStreamingSpeakResponse()`: Full parsing with fallback to legacy JSON
+
+**Unchanged (JSON-only):** Vote, Choice, and MayorReveal responses remain in JSON format.
 
 ### LLM Services (`src/main/services/llm/`)
-- **index.ts**: Factory for creating LLM services.
+- **index.ts**: Factory for creating LLM services. `LLMService` interface has two methods:
+  - `generate()`: Non-streaming request returning complete response
+  - `generateStream()`: Streaming async generator yielding chunks with callback
 - **openaiService.ts**: OpenAI responses API with reasoning.
 - **anthropicService.ts**: Claude with extended thinking (8000 token budget).
 - **geminiService.ts**: Google Gemini support.
-- **rateLimiter.ts**: Rate limiting wrapper.
+- **rateLimiter.ts**: Rate limiting wrapper for both generate and generateStream.
 
 ### Preload Bridge
 `src/preload/index.ts` defines `window.api` methods and events.
@@ -206,6 +232,7 @@ interface API {
   onGameAgentThinking(callback): () => void
   onGameAgentThinkingDone(callback): () => void
   onGameStreamingMessage(callback): () => void
+  onGameStreamingChunk(callback: (data: { agentId: string; chunk: string; isComplete: boolean }) => void): () => void
   onGameStateUpdate(callback): () => void
 }
 ```

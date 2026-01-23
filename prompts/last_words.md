@@ -8,11 +8,14 @@ WHen speaking, do not use bullets or structured outputs, but try to speak like s
 Try to win and have fun!
 
 ## Response Format
-Respond with JSON:
-```json
-{
-  "type": "speak",
-  "action": "SAY" or "DEFER",
-  "message_markdown": "Your last words to the group"
-}
-```
+
+**Step 1: Output action header as JSON:**
+{"type":"speak","action":"SAY"}
+
+**Step 2: If SAY, output message body:**
+---MESSAGE_MARKDOWN---
+Your last words to the group
+---END---
+
+**DEFER example:**
+{"type":"speak","action":"DEFER"}

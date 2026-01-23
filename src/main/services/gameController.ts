@@ -392,12 +392,76 @@ export class GameController extends EventEmitter {
             return;
           }
 
-          const response = await service.generate(messages, systemPrompt, agent.model);
+          // Use streaming for speak requests
+          let headerParsed = false;
+          let headerAction: 'SAY' | 'DEFER' | null = null;
+          let messageBodyStarted = false;
+          let streamedMessageContent = '';
 
-          content = response.content;
+          const generator = service.generateStream(
+            messages,
+            systemPrompt,
+            agent.model,
+            (chunk: string) => {
+              content += chunk;
+
+              // Check if we have parsed the header yet
+              if (!headerParsed && ResponseParser.hasCompleteHeader(content)) {
+                const headerResult = ResponseParser.parseStreamingHeader(content);
+                if (headerResult.success && headerResult.data) {
+                  headerParsed = true;
+                  headerAction = headerResult.data.action;
+                  console.log(`${agent.name}: Header parsed, action: ${headerAction}`);
+
+                  // For DEFER, no more content expected
+                  if (headerAction === 'DEFER') {
+                    return;
+                  }
+                }
+              }
+
+              // For SAY, stream the message body content
+              if (headerParsed && headerAction === 'SAY') {
+                const bodyStartPos = ResponseParser.getMessageBodyStartPosition(content);
+                if (bodyStartPos !== -1) {
+                  if (!messageBodyStarted) {
+                    messageBodyStarted = true;
+                    // Get the portion after the marker
+                    const newContent = content.slice(bodyStartPos).replace('---END---', '').trim();
+                    if (newContent.length > streamedMessageContent.length) {
+                      const delta = newContent.slice(streamedMessageContent.length);
+                      streamedMessageContent = newContent;
+                      this.emit('streaming_chunk', agent.id, delta, false);
+                    }
+                  } else {
+                    // Check for more content
+                    const newContent = content.slice(bodyStartPos).replace('---END---', '').trim();
+                    if (newContent.length > streamedMessageContent.length) {
+                      const delta = newContent.slice(streamedMessageContent.length);
+                      streamedMessageContent = newContent;
+                      this.emit('streaming_chunk', agent.id, delta, false);
+                    }
+                  }
+                }
+              }
+            }
+          );
+
+          // Consume the generator
+          let result: IteratorResult<string, LLMResponse>;
+          do {
+            result = await generator.next();
+          } while (!result.done);
+
+          const response = result.value;
           thinkingContent = response.thinkingContent || '';
-          this.emit('streaming_message', agent.id, content);
 
+          // Mark streaming as complete if we were streaming
+          if (messageBodyStarted) {
+            this.emit('streaming_chunk', agent.id, '', true);
+          }
+
+          this.emit('streaming_message', agent.id, content);
           console.log(`${agent.name}: Response received, content length: ${content.length}`);
 
           // Success - break out of retry loop
@@ -446,7 +510,8 @@ export class GameController extends EventEmitter {
         console.error('='.repeat(80) + '\n');
       }
 
-      const result = ResponseParser.parseSpeakResponse(content);
+      // Use streaming-aware parser with fallback to legacy format
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
       console.log(`${agent.name} raw content:`, content.substring(0, 500));
       console.log(`${agent.name} parsed result:`, JSON.stringify(result.data));
       if (result.success && result.data) {

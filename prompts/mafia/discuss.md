@@ -17,11 +17,14 @@ Think hard about what you're going to say, this is an important game!
 You really shouldn't defer unless you have really thought it out and feel like it's the best option.
 
 ## Response Format
-Respond with JSON:
-```json
-{
-  "type": "speak",
-  "action": "SAY" or "DEFER",
-  "message_markdown": "Your chat message"
-}
-```
+
+**Step 1: Output action header as JSON:**
+{"type":"speak","action":"SAY"}
+
+**Step 2: If SAY, output message body:**
+---MESSAGE_MARKDOWN---
+Your message here
+---END---
+
+**DEFER example:**
+{"type":"speak","action":"DEFER"}

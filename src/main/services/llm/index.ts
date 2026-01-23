@@ -14,6 +14,13 @@ export interface LLMService {
     systemPrompt: string,
     model: string
   ): Promise<LLMResponse>;
+
+  generateStream(
+    messages: LLMMessage[],
+    systemPrompt: string,
+    model: string,
+    onChunk: (chunk: string) => void
+  ): AsyncGenerator<string, LLMResponse, unknown>;
 }
 
 export function createLLMService(provider: Provider, apiKey: string): LLMService {
@@ -28,5 +35,3 @@ export function createLLMService(provider: Provider, apiKey: string): LLMService
       throw new Error(`Unknown provider: ${provider}`);
   }
 }
-
-export * from './messageConverter';

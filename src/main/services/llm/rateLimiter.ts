@@ -165,6 +165,53 @@ export class RateLimitedLLMService implements LLMService {
     this.consecutiveErrors = 0;
     console.log('[RateLimiter] Circuit breaker manually reset');
   }
+
+  async *generateStream(
+    messages: LLMMessage[],
+    systemPrompt: string,
+    model: string,
+    onChunk: (chunk: string) => void
+  ): AsyncGenerator<string, LLMResponse, unknown> {
+    // Check circuit breaker
+    if (this.isCircuitOpen()) {
+      throw new Error('Circuit breaker is open - too many consecutive errors. Waiting for reset.');
+    }
+
+    // Wait for rate limit slot
+    while (!this.canMakeRequest()) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    this.activeRequests++;
+    this.requestTimestamps.push(Date.now());
+
+    try {
+      const generator = this.service.generateStream(messages, systemPrompt, model, onChunk);
+      let result: IteratorResult<string, LLMResponse>;
+
+      while (true) {
+        result = await generator.next();
+        if (result.done) {
+          this.consecutiveErrors = 0; // Reset on success
+          return result.value;
+        }
+        yield result.value;
+      }
+    } catch (error) {
+      this.consecutiveErrors++;
+      console.error(`[RateLimiter] Stream request failed (consecutive errors: ${this.consecutiveErrors})`);
+
+      if (this.consecutiveErrors >= this.config.circuitBreakerThreshold) {
+        console.error(`[RateLimiter] Circuit breaker TRIPPED - stopping all requests for ${this.config.circuitBreakerResetMs / 1000}s`);
+        this.circuitOpen = true;
+        this.circuitOpenedAt = Date.now();
+      }
+
+      throw error;
+    } finally {
+      this.activeRequests--;
+    }
+  }
 }
 
 // Factory function to wrap existing services

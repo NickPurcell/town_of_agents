@@ -22,6 +22,11 @@ interface SideChatThread {
   pendingSince?: number;
 }
 
+interface StreamingContent {
+  content: string;
+  isComplete: boolean;
+}
+
 interface GameStore {
   // Setup state
   pendingAgents: PendingAgent[];
@@ -31,6 +36,7 @@ interface GameStore {
   gameState: GameState | null;
   isGameActive: boolean;
   streamingMessage: { agentId: string; content: string } | null;
+  streamingContent: Map<string, StreamingContent>;
   thinkingAgent: ThinkingAgent | null;
   sideChatThreads: Record<string, SideChatThread>;
 
@@ -47,6 +53,8 @@ interface GameStore {
   setAgentDead: (agentId: string) => void;
   setGameOver: (winner: Faction) => void;
   setStreamingMessage: (message: { agentId: string; content: string } | null) => void;
+  appendStreamingChunk: (agentId: string, chunk: string) => void;
+  completeStreaming: (agentId: string) => void;
   setThinkingAgent: (agentId: string, agentName: string) => void;
   clearThinkingAgent: (agentId?: string) => void;
   sendSideChatMessage: (agentId: string, content: string) => Promise<void>;
@@ -69,6 +77,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameState: null,
   isGameActive: false,
   streamingMessage: null,
+  streamingContent: new Map(),
   thinkingAgent: null,
   sideChatThreads: {},
 
@@ -122,7 +131,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   appendEvent: (event: GameEvent) => {
-    const { gameState, thinkingAgent } = get();
+    const { gameState, thinkingAgent, streamingContent } = get();
     if (gameState) {
       const eventAgentId = 'agentId' in event ? (event as { agentId?: string }).agentId : null;
       const shouldClearThinking = Boolean(
@@ -130,12 +139,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
         eventAgentId &&
         eventAgentId === thinkingAgent.agentId
       );
+
+      // Clear streaming content for this agent when event is appended
+      let newStreamingContent = streamingContent;
+      if (eventAgentId && streamingContent.has(eventAgentId)) {
+        newStreamingContent = new Map(streamingContent);
+        newStreamingContent.delete(eventAgentId);
+      }
+
       set({
         gameState: {
           ...gameState,
           events: [...gameState.events, event],
         },
         thinkingAgent: shouldClearThinking ? null : thinkingAgent,
+        streamingContent: newStreamingContent,
       });
     }
   },
@@ -169,6 +187,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setStreamingMessage: (message) => {
     set({ streamingMessage: message });
+  },
+
+  appendStreamingChunk: (agentId: string, chunk: string) => {
+    set(state => {
+      const newMap = new Map(state.streamingContent);
+      const existing = newMap.get(agentId);
+      newMap.set(agentId, {
+        content: (existing?.content || '') + chunk,
+        isComplete: false,
+      });
+      return { streamingContent: newMap };
+    });
+  },
+
+  completeStreaming: (agentId: string) => {
+    set(state => {
+      const newMap = new Map(state.streamingContent);
+      const existing = newMap.get(agentId);
+      if (existing) {
+        newMap.set(agentId, {
+          ...existing,
+          isComplete: true,
+        });
+      }
+      return { streamingContent: newMap };
+    });
   },
 
   setThinkingAgent: (agentId: string, agentName: string) => {
@@ -271,6 +315,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameState: null,
       isGameActive: false,
       streamingMessage: null,
+      streamingContent: new Map(),
       thinkingAgent: null,
       isSettingUp: true,
       sideChatThreads: {},
@@ -286,7 +331,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     try {
-      set({ sideChatThreads: {} });
+      set({ sideChatThreads: {}, streamingContent: new Map() });
       set({ isSettingUp: false });
       await window.api.gameStart(pendingAgents);
     } catch (error) {

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Chat, Settings, ChatIndexEntry, Message, GameState, GameEvent, Phase, Faction, Role, SideChatMessage, LLMResponse } from '@shared/types';
+import type { Settings, GameState, GameEvent, Phase, Faction, Role, SideChatMessage, LLMResponse } from '@shared/types';
 
 interface PendingAgent {
   name: string;
@@ -16,68 +16,9 @@ contextBridge.exposeInMainWorld('api', {
   saveSettings: (settings: Settings): Promise<boolean> =>
     ipcRenderer.invoke('settings:save', settings),
 
-  // Chat operations
-  listChats: (): Promise<ChatIndexEntry[]> => ipcRenderer.invoke('chat:list'),
-  getChat: (chatId: string): Promise<Chat | null> =>
-    ipcRenderer.invoke('chat:get', chatId),
-  createChat: (chat: Chat): Promise<Chat> =>
-    ipcRenderer.invoke('chat:create', chat),
-  updateChat: (chat: Chat): Promise<Chat> =>
-    ipcRenderer.invoke('chat:update', chat),
-  deleteChat: (chatId: string): Promise<boolean> =>
-    ipcRenderer.invoke('chat:delete', chatId),
-
-  // Chat control
-  startChat: (chatId: string): Promise<boolean> =>
-    ipcRenderer.invoke('chat:start', chatId),
-  stopChat: (chatId: string): Promise<boolean> =>
-    ipcRenderer.invoke('chat:stop', chatId),
-  sendUserMessage: (chatId: string, content: string): Promise<boolean> =>
-    ipcRenderer.invoke('chat:sendUserMessage', chatId, content),
-
   // LLM
   testConnection: (provider: string, apiKey: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('llm:testConnection', provider, apiKey),
-
-  // Event listeners
-  onChatStarted: (callback: (data: { chatId: string }) => void) => {
-    const handler = (_: Electron.IpcRendererEvent, data: { chatId: string }) => callback(data);
-    ipcRenderer.on('chat:started', handler);
-    return () => ipcRenderer.removeListener('chat:started', handler);
-  },
-
-  onChatStopped: (callback: (data: { chatId: string }) => void) => {
-    const handler = (_: Electron.IpcRendererEvent, data: { chatId: string }) => callback(data);
-    ipcRenderer.on('chat:stopped', handler);
-    return () => ipcRenderer.removeListener('chat:stopped', handler);
-  },
-
-  onMessageAdded: (callback: (data: { chatId: string; message: Message }) => void) => {
-    const handler = (_: Electron.IpcRendererEvent, data: { chatId: string; message: Message }) =>
-      callback(data);
-    ipcRenderer.on('chat:messageAdded', handler);
-    return () => ipcRenderer.removeListener('chat:messageAdded', handler);
-  },
-
-  onChatError: (callback: (data: { chatId: string; error: string }) => void) => {
-    const handler = (_: Electron.IpcRendererEvent, data: { chatId: string; error: string }) =>
-      callback(data);
-    ipcRenderer.on('chat:error', handler);
-    return () => ipcRenderer.removeListener('chat:error', handler);
-  },
-
-  onAgentThinking: (callback: (data: { chatId: string; agentId: string; agentName: string }) => void) => {
-    const handler = (_: Electron.IpcRendererEvent, data: { chatId: string; agentId: string; agentName: string }) =>
-      callback(data);
-    ipcRenderer.on('chat:agentThinking', handler);
-    return () => ipcRenderer.removeListener('chat:agentThinking', handler);
-  },
-
-  onAgentThinkingDone: (callback: (data: { chatId: string }) => void) => {
-    const handler = (_: Electron.IpcRendererEvent, data: { chatId: string }) => callback(data);
-    ipcRenderer.on('chat:agentThinkingDone', handler);
-    return () => ipcRenderer.removeListener('chat:agentThinkingDone', handler);
-  },
 
   // Game operations
   gameStart: (agents: PendingAgent[]): Promise<{ success: boolean }> =>
@@ -139,6 +80,13 @@ contextBridge.exposeInMainWorld('api', {
       callback(data);
     ipcRenderer.on('game:streamingMessage', handler);
     return () => ipcRenderer.removeListener('game:streamingMessage', handler);
+  },
+
+  onGameStreamingChunk: (callback: (data: { agentId: string; chunk: string; isComplete: boolean }) => void) => {
+    const handler = (_: Electron.IpcRendererEvent, data: { agentId: string; chunk: string; isComplete: boolean }) =>
+      callback(data);
+    ipcRenderer.on('game:streamingChunk', handler);
+    return () => ipcRenderer.removeListener('game:streamingChunk', handler);
   },
 
   onGameStateUpdate: (callback: (state: GameState) => void) => {

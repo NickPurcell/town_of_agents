@@ -144,6 +144,12 @@ export interface SideChatMessage {
   timestamp: number;
 }
 
+// Streaming speak header (two-phase protocol)
+export interface StreamingSpeakHeader {
+  type: 'speak';
+  action: 'SAY' | 'DEFER';
+}
+
 // LLM response types (strict JSON)
 export interface SpeakResponse {
   type: 'speak';

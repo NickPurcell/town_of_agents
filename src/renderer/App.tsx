@@ -1,12 +1,9 @@
 import React, { useEffect } from 'react';
-import { useChatStore } from './store/chatStore';
 import { useSettingsStore } from './store/settingsStore';
-import { useUIStore } from './store/uiStore';
 import { useGameStore } from './store/gameStore';
 import { ThreeColumnLayout } from './components/layout/ThreeColumnLayout';
 
 function App() {
-  const { loadChatIndex, addMessage, updateChatStatus, setError, setThinkingAgent, clearThinkingAgent } = useChatStore();
   const { loadSettings } = useSettingsStore();
   const {
     setGameState,
@@ -15,36 +12,15 @@ function App() {
     setAgentDead,
     setGameOver,
     setStreamingMessage,
+    appendStreamingChunk,
+    completeStreaming,
     setThinkingAgent: setGameThinkingAgent,
     clearThinkingAgent: clearGameThinkingAgent,
   } = useGameStore();
 
   useEffect(() => {
     // Load initial data
-    loadChatIndex();
     loadSettings();
-
-    // Set up chat IPC listeners
-    const unsubscribeStarted = window.api.onChatStarted(({ chatId }) => {
-      updateChatStatus(chatId, true);
-    });
-
-    const unsubscribeStopped = window.api.onChatStopped(({ chatId }) => {
-      updateChatStatus(chatId, false);
-    });
-
-    const unsubscribeMessage = window.api.onMessageAdded(({ chatId, message }) => {
-      addMessage(chatId, message);
-    });
-
-    const unsubscribeError = window.api.onChatError(({ chatId, error }) => {
-      clearThinkingAgent(chatId);
-      setError(error);
-    });
-
-    const unsubscribeThinking = window.api.onAgentThinking(({ chatId, agentId, agentName }) => {
-      setThinkingAgent(chatId, agentId, agentName);
-    });
 
     // Set up game IPC listeners
     const unsubscribeGameEvent = window.api.onGameEventAppended((event) => {
@@ -75,16 +51,19 @@ function App() {
       setStreamingMessage({ agentId, content });
     });
 
+    const unsubscribeStreamingChunk = window.api.onGameStreamingChunk(({ agentId, chunk, isComplete }) => {
+      if (isComplete) {
+        completeStreaming(agentId);
+      } else {
+        appendStreamingChunk(agentId, chunk);
+      }
+    });
+
     const unsubscribeGameState = window.api.onGameStateUpdate((state) => {
       setGameState(state);
     });
 
     return () => {
-      unsubscribeStarted();
-      unsubscribeStopped();
-      unsubscribeMessage();
-      unsubscribeError();
-      unsubscribeThinking();
       unsubscribeGameEvent();
       unsubscribeGamePhase();
       unsubscribeGameOver();
@@ -92,6 +71,7 @@ function App() {
       unsubscribeGameThinking();
       unsubscribeGameThinkingDone();
       unsubscribeStreaming();
+      unsubscribeStreamingChunk();
       unsubscribeGameState();
     };
   }, []);

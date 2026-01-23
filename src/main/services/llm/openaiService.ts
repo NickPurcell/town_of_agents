@@ -28,11 +28,12 @@ export class OpenAIService implements LLMService {
 
     let response;
     try {
+      const isGptModel = model.toLowerCase().startsWith('gpt');
       response = await this.client.responses.create({
         model,
         input: formattedMessages,
         instructions: systemPrompt,
-        reasoning: { effort: 'medium', summary: 'auto' },
+        ...(isGptModel ? {} : { reasoning: { effort: 'medium', summary: 'auto' } }),
       });
     } catch (error) {
       console.error('\n' + '='.repeat(80));
@@ -69,6 +70,88 @@ export class OpenAIService implements LLMService {
           }
         }
       }
+    }
+
+    const rawResponse: RawResponse = {
+      provider: 'openai',
+      // @ts-ignore
+      id: response.id,
+      model,
+      // @ts-ignore
+      stopReason: response.status,
+      usage: {
+        // @ts-ignore
+        inputTokens: response.usage?.input_tokens,
+        // @ts-ignore
+        outputTokens: response.usage?.output_tokens,
+        // @ts-ignore
+        totalTokens: response.usage?.total_tokens
+      },
+      finishTime: Date.now()
+    };
+
+    return {
+      content,
+      thinkingContent: thinkingContent || undefined,
+      rawResponse
+    };
+  }
+
+  async *generateStream(
+    messages: LLMMessage[],
+    systemPrompt: string,
+    model: string,
+    onChunk: (chunk: string) => void
+  ): AsyncGenerator<string, LLMResponse, unknown> {
+    const formattedMessages = messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
+
+    if (formattedMessages.length === 0 || formattedMessages[0].role !== 'user') {
+      formattedMessages.unshift({
+        role: 'user',
+        content: 'Please begin the conversation based on the topic provided.'
+      });
+    }
+
+    let content = '';
+    let thinkingContent = '';
+    let response: any;
+
+    try {
+      const isGptModel = model.toLowerCase().startsWith('gpt');
+      const stream = await this.client.responses.stream({
+        model,
+        input: formattedMessages,
+        instructions: systemPrompt,
+        ...(isGptModel ? {} : { reasoning: { effort: 'medium', summary: 'auto' } }),
+      });
+
+      for await (const event of stream) {
+        // @ts-ignore - Handle different event types
+        if (event.type === 'response.output_text.delta') {
+          // @ts-ignore
+          const delta = event.delta || '';
+          content += delta;
+          onChunk(delta);
+          yield delta;
+        } else if (event.type === 'response.reasoning_summary_text.delta') {
+          // @ts-ignore
+          const delta = event.delta || '';
+          thinkingContent += delta;
+        }
+      }
+
+      response = await stream.finalResponse();
+    } catch (error) {
+      console.error('\n' + '='.repeat(80));
+      console.error('OPENAI API ERROR - STREAMING REQUEST FAILED');
+      console.error('='.repeat(80));
+      console.error('Model:', model);
+      console.error('Error:', error);
+      console.error('='.repeat(80) + '\n');
+      throw error;
     }
 
     const rawResponse: RawResponse = {
