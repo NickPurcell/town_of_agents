@@ -24,20 +24,6 @@ export interface Message {
   timestamp: number;
 }
 
-// Chat configuration and state
-export interface Chat {
-  id: string;
-  name: string;
-  topic: string;
-  intervalMs: number;
-  isActive: boolean;
-  agents: Agent[];
-  messages: Message[];
-  currentAgentIndex: number;
-  createdAt: number;
-  updatedAt: number;
-}
-
 // Application settings
 export interface Settings {
   apiKeys: {
@@ -51,16 +37,6 @@ export interface Settings {
     turnTimeoutSec: number;
     mafiaVotingRetries: number;
   };
-}
-
-// Chat index entry for listing
-export interface ChatIndexEntry {
-  id: string;
-  name: string;
-  isActive: boolean;
-  agentCount: number;
-  messageCount: number;
-  updatedAt: number;
 }
 
 // Raw response metadata from LLM (excludes message content)
@@ -94,6 +70,8 @@ export interface ModelOption {
 
 export const MODEL_OPTIONS: ModelOption[] = [
   { id: 'gpt-5', name: 'GPT-5 Thinking', provider: 'openai' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai' },
   { id: 'claude-opus-4-5', name: 'Claude Opus 4.5', provider: 'anthropic' },
   { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google' }
 ];
