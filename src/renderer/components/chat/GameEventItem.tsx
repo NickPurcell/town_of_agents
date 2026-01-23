@@ -23,24 +23,23 @@ const providerAvatarMap: Record<GameAgent['provider'], string> = {
   google: '/avatars/gemini.png'
 };
 
-// Human-readable phase labels
-const PHASE_LABELS: Record<Phase, string> = {
+// Phases that should show a banner (first phase of each role's turn)
+const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   DAY_ONE_DISCUSSION: 'Day 1 Discussion',
   DAY_DISCUSSION: 'Day Discussion',
   DAY_VOTE: 'Day Vote',
   LAST_WORDS: 'Last Words',
   POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
-  DOCTOR_CHOICE: 'Doctor\'s Choice',
-  VIGILANTE_PRE_SPEECH: 'Vigilante Deliberation',
-  VIGILANTE_CHOICE: 'Vigilante\'s Choice',
-  SHERIFF_CHOICE: 'Sheriff\'s Investigation',
-  SHERIFF_POST_SPEECH: 'Sheriff\'s Report',
-  LOOKOUT_CHOICE: 'Lookout\'s Watch',
-  LOOKOUT_POST_SPEECH: 'Lookout\'s Report',
-  NIGHT_DISCUSSION: 'Mafia Night Discussion',
-  NIGHT_VOTE: 'Mafia Night Vote',
-  MAYOR_REVEAL_CHOICE: 'Mayor\'s Decision',
+  DOCTOR_CHOICE: "Doctor's Turn",
+  VIGILANTE_PRE_SPEECH: "Vigilante's Turn",
+  SHERIFF_CHOICE: "Sheriff's Turn",
+  LOOKOUT_CHOICE: "Lookout's Turn",
+  NIGHT_DISCUSSION: "Mafia's Turn",
+  MAYOR_REVEAL_CHOICE: "Mayor's Turn",
 };
+
+// Phases that should NOT show a banner (subsequent phases of a role's turn)
+// VIGILANTE_CHOICE, SHERIFF_POST_SPEECH, LOOKOUT_POST_SPEECH, NIGHT_VOTE are hidden
 
 function AgentAvatar({ agent }: { agent: GameAgent }) {
   const [avatarError, setAvatarError] = useState(false);
@@ -135,10 +134,14 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
     }
 
     case 'PHASE_CHANGE': {
+      const label = VISIBLE_PHASES[event.phase];
+      // Don't render banners for hidden phases (subsequent phases of a role's turn)
+      if (!label) return null;
+
       return (
         <div className={styles.phaseChange}>
           <div className={styles.phaseDivider} />
-          <span className={styles.phaseChangeLabel}>{PHASE_LABELS[event.phase]}</span>
+          <span className={styles.phaseChangeLabel}>{label}</span>
           <div className={styles.phaseDivider} />
         </div>
       );

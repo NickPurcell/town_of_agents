@@ -80,9 +80,9 @@ export function getCategoryClassName(category: NarrationCategory): string {
  * Returns the display label for private intel badges
  */
 export function getPrivateBadgeLabel(category: NarrationCategory): string | null {
-  if (category === 'private_sheriff') return 'Sheriff Intel';
-  if (category === 'private_lookout') return 'Lookout Intel';
-  if (category === 'private_vigilante') return 'Vigilante Intel';
-  if (category === 'private_doctor') return 'Doctor Intel';
+  if (category === 'private_sheriff') return 'Sheriff';
+  if (category === 'private_lookout') return 'Lookout';
+  if (category === 'private_vigilante') return 'Vigilante';
+  if (category === 'private_doctor') return 'Doctor';
   return null;
 }
