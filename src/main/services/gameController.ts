@@ -340,8 +340,9 @@ export class GameController extends EventEmitter {
     const service = this.llmServices.get(agent.id);
     if (!service) return;
 
+    const turnStartTime = Date.now();
     console.log('\n' + '-'.repeat(60));
-    console.log(`SPEAK REQUEST: ${agent.name} (${agent.role}) - Phase: ${phase}`);
+    console.log(`[TIMING] SPEAK REQUEST START: ${agent.name} (${agent.role}) - Phase: ${phase} - Time: ${new Date().toISOString()}`);
 
     if (!this.phaseRunner.isTurnActive(turnId)) {
       console.log(`${agent.name}: Turn cancelled before request`);
@@ -398,6 +399,8 @@ export class GameController extends EventEmitter {
           let messageBodyStarted = false;
           let streamedMessageContent = '';
 
+          const llmRequestStart = Date.now();
+          console.log(`[TIMING] ${agent.name}: LLM request starting at ${new Date().toISOString()}`);
           const generator = service.generateStream(
             messages,
             systemPrompt,
@@ -461,8 +464,9 @@ export class GameController extends EventEmitter {
             this.emit('streaming_chunk', agent.id, '', true);
           }
 
+          const llmRequestEnd = Date.now();
           this.emit('streaming_message', agent.id, content);
-          console.log(`${agent.name}: Response received, content length: ${content.length}`);
+          console.log(`[TIMING] ${agent.name}: LLM response received, took ${llmRequestEnd - llmRequestStart}ms, content length: ${content.length}`);
 
           // Success - break out of retry loop
           lastError = null;
@@ -473,7 +477,7 @@ export class GameController extends EventEmitter {
 
           if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
             const delay = RETRY_DELAY_MS * attempt; // Exponential backoff
-            console.log(`[${agent.name}] Retrying in ${delay}ms...`);
+            console.log(`[DELAY] ${agent.name}: LLM retry backoff - waiting ${delay}ms before attempt ${attempt + 1}`);
             await sleep(delay);
             continue;
           }
@@ -530,6 +534,8 @@ export class GameController extends EventEmitter {
         }, thinkingContent);
       }
     } finally {
+      const turnEndTime = Date.now();
+      console.log(`[TIMING] SPEAK REQUEST END: ${agent.name} - Total time: ${turnEndTime - turnStartTime}ms`);
       this.emitAgentThinkingDone(agent);
     }
   }

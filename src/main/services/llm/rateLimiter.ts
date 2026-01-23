@@ -75,10 +75,10 @@ export class RateLimitedLLMService implements LLMService {
     return true;
   }
 
-  private canMakeRequest(): boolean {
+  private canMakeRequest(): { allowed: boolean; reason?: string } {
     // Check concurrent limit
     if (this.activeRequests >= this.config.maxConcurrent) {
-      return false;
+      return { allowed: false, reason: `concurrent_limit (${this.activeRequests}/${this.config.maxConcurrent})` };
     }
 
     // Check rate limit
@@ -89,16 +89,18 @@ export class RateLimitedLLMService implements LLMService {
     this.requestTimestamps = this.requestTimestamps.filter(ts => ts > oneMinuteAgo);
 
     if (this.requestTimestamps.length >= this.config.maxRequestsPerMinute) {
-      return false;
+      return { allowed: false, reason: `rate_limit (${this.requestTimestamps.length}/${this.config.maxRequestsPerMinute} req/min)` };
     }
 
-    return true;
+    return { allowed: true };
   }
 
   private async processQueue(): Promise<void> {
     if (this.queue.length === 0) return;
-    if (!this.canMakeRequest()) {
+    const check = this.canMakeRequest();
+    if (!check.allowed) {
       // Schedule retry
+      console.log(`[DELAY] RateLimiter queue blocked: ${check.reason}, queue size: ${this.queue.length}, retrying in 1000ms`);
       setTimeout(() => this.processQueue(), 1000);
       return;
     }
@@ -178,8 +180,11 @@ export class RateLimitedLLMService implements LLMService {
     }
 
     // Wait for rate limit slot
-    while (!this.canMakeRequest()) {
+    let check = this.canMakeRequest();
+    while (!check.allowed) {
+      console.log(`[DELAY] RateLimiter stream blocked: ${check.reason}, waiting 1000ms`);
       await new Promise(resolve => setTimeout(resolve, 1000));
+      check = this.canMakeRequest();
     }
 
     this.activeRequests++;

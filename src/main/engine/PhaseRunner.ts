@@ -195,6 +195,7 @@ export class PhaseRunner extends EventEmitter {
     this.startTurnTimeout();
 
     // Emit request for agent to speak
+    console.log(`[TIMING] PhaseRunner: Emitting speak request for ${currentAgent.name} at ${new Date().toISOString()}`);
     this.emit('agent_speak_request', currentAgent, this.engine.getCurrentPhase(), this.currentTurnId);
   }
 
@@ -211,6 +212,9 @@ export class PhaseRunner extends EventEmitter {
       this.currentAgentIndex = 0;
       this.roundsCompleted++;
     }
+
+    const nextAgent = this.roundRobinOrder[this.currentAgentIndex];
+    console.log(`[TIMING] PhaseRunner: Advancing to next agent: ${nextAgent?.name ?? 'none'} at ${new Date().toISOString()}`);
 
     // Continue to next agent
     this.promptNextDiscussionAgent();
@@ -246,6 +250,7 @@ export class PhaseRunner extends EventEmitter {
     // Verify this is the current agent's turn
     if (agent.id !== this.currentTurnAgentId) return;
 
+    console.log(`[TIMING] PhaseRunner: ${agent.name} speech response handled at ${new Date().toISOString()}`);
     this.clearTurnTimeout();
 
     const phase = this.engine.getCurrentPhase();
