@@ -399,6 +399,8 @@ export class GameController extends EventEmitter {
           let headerAction: 'SAY' | 'DEFER' | null = null;
           let messageBodyStarted = false;
           let streamedMessageContent = '';
+          let pendingBuffer = ''; // Buffer to hold content that might be part of ---END---
+          const END_MARKER = '---END---';
 
           const llmRequestStart = Date.now();
           let firstChunkReceived = false;
@@ -429,27 +431,47 @@ export class GameController extends EventEmitter {
                 }
               }
 
-              // For SAY, stream the message body content
+              // For SAY, stream the message body content with buffering to hide ---END---
               if (headerParsed && headerAction === 'SAY') {
                 const bodyStartPos = ResponseParser.getMessageBodyStartPosition(content);
                 if (bodyStartPos !== -1) {
                   if (!messageBodyStarted) {
                     messageBodyStarted = true;
-                    // Get the portion after the marker
-                    const newContent = content.slice(bodyStartPos).replace('---END---', '').trim();
-                    if (newContent.length > streamedMessageContent.length) {
-                      const delta = newContent.slice(streamedMessageContent.length);
-                      streamedMessageContent = newContent;
-                      this.emit('streaming_chunk', agent.id, delta, false);
-                    }
+                    // Initialize buffer with content after the marker
+                    pendingBuffer = content.slice(bodyStartPos);
                   } else {
-                    // Check for more content
-                    const newContent = content.slice(bodyStartPos).replace('---END---', '').trim();
-                    if (newContent.length > streamedMessageContent.length) {
-                      const delta = newContent.slice(streamedMessageContent.length);
-                      streamedMessageContent = newContent;
+                    // Append new chunk to pending buffer
+                    pendingBuffer += chunk;
+                  }
+
+                  // Check if buffer contains the full end marker
+                  const endIndex = pendingBuffer.indexOf(END_MARKER);
+                  if (endIndex !== -1) {
+                    // Emit everything before the marker, then stop
+                    const beforeEnd = pendingBuffer.slice(0, endIndex).trim();
+                    if (beforeEnd.length > streamedMessageContent.length) {
+                      const delta = beforeEnd.slice(streamedMessageContent.length);
+                      streamedMessageContent = beforeEnd;
                       this.emit('streaming_chunk', agent.id, delta, false);
                     }
+                    return; // Don't emit anything after ---END---
+                  }
+
+                  // Check how much of the buffer could be start of ---END---
+                  let holdBackCount = 0;
+                  for (let i = 1; i <= Math.min(pendingBuffer.length, END_MARKER.length - 1); i++) {
+                    const suffix = pendingBuffer.slice(-i);
+                    if (END_MARKER.startsWith(suffix)) {
+                      holdBackCount = i;
+                    }
+                  }
+
+                  // Emit everything except the held-back suffix
+                  const safeContent = pendingBuffer.slice(0, pendingBuffer.length - holdBackCount).trim();
+                  if (safeContent.length > streamedMessageContent.length) {
+                    const delta = safeContent.slice(streamedMessageContent.length);
+                    streamedMessageContent = safeContent;
+                    this.emit('streaming_chunk', agent.id, delta, false);
                   }
                 }
               }
