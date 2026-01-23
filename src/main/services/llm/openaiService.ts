@@ -35,7 +35,7 @@ export class OpenAIService implements LLMService {
         model,
         input: formattedMessages,
         instructions: systemPrompt,
-        ...(useReasoning ? { reasoning: { effort: 'low' } } : {}),
+        ...(useReasoning ? { reasoning: { effort: 'minimal' } } : {}),
       });
     } catch (error) {
       console.error('\n' + '='.repeat(80));
@@ -132,7 +132,7 @@ export class OpenAIService implements LLMService {
         model,
         input: formattedMessages,
         instructions: systemPrompt,
-        ...(useReasoning ? { reasoning: { effort: 'low' } } : {}),
+        ...(useReasoning ? { reasoning: { effort: 'minimal' } } : {}),
       });
 
       console.log(`[TIMING] OpenAI: Stream created after ${Date.now() - streamStartTime}ms`);
