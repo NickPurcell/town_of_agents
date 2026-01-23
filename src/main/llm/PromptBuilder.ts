@@ -11,17 +11,29 @@ import { loadPrompt, injectVariables } from './PromptLoader';
 
 // Phase to prompt file mapping
 const PHASE_PROMPT_MAP: Record<Phase, string> = {
+  DAY_ONE_DISCUSSION: 'discuss_day_one.md',
   DAY_DISCUSSION: 'discuss_day.md',
   DAY_VOTE: 'vote_day.md',
   LAST_WORDS: 'last_words.md',
   POST_EXECUTION_DISCUSSION: 'discuss_day_post.md',
-  DOCTOR_CHOICE: 'doctor_choice.md',
-  SHERIFF_CHOICE: 'sheriff_choice.md',
-  SHERIFF_POST_SPEECH: 'sheriff_post.md',
-  LOOKOUT_CHOICE: 'lookout_choice.md',
-  LOOKOUT_POST_SPEECH: 'lookout_post.md',
-  NIGHT_DISCUSSION: 'discuss_night.md',
-  NIGHT_VOTE: 'vote_night.md',
+  DOCTOR_CHOICE: 'doctor/choice.md',
+  VIGILANTE_PRE_SPEECH: 'vigilante/choice_pre.md',
+  VIGILANTE_CHOICE: 'vigilante/choice.md',
+  SHERIFF_CHOICE: 'sheriff/choice.md',
+  SHERIFF_POST_SPEECH: 'sheriff/choice_post.md',
+  LOOKOUT_CHOICE: 'lookout/choice.md',
+  LOOKOUT_POST_SPEECH: 'lookout/choice_post.md',
+  NIGHT_DISCUSSION: 'mafia/discuss.md',
+  NIGHT_VOTE: 'mafia/vote.md',
+};
+
+// Role-specific prompt overrides
+const ROLE_PROMPT_OVERRIDES: Partial<Record<Role, Partial<Record<Phase, string>>>> = {
+  MAYOR: {
+    DAY_ONE_DISCUSSION: 'mayor/discuss_day_one.md',
+    DAY_DISCUSSION: 'mayor/discuss_day.md',
+    DAY_VOTE: 'mayor/vote_day.md',
+  },
 };
 
 // Role descriptions
@@ -31,11 +43,22 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   DOCTOR: 'You are the Doctor. Each night you can protect one player. If the mafia targets them, they will survive. You can protect yourself.',
   CITIZEN: 'You are a Citizen. You have no special abilities, but your vote is crucial. Watch behavior and voting patterns to identify mafia.',
   LOOKOUT: 'You are the Lookout. Each night you can watch one player. If anyone visits that player during the night, you will see who visited them. Use this information to identify suspicious behavior.',
+  VIGILANTE: 'You are the Vigilante. Each night you can choose one player to eliminate. If you kill a town member, you will be wracked with guilt and die after skipping your next night action. Choose carefully.',
+  MAYOR: 'You are the Mayor. You can declare yourself during day discussion to gain 3 votes, but once revealed the Doctor cannot protect you.',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
 
 export class PromptBuilder {
+  // Get the prompt path for a role and phase, considering role-specific overrides
+  private static getPromptPath(role: Role, phase: Phase): string {
+    const roleOverrides = ROLE_PROMPT_OVERRIDES[role];
+    if (roleOverrides && roleOverrides[phase]) {
+      return roleOverrides[phase]!;
+    }
+    return PHASE_PROMPT_MAP[phase];
+  }
+
   // Build system prompt for an agent based on phase
   static buildSystemPrompt(
     agent: GameAgent,
@@ -44,7 +67,7 @@ export class PromptBuilder {
   ): string {
     // Load boilerplate and phase prompt
     const boilerTemplate = loadPrompt('boiler.md');
-    const phaseTemplate = loadPrompt(PHASE_PROMPT_MAP[phase]);
+    const phaseTemplate = loadPrompt(this.getPromptPath(agent.role, phase));
 
     // Prepare template variables
     const variables = this.buildTemplateVariables(agent, state);
@@ -98,7 +121,11 @@ export class PromptBuilder {
       deadPlayers: deadAgents.length > 0
         ? deadAgents.map((a) => `${a.name} (${a.role})`).join(', ')
         : 'None',
-      timeOfDay: state.phase.includes('NIGHT') || state.phase.includes('SHERIFF') || state.phase.includes('DOCTOR')
+      timeOfDay: state.phase.includes('NIGHT') ||
+        state.phase.includes('SHERIFF') ||
+        state.phase.includes('DOCTOR') ||
+        state.phase.includes('LOOKOUT') ||
+        state.phase.includes('VIGILANTE')
         ? 'Night'
         : 'Day',
       dayNumber: String(state.dayNumber),
@@ -161,9 +188,12 @@ export class PromptBuilder {
       case 'VOTE':
         const isOwnVote = event.agentId === agent.id;
         const voterName = isOwnVote ? 'You' : this.getAgentNamePlaceholder(event.agentId);
-        const voteContent = event.targetName === 'DEFER'
+        const voteTargets = event.targetNames && event.targetNames.length > 0
+          ? event.targetNames.join(', ')
+          : event.targetName;
+        const voteContent = voteTargets === 'DEFER'
           ? `${voterName} abstained from voting.`
-          : `${voterName} voted for ${event.targetName}.`;
+          : `${voterName} voted for ${voteTargets}.`;
         return { role: 'user', content: voteContent };
 
       case 'CHOICE':
@@ -174,6 +204,8 @@ export class PromptBuilder {
             action = 'protect';
           } else if (event.choiceType === 'SHERIFF_INVESTIGATE') {
             action = 'investigate';
+          } else if (event.choiceType === 'VIGILANTE_KILL') {
+            action = 'eliminate';
           } else {
             action = 'watch';
           }

@@ -111,29 +111,37 @@ Key types in `src/shared/types/game.ts`:
 - **Mafia wins**: Mafia count >= Town count
 
 ## Prompt Templates
-Prompts live in `prompts/`. Template variables use `{{variableName}}`.
+Prompts live in `prompts/` organized by role folders. Template variables use `{{variableName}}`.
 
-**Core Templates**:
+**Core Templates** (root):
 - `boiler.md`: Base system prompt with role definitions and game rules
 - `user_message.md`: Template for user-side chat requests
-
-**Phase Prompts**:
-- `discuss_day_one.md`: First day discussion
-- `discuss_day.md`: Day discussion (rounds)
-- `vote_day.md`: Day voting mechanics
 - `last_words.md`: Condemned agent's final words
 - `discuss_day_post.md`: Post-execution discussion
-- `discuss_night.md`: Mafia night discussion
-- `vote_night.md`: Mafia night kill voting
 
-**Role-Specific Prompts**:
-- `doctor_choice.md`: Protection target selection
-- `sheriff_choice.md`: Investigation target selection
-- `sheriff_post.md`: Investigation result reaction
-- `lookout_choice.md`: Watch target selection
-- `lookout_post.md`: Visitor information reaction
-- `vigilante_pre.md`: Deliberation before killing
-- `vigilante_choice.md`: Kill target selection
+**Generic Day Prompts** (root):
+- `discuss_day_one.md`: First day discussion (generic townsfolk)
+- `discuss_day.md`: Day discussion rounds (generic townsfolk)
+- `vote_day.md`: Day voting mechanics (generic townsfolk)
+
+**Role-Specific Prompts** (in role folders):
+- `sheriff/choice.md`: Investigation target selection
+- `sheriff/choice_post.md`: Investigation result reaction
+- `lookout/choice.md`: Watch target selection
+- `lookout/choice_post.md`: Visitor information reaction
+- `doctor/choice.md`: Protection target selection
+- `vigilante/choice_pre.md`: Deliberation before killing
+- `vigilante/choice.md`: Kill target selection
+- `mafia/discuss.md`: Mafia night discussion
+- `mafia/vote.md`: Mafia night kill voting
+- `mayor/discuss_day_one.md`: First day discussion with mayor ability
+- `mayor/discuss_day.md`: Day discussion with mayor ability
+- `mayor/vote_day.md`: Day voting with 3-vote format for revealed mayor
+
+**Role-Specific Override System**:
+PromptBuilder uses `ROLE_PROMPT_OVERRIDES` to serve role-specific prompts. When adding role-specific prompts:
+1. Add prompt file to `prompts/<role>/`
+2. Add override mapping to `ROLE_PROMPT_OVERRIDES` in PromptBuilder.ts
 
 If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a new prompt file.
 

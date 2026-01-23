@@ -1,6 +1,6 @@
-You have just set your watch target for the night.
+You have just received your lookout report from the night.
 
-Comment on your choice, this message is only viewable by you. No one else will see this message but you.
+Comment on what you saw and what it means. This message is only viewable by you. No one else will see this message but you.
 
 Remember: You can choose to reveal your role and findings later, or keep them secret. Consider the strategic implications.
 

@@ -27,3 +27,4 @@ Always base your actions on firm logic and reasoning
 If you are going to lie, lie intelligently.
 Do not make random accusations as the first message on the first day - if it's the first day and nothing has happened yet, don't just accuse someone random.
 Don't just go along with a vote because everyone else is voting - base your vote on your own intuition.
+DO NOT EVER USE THE TERM LYNCH!!!!!!
