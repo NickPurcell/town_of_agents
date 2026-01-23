@@ -60,12 +60,6 @@ export function StreamingSpeech({ agent, content, isComplete }: StreamingSpeechP
           >
             {agent.name}
           </span>
-          {!isComplete && (
-            <span className={streamStyles.streamingBadge}>
-              <span className={streamStyles.streamingDot} />
-              Speaking...
-            </span>
-          )}
         </div>
         <div className={styles.speechContent}>
           {content ? (
