@@ -819,7 +819,7 @@ export class GameController extends EventEmitter {
         return;
       }
 
-      const result = ResponseParser.parseSpeakResponse(content);
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
       if (result.success && result.data) {
         this.phaseRunner.handleLastWordsSpeech(result.data, thinkingContent);
       } else {
@@ -898,7 +898,7 @@ export class GameController extends EventEmitter {
         return;
       }
 
-      const result = ResponseParser.parseSpeakResponse(content);
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
       if (result.success && result.data) {
         // Emit the speech event (sheriff private visibility)
         const event: SpeechEvent = {
@@ -985,7 +985,7 @@ export class GameController extends EventEmitter {
         return;
       }
 
-      const result = ResponseParser.parseSpeakResponse(content);
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
       if (result.success && result.data) {
         const event: SpeechEvent = {
           type: 'SPEECH',
@@ -1070,7 +1070,7 @@ export class GameController extends EventEmitter {
         return;
       }
 
-      const result = ResponseParser.parseSpeakResponse(content);
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
       if (result.success && result.data) {
         // Emit the speech event (lookout private visibility)
         const event: SpeechEvent = {
