@@ -1,0 +1,67 @@
+.streaming {
+  border-left-style: dashed;
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-left-color: var(--agent-color);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    border-left-color: color-mix(in srgb, var(--agent-color) 60%, white);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35), 0 0 12px var(--agent-color);
+  }
+}
+
+.streamingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+.streamingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #4caf50;
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+.waiting {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink 0.8s step-end infinite;
+  color: var(--agent-color, var(--text-secondary));
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}

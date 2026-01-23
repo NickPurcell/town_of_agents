@@ -3,6 +3,7 @@ import { useGameStore } from '../../store/gameStore';
 import { useUIStore } from '../../store/uiStore';
 import { GameEventItem } from '../chat/GameEventItem';
 import { ThinkingIndicator } from '../chat/ThinkingIndicator';
+import { StreamingSpeech } from '../chat/StreamingSpeech';
 import type { Phase } from '@shared/types';
 import { ROLE_COLORS } from '@shared/types';
 import styles from './GameChatScreen.module.css';
@@ -26,7 +27,7 @@ const PHASE_LABELS: Record<Phase, string> = {
 };
 
 export function GameChatScreen() {
-  const { gameState, stopGame, resetGame, thinkingAgent, pauseGame, resumeGame } = useGameStore();
+  const { gameState, stopGame, resetGame, thinkingAgent, streamingContent, pauseGame, resumeGame } = useGameStore();
   const { setScreen } = useUIStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -141,15 +142,30 @@ export function GameChatScreen() {
                 defaultReasoningExpanded={index === lastReasoningIndex}
               />
             ))}
-            {thinkingAgent && (
-              <div className={styles.thinkingIndicator}>
-                <ThinkingIndicator
-                  agentName={thinkingAgent.agentName}
-                  color={thinkingAgentModel ? ROLE_COLORS[thinkingAgentModel.role] : undefined}
-                  compact
-                />
-              </div>
-            )}
+            {thinkingAgent && (() => {
+              const streamingData = streamingContent.get(thinkingAgent.agentId);
+              const hasStreamingContent = streamingData && streamingData.content.length > 0;
+
+              if (hasStreamingContent && thinkingAgentModel) {
+                return (
+                  <StreamingSpeech
+                    agent={thinkingAgentModel}
+                    content={streamingData.content}
+                    isComplete={streamingData.isComplete}
+                  />
+                );
+              }
+
+              return (
+                <div className={styles.thinkingIndicator}>
+                  <ThinkingIndicator
+                    agentName={thinkingAgent.agentName}
+                    color={thinkingAgentModel ? ROLE_COLORS[thinkingAgentModel.role] : undefined}
+                    compact
+                  />
+                </div>
+              );
+            })()}
           </>
         )}
 
