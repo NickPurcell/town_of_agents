@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, Phase } from '@shared/types';
 import { ROLE_COLORS } from '@shared/types';
-import { categorizeNarration, getCategoryClassName, getPrivateBadgeLabel } from '../../utils/narrationCategorizer';
+import { categorizeNarration, getCategoryClassName } from '../../utils/narrationCategorizer';
 import { NarrationIconMap } from './NarrationIcons';
 import styles from './GameEventItem.module.css';
 
@@ -116,13 +116,9 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
       const { category, icon } = categorizeNarration(narrationEvent);
       const IconComponent = NarrationIconMap[icon];
       const categoryClass = getCategoryClassName(category);
-      const privateBadgeLabel = getPrivateBadgeLabel(category);
 
       return (
         <div className={`${styles.narration} ${styles[`narration${categoryClass}`]}`}>
-          {privateBadgeLabel && (
-            <span className={styles.privateBadge}>{privateBadgeLabel}</span>
-          )}
           <div className={styles.narrationContent}>
             <IconComponent className={styles.narrationIcon} />
             <div>
