@@ -3,6 +3,7 @@ import {
   VoteResponse,
   ChoiceResponse,
   AgentResponse,
+  MayorRevealResponse,
 } from '../../shared/types';
 
 export interface ParseResult<T> {
@@ -33,6 +34,8 @@ export class ResponseParser {
         return this.validateVoteResponse(parsed);
       } else if (parsed.type === 'choice') {
         return this.validateChoiceResponse(parsed);
+      } else if (parsed.type === 'mayor_reveal') {
+        return this.validateMayorRevealResponse(parsed);
       }
 
       return {
@@ -107,6 +110,21 @@ export class ResponseParser {
     };
   }
 
+  // Parse mayor reveal response
+  static parseMayorRevealResponse(content: string): ParseResult<MayorRevealResponse> {
+    const result = this.parse(content);
+    if (!result.success || result.data?.type !== 'mayor_reveal') {
+      return {
+        success: false,
+        error: result.error || 'Not a mayor reveal response',
+      };
+    }
+    return {
+      success: true,
+      data: result.data as MayorRevealResponse,
+    };
+  }
+
   // Extract JSON from content (handles markdown code blocks)
   private static extractJSON(content: string): string | null {
     // Try to find JSON in code blocks first (prefer the last block)
@@ -162,13 +180,18 @@ export class ResponseParser {
       action: parsed.action,
       message_markdown: parsed.message_markdown || '',
     };
+    if (typeof parsed.declare_mayor === 'boolean') {
+      response.declare_mayor = parsed.declare_mayor;
+    }
 
     return { success: true, data: response };
   }
 
   // Validate vote response
   private static validateVoteResponse(parsed: any): ParseResult<VoteResponse> {
-    if (parsed.vote === undefined || parsed.vote === null) {
+    const hasVote = parsed.vote !== undefined && parsed.vote !== null;
+    const hasVotesArray = Array.isArray(parsed.votes);
+    if (!hasVote && !hasVotesArray) {
       return {
         success: false,
         error: 'Missing vote field',
@@ -177,8 +200,13 @@ export class ResponseParser {
 
     const response: VoteResponse = {
       type: 'vote',
-      vote: parsed.vote,
     };
+    if (hasVote) {
+      response.vote = parsed.vote;
+    }
+    if (hasVotesArray) {
+      response.votes = parsed.votes.filter((vote: unknown) => typeof vote === 'string');
+    }
 
     return { success: true, data: response };
   }
@@ -196,6 +224,26 @@ export class ResponseParser {
       type: 'choice',
       target: parsed.target,
     };
+
+    return { success: true, data: response };
+  }
+
+  // Validate mayor reveal response
+  private static validateMayorRevealResponse(parsed: any): ParseResult<MayorRevealResponse> {
+    if (typeof parsed.reveal !== 'boolean') {
+      return {
+        success: false,
+        error: 'Missing reveal field',
+      };
+    }
+
+    const response: MayorRevealResponse = {
+      type: 'mayor_reveal',
+      reveal: parsed.reveal,
+    };
+    if (typeof parsed.message_markdown === 'string') {
+      response.message_markdown = parsed.message_markdown;
+    }
 
     return { success: true, data: response };
   }

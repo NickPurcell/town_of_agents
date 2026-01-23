@@ -1,22 +1,26 @@
 // Game role types
-export type Role = 'MAFIA' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT';
+export type Role = 'MAFIA' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
 
 // Faction types
 export type Faction = 'MAFIA' | 'TOWN';
 
 // Game phase types
 export type Phase =
+  | 'DAY_ONE_DISCUSSION'
   | 'DAY_DISCUSSION'
   | 'DAY_VOTE'
   | 'LAST_WORDS'
   | 'POST_EXECUTION_DISCUSSION'
   | 'DOCTOR_CHOICE'
+  | 'VIGILANTE_PRE_SPEECH'
+  | 'VIGILANTE_CHOICE'
   | 'SHERIFF_CHOICE'
   | 'SHERIFF_POST_SPEECH'
   | 'LOOKOUT_CHOICE'
   | 'LOOKOUT_POST_SPEECH'
   | 'NIGHT_DISCUSSION'
-  | 'NIGHT_VOTE';
+  | 'NIGHT_VOTE'
+  | 'MAYOR_REVEAL_CHOICE';
 
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {
@@ -33,6 +37,7 @@ export interface GameAgent {
   provider: 'openai' | 'anthropic' | 'google';
   model: string;
   alive: boolean;
+  hasRevealedMayor?: boolean;
 }
 
 // Visibility types for events
@@ -42,6 +47,8 @@ export type Visibility =
   | { kind: 'sheriff_private'; agentId: string }
   | { kind: 'doctor_private'; agentId: string }
   | { kind: 'lookout_private'; agentId: string }
+  | { kind: 'vigilante_private'; agentId: string }
+  | { kind: 'mayor_private'; agentId: string }
   | { kind: 'host' };
 
 // Game event types
@@ -81,6 +88,7 @@ export interface VoteEvent {
   type: 'VOTE';
   agentId: string;
   targetName: string | 'DEFER';
+  targetNames?: string[];
   visibility: Visibility;
   ts: number;
   reasoning?: string;  // Agent's thinking before voting
@@ -90,7 +98,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -108,7 +116,7 @@ export interface InvestigationResultEvent {
 export interface DeathEvent {
   type: 'DEATH';
   agentId: string;
-  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL';
+  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT';
   visibility: Visibility;
   ts: number;
 }
@@ -121,8 +129,11 @@ export interface GameState {
   events: GameEvent[];
   isPaused?: boolean;
   pendingNightKillTarget?: string;
+  pendingVigilanteKillTarget?: string;
   pendingDoctorProtectTarget?: string;
   sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]>;
+  vigilanteSkipNextNight?: boolean;
+  vigilanteGuiltyId?: string;
   winner?: Faction;
 }
 
@@ -138,11 +149,13 @@ export interface SpeakResponse {
   type: 'speak';
   action: 'DEFER' | 'SAY';
   message_markdown: string;
+  declare_mayor?: boolean;
 }
 
 export interface VoteResponse {
   type: 'vote';
-  vote: 'DEFER' | string; // AgentName
+  vote?: 'DEFER' | string; // AgentName
+  votes?: string[];
 }
 
 export interface ChoiceResponse {
@@ -150,7 +163,13 @@ export interface ChoiceResponse {
   target: 'DEFER' | string; // AgentName
 }
 
-export type AgentResponse = SpeakResponse | VoteResponse | ChoiceResponse;
+export interface MayorRevealResponse {
+  type: 'mayor_reveal';
+  reveal: boolean;
+  message_markdown?: string; // Optional message when revealing
+}
+
+export type AgentResponse = SpeakResponse | VoteResponse | ChoiceResponse | MayorRevealResponse;
 
 // Game settings
 export interface GameSettings {
@@ -174,6 +193,8 @@ export const ROLE_COLORS: Record<Role, string> = {
   SHERIFF: '#1e88e5',  // Blue
   DOCTOR: '#ffffff',   // White
   LOOKOUT: '#9c27b0',  // Purple
+  MAYOR: '#ff9800',    // Orange
+  VIGILANTE: '#4caf50', // Green
 };
 
 // Helper to get visible events for an agent
@@ -190,6 +211,10 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'doctor_private':
       return visibility.agentId === agent.id;
     case 'lookout_private':
+      return visibility.agentId === agent.id;
+    case 'vigilante_private':
+      return visibility.agentId === agent.id;
+    case 'mayor_private':
       return visibility.agentId === agent.id;
     case 'host':
       return false; // Only visible to host/narrator

@@ -23,15 +23,3 @@ Respond with JSON:
   "message_markdown": "Your chat message"
 }
 ```
-
-## Mayor Special Ability
-If you are the Mayor, you may declare yourself by adding `"declare_mayor": true`:
-```json
-{
-  "type": "speak",
-  "action": "SAY",
-  "message_markdown": "Your chat message",
-  "declare_mayor": true
-}
-```
-This gives you 3 votes but the Doctor can no longer protect you.

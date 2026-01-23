@@ -18,24 +18,30 @@ import { VisibilityFilter } from './Visibility';
 
 // Phase order for state machine
 const PHASE_ORDER: Phase[] = [
+  'DAY_ONE_DISCUSSION',
   'DAY_DISCUSSION',
   'DAY_VOTE',
   'LAST_WORDS',
   'POST_EXECUTION_DISCUSSION',
   'DOCTOR_CHOICE',
+  'VIGILANTE_PRE_SPEECH',
+  'VIGILANTE_CHOICE',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
-  'LOOKOUT_CHOICE',
-  'LOOKOUT_POST_SPEECH',
   'NIGHT_DISCUSSION',
   'NIGHT_VOTE',
+  'LOOKOUT_CHOICE',
+  'LOOKOUT_POST_SPEECH',
 ];
 
 export interface GameEngineEvents {
   'event_appended': (event: GameEvent) => void;
   'phase_changed': (phase: Phase, dayNumber: number) => void;
   'game_over': (winner: Faction) => void;
-  'agent_died': (agentId: string, cause: 'DAY_ELIMINATION' | 'NIGHT_KILL') => void;
+  'agent_died': (
+    agentId: string,
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT'
+  ) => void;
 }
 
 export class GameEngine extends EventEmitter {
@@ -44,10 +50,13 @@ export class GameEngine extends EventEmitter {
   private settings: GameSettings;
 
   private dayNumber: number = 1;
-  private phase: Phase = 'DAY_DISCUSSION';
+  private phase: Phase = 'DAY_ONE_DISCUSSION';
   private pendingNightKillTarget?: string;
+  private pendingVigilanteKillTarget?: string;
   private pendingDoctorProtectTarget?: string;
   private pendingLookoutWatchTarget?: string;
+  private vigilanteSkipNextNight: boolean = false;
+  private vigilanteGuiltyId?: string;
   private sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]> = {};
   private lookoutIntelQueue: Record<string, { watchedId: string; visitors: string[] }[]> = {};
   // Track who visited whom during the night (visitor -> target)
@@ -68,10 +77,13 @@ export class GameEngine extends EventEmitter {
     this.agentManager.initializeAgents(agentConfigs);
     this.conversationStore.clear();
     this.dayNumber = 1;
-    this.phase = 'DAY_DISCUSSION';
+    this.phase = 'DAY_ONE_DISCUSSION';
     this.pendingNightKillTarget = undefined;
+    this.pendingVigilanteKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
+    this.vigilanteSkipNextNight = false;
+    this.vigilanteGuiltyId = undefined;
     this.sheriffIntelQueue = {};
     this.lookoutIntelQueue = {};
     this.nightVisits = [];
@@ -87,7 +99,7 @@ export class GameEngine extends EventEmitter {
 
     // Emit game start narration
     this.appendNarration(`**The start of Day ${this.dayNumber}**`, VisibilityFilter.public());
-    this.emitPhaseChange('DAY_DISCUSSION');
+    this.emitPhaseChange('DAY_ONE_DISCUSSION');
   }
 
   // Stop the game
@@ -103,8 +115,11 @@ export class GameEngine extends EventEmitter {
       agents: this.agentManager.getAllAgents(),
       events: this.conversationStore.getAllEvents(),
       pendingNightKillTarget: this.pendingNightKillTarget,
+      pendingVigilanteKillTarget: this.pendingVigilanteKillTarget,
       pendingDoctorProtectTarget: this.pendingDoctorProtectTarget,
       sheriffIntelQueue: this.sheriffIntelQueue,
+      vigilanteSkipNextNight: this.vigilanteSkipNextNight,
+      vigilanteGuiltyId: this.vigilanteGuiltyId,
       winner: this.winner,
     };
   }
@@ -192,6 +207,11 @@ export class GameEngine extends EventEmitter {
 
     // Handle special transitions
     switch (this.phase) {
+      case 'DAY_ONE_DISCUSSION':
+        // First day has discussion only; go straight to night
+        this.startNight();
+        return;
+
       case 'DAY_VOTE':
         // If there's someone to eliminate, go to last words
         if (this.lastWordsAgentId) {
@@ -220,7 +240,29 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'DOCTOR_CHOICE':
-        // After doctor, go to sheriff
+        // After doctor, go to vigilante (if available)
+        const vigilante = this.agentManager.getAliveVigilante();
+        if (!vigilante || this.vigilanteSkipNextNight) {
+          this.skipVigilantePhase();
+          return;
+        }
+        this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
+        this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
+        return;
+
+      case 'VIGILANTE_PRE_SPEECH':
+        // After vigilante deliberation, go to vigilante choice
+        const activeVigilante = this.agentManager.getAliveVigilante();
+        if (!activeVigilante || this.vigilanteSkipNextNight) {
+          this.skipVigilantePhase();
+          return;
+        }
+        this.emitPhaseChange('VIGILANTE_CHOICE');
+        this.appendNarration('**Vigilante, choose your target.**', VisibilityFilter.vigilantePrivate(activeVigilante.id));
+        return;
+
+      case 'VIGILANTE_CHOICE':
+        // After vigilante, go to sheriff
         const sheriff = this.agentManager.getAliveSheriff();
         if (!sheriff) {
           this.skipSheriffPhase();
@@ -236,30 +278,35 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'SHERIFF_POST_SPEECH':
-        // After sheriff speech, go to lookout choice
-        const lookout = this.agentManager.getAliveLookout();
-        if (!lookout) {
-          this.skipLookoutPhase();
-          return;
-        }
-        this.emitPhaseChange('LOOKOUT_CHOICE');
-        this.appendNarration('**Lookout, choose your target to watch.**', VisibilityFilter.lookoutPrivate(lookout.id));
-        return;
-
-      case 'LOOKOUT_CHOICE':
-        // After lookout choice, go to lookout post-speech
-        this.emitPhaseChange('LOOKOUT_POST_SPEECH');
-        return;
-
-      case 'LOOKOUT_POST_SPEECH':
-        // After lookout speech, go to mafia discussion
+        // After sheriff speech, go to mafia discussion
         this.emitPhaseChange('NIGHT_DISCUSSION');
         this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
         return;
 
-      case 'NIGHT_VOTE':
-        // After mafia vote, resolve night
+      case 'LOOKOUT_CHOICE':
+        // After lookout choice, deliver results and go to lookout post-speech
+        this.processLookoutIntel();
+        this.deliverLookoutIntel();
+        this.emitPhaseChange('LOOKOUT_POST_SPEECH');
+        return;
+
+      case 'LOOKOUT_POST_SPEECH':
+        // After lookout speech, resolve night
         this.resolveNight();
+        return;
+
+      case 'NIGHT_VOTE':
+        // After mafia vote, let the lookout act last if alive
+        const postVoteLookout = this.agentManager.getAliveLookout();
+        if (!postVoteLookout) {
+          this.skipLookoutPhase();
+          return;
+        }
+        this.emitPhaseChange('LOOKOUT_CHOICE');
+        this.appendNarration(
+          '**Lookout, choose your target to watch.**',
+          VisibilityFilter.lookoutPrivate(postVoteLookout.id)
+        );
         return;
 
       default:
@@ -289,25 +336,41 @@ export class GameEngine extends EventEmitter {
     this.appendNarration('**Doctor, choose your target.**', VisibilityFilter.doctorPrivate(doctor.id));
   }
 
-  // Skip sheriff phase if dead - go to lookout choice
+  // Skip sheriff phase if dead - go to mafia discussion
   private skipSheriffPhase(): void {
-    const lookout = this.agentManager.getAliveLookout();
-    if (!lookout) {
-      this.skipLookoutPhase();
-      return;
-    }
-    this.emitPhaseChange('LOOKOUT_CHOICE');
-    this.appendNarration('**Lookout, choose your target to watch.**', VisibilityFilter.lookoutPrivate(lookout.id));
-  }
-
-  // Skip lookout phase if dead - go directly to mafia discussion
-  private skipLookoutPhase(): void {
     this.emitPhaseChange('NIGHT_DISCUSSION');
     this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
   }
 
-  // Skip doctor phase if dead - go to sheriff
+  // Skip lookout phase if dead - resolve night immediately
+  private skipLookoutPhase(): void {
+    this.resolveNight();
+  }
+
+  // Skip doctor phase if dead - go to vigilante
   private skipDoctorPhase(): void {
+    const vigilante = this.agentManager.getAliveVigilante();
+    if (!vigilante || this.vigilanteSkipNextNight) {
+      this.skipVigilantePhase();
+      return;
+    }
+    this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
+    this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
+  }
+
+  // Skip vigilante phase if dead or skipping - go to sheriff
+  private skipVigilantePhase(): void {
+    if (this.vigilanteSkipNextNight) {
+      const vigilante = this.agentManager.getAliveVigilante();
+      if (vigilante) {
+        this.appendNarration(
+          '**Guilt overwhelms you tonight. You cannot act.**',
+          VisibilityFilter.vigilantePrivate(vigilante.id)
+        );
+      }
+      this.vigilanteSkipNextNight = false;
+    }
+    this.pendingVigilanteKillTarget = undefined;
     const sheriff = this.agentManager.getAliveSheriff();
     if (!sheriff) {
       this.skipSheriffPhase();
@@ -321,31 +384,62 @@ export class GameEngine extends EventEmitter {
   private resolveNight(): void {
     this.dayNumber++;
 
-    // Process lookout intel before clearing night visits
-    this.processLookoutIntel();
+    const morningMessages: string[] = [];
+    const killTargets = new Map<string, Set<'MAFIA' | 'VIGILANTE'>>();
 
-    // Resolve night kill
-    let killMessage: string;
     if (this.pendingNightKillTarget) {
-      const target = this.agentManager.getAgent(this.pendingNightKillTarget);
-      if (target) {
-        if (this.pendingDoctorProtectTarget === this.pendingNightKillTarget) {
-          // Doctor saved the target
-          killMessage = `**${target.name} was attacked in the night, but was saved by the doctor!**`;
-        } else {
-          // Target dies
-          this.eliminateAgent(this.pendingNightKillTarget, 'NIGHT_KILL');
-          killMessage = `**${target.name} was found dead in the morning.**`;
-        }
-      } else {
-        killMessage = '**The night passed without incident.**';
+      const sources = killTargets.get(this.pendingNightKillTarget)
+        ?? new Set<'MAFIA' | 'VIGILANTE'>();
+      sources.add('MAFIA');
+      killTargets.set(this.pendingNightKillTarget, sources);
+    }
+
+    if (this.pendingVigilanteKillTarget) {
+      const sources = killTargets.get(this.pendingVigilanteKillTarget)
+        ?? new Set<'MAFIA' | 'VIGILANTE'>();
+      sources.add('VIGILANTE');
+      killTargets.set(this.pendingVigilanteKillTarget, sources);
+    }
+
+    const vigilanteActor = this.agentManager.getAliveVigilante();
+
+    for (const [targetId, sources] of killTargets.entries()) {
+      const target = this.agentManager.getAgent(targetId);
+      if (!target) continue;
+
+      const isRevealedMayor = target.role === 'MAYOR' && target.hasRevealedMayor;
+      const isProtected =
+        !isRevealedMayor && this.pendingDoctorProtectTarget === targetId;
+
+      if (isProtected) {
+        morningMessages.push(
+          `**${target.name} was attacked in the night, but was saved by the doctor!**`
+        );
+        continue;
       }
-    } else {
-      killMessage = '**The night passed without incident.**';
+
+      const cause = sources.has('MAFIA') ? 'NIGHT_KILL' : 'VIGILANTE_KILL';
+      this.eliminateAgent(targetId, cause);
+      morningMessages.push(`**${target.name} was found dead in the morning.**`);
+
+      if (sources.has('VIGILANTE') && target.faction === 'TOWN' && vigilanteActor) {
+        this.vigilanteSkipNextNight = true;
+        this.vigilanteGuiltyId = vigilanteActor.id;
+      }
+    }
+
+    if (this.vigilanteGuiltyId && !this.vigilanteSkipNextNight) {
+      const guiltyVigilante = this.agentManager.getAgent(this.vigilanteGuiltyId);
+      if (guiltyVigilante && guiltyVigilante.alive) {
+        this.eliminateAgent(guiltyVigilante.id, 'VIGILANTE_GUILT');
+        morningMessages.push(`**${guiltyVigilante.name} was found dead from guilt.**`);
+      }
+      this.vigilanteGuiltyId = undefined;
     }
 
     // Clear pending actions
     this.pendingNightKillTarget = undefined;
+    this.pendingVigilanteKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
     this.nightVisits = [];
@@ -355,13 +449,16 @@ export class GameEngine extends EventEmitter {
 
     // Start new day
     this.appendNarration(`**The start of Day ${this.dayNumber}**`, VisibilityFilter.public());
-    this.appendNarration(killMessage, VisibilityFilter.public());
+    if (morningMessages.length === 0) {
+      this.appendNarration('**The night passed without incident.**', VisibilityFilter.public());
+    } else {
+      for (const message of morningMessages) {
+        this.appendNarration(message, VisibilityFilter.public());
+      }
+    }
 
     // Deliver sheriff intel
     this.deliverSheriffIntel();
-
-    // Deliver lookout intel
-    this.deliverLookoutIntel();
 
     this.emitPhaseChange('DAY_DISCUSSION');
   }
@@ -448,6 +545,16 @@ export class GameEngine extends EventEmitter {
     this.pendingNightKillTarget = targetId;
   }
 
+  // Set pending vigilante kill target
+  setPendingVigilanteKillTarget(targetId: string | undefined): void {
+    this.pendingVigilanteKillTarget = targetId;
+  }
+
+  // Get pending vigilante kill target
+  getPendingVigilanteKillTarget(): string | undefined {
+    return this.pendingVigilanteKillTarget;
+  }
+
   // Set pending doctor protect target
   setPendingDoctorProtectTarget(targetId: string | undefined): void {
     this.pendingDoctorProtectTarget = targetId;
@@ -462,7 +569,10 @@ export class GameEngine extends EventEmitter {
   }
 
   // Eliminate an agent
-  eliminateAgent(agentId: string, cause: 'DAY_ELIMINATION' | 'NIGHT_KILL'): void {
+  eliminateAgent(
+    agentId: string,
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT'
+  ): void {
     const agent = this.agentManager.getAgent(agentId);
     if (!agent || !agent.alive) return;
 
@@ -484,7 +594,9 @@ export class GameEngine extends EventEmitter {
     }
 
     // Check win condition
-    this.checkWinCondition();
+    if (!this.winner) {
+      this.checkWinCondition();
+    }
   }
 
   // Check win condition

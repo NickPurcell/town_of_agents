@@ -132,7 +132,12 @@ export class PhaseRunner extends EventEmitter {
     } else {
       // Timeout during choice phases - skip action
       const phase = this.engine.getCurrentPhase();
-      if (phase === 'SHERIFF_CHOICE' || phase === 'DOCTOR_CHOICE' || phase === 'LOOKOUT_CHOICE') {
+      if (
+        phase === 'SHERIFF_CHOICE' ||
+        phase === 'DOCTOR_CHOICE' ||
+        phase === 'LOOKOUT_CHOICE' ||
+        phase === 'VIGILANTE_CHOICE'
+      ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
         this.currentTurnId = 0;
@@ -164,8 +169,10 @@ export class PhaseRunner extends EventEmitter {
     if (this.deferIfPaused(() => this.promptNextDiscussionAgent())) return;
 
     const phase = this.engine.getCurrentPhase();
-    // POST_EXECUTION_DISCUSSION only gets 1 round
-    const totalRounds = phase === 'POST_EXECUTION_DISCUSSION' ? 1 : this.settings.roundsPerDiscussion;
+    // Post-execution and first day only get 1 round
+    const totalRounds = (phase === 'POST_EXECUTION_DISCUSSION' || phase === 'DAY_ONE_DISCUSSION')
+      ? 1
+      : this.settings.roundsPerDiscussion;
     const totalAgents = this.roundRobinOrder.length;
 
     // Check if we've completed all rounds
@@ -215,6 +222,7 @@ export class PhaseRunner extends EventEmitter {
     const agentManager = this.engine.getAgentManager();
 
     switch (phase) {
+      case 'DAY_ONE_DISCUSSION':
       case 'DAY_DISCUSSION':
       case 'POST_EXECUTION_DISCUSSION':
         return agentManager.getAliveAgents();
@@ -395,19 +403,43 @@ export class PhaseRunner extends EventEmitter {
       phase === 'NIGHT_VOTE'
         ? VisibilityFilter.mafia()
         : VisibilityFilter.public();
+    const isRevealedMayor =
+      phase === 'DAY_VOTE' &&
+      agent.role === 'MAYOR' &&
+      agent.hasRevealedMayor;
+    const hasMayorVotes = isRevealedMayor && Array.isArray(response.votes);
+    const multiVotes = hasMayorVotes ? response.votes.slice(0, 3) : null;
 
-    const event: VoteEvent = {
-      type: 'VOTE',
-      agentId: agent.id,
-      targetName: response.vote,
-      visibility,
-      ts: Date.now(),
-      reasoning,
-    };
-    this.engine.appendEvent(event);
+    if (hasMayorVotes && multiVotes) {
+      const event: VoteEvent = {
+        type: 'VOTE',
+        agentId: agent.id,
+        targetName: multiVotes[0] ?? 'DEFER',
+        targetNames: multiVotes,
+        visibility,
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(event);
+
+      for (let i = 0; i < multiVotes.length; i++) {
+        this.pendingVotes.set(`${agent.id}_vote_${i}`, multiVotes[i]);
+      }
+    } else {
+      const vote = response.vote ?? 'DEFER';
+      const event: VoteEvent = {
+        type: 'VOTE',
+        agentId: agent.id,
+        targetName: vote,
+        visibility,
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(event);
+      this.pendingVotes.set(agent.id, vote);
+    }
 
     this.awaitingVotes.delete(agent.id);
-    this.pendingVotes.set(agent.id, response.vote);
 
     // Advance to next voter
     this.advanceToNextVotingAgent();
@@ -507,6 +539,8 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveDoctor();
     } else if (phase === 'LOOKOUT_CHOICE') {
       choiceAgent = agentManager.getAliveLookout();
+    } else if (phase === 'VIGILANTE_CHOICE') {
+      choiceAgent = agentManager.getAliveVigilante();
     }
 
     if (choiceAgent) {
@@ -547,6 +581,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getDoctorTargets();
     } else if (phase === 'LOOKOUT_CHOICE') {
       eligibleTargets = agentManager.getLookoutTargets(agent.id);
+    } else if (phase === 'VIGILANTE_CHOICE') {
+      eligibleTargets = agentManager.getVigilanteTargets(agent.id);
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -616,6 +652,24 @@ export class PhaseRunner extends EventEmitter {
         `**You are now watching ${target.name}. You will see anyone who visits them tonight.**`,
         VisibilityFilter.lookoutPrivate(agent.id)
       );
+    } else if (phase === 'VIGILANTE_CHOICE') {
+      // Emit choice event for vigilante kill
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'VIGILANTE_KILL',
+        visibility: VisibilityFilter.vigilantePrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Track vigilante visit for lookout
+      this.engine.addNightVisit(agent.id, target.id);
+
+      // Record kill target
+      this.engine.setPendingVigilanteKillTarget(target.id);
     }
 
     this.engine.nextPhase();

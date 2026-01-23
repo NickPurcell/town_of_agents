@@ -11,6 +11,7 @@ import { loadPrompt, injectVariables } from './PromptLoader';
 
 // Phase to prompt file mapping
 const PHASE_PROMPT_MAP: Record<Phase, string> = {
+  MAYOR_REVEAL_CHOICE: 'mayor/reveal_choice.md',
   DAY_ONE_DISCUSSION: 'discuss_day_one.md',
   DAY_DISCUSSION: 'discuss_day.md',
   DAY_VOTE: 'vote_day.md',
@@ -30,8 +31,6 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
 // Role-specific prompt overrides
 const ROLE_PROMPT_OVERRIDES: Partial<Record<Role, Partial<Record<Phase, string>>>> = {
   MAYOR: {
-    DAY_ONE_DISCUSSION: 'mayor/discuss_day_one.md',
-    DAY_DISCUSSION: 'mayor/discuss_day.md',
     DAY_VOTE: 'mayor/vote_day.md',
   },
 };
@@ -44,7 +43,7 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   CITIZEN: 'You are a Citizen. You have no special abilities, but your vote is crucial. Watch behavior and voting patterns to identify mafia.',
   LOOKOUT: 'You are the Lookout. Each night you can watch one player. If anyone visits that player during the night, you will see who visited them. Use this information to identify suspicious behavior.',
   VIGILANTE: 'You are the Vigilante. Each night you can choose one player to eliminate. If you kill a town member, you will be wracked with guilt and die after skipping your next night action. Choose carefully.',
-  MAYOR: 'You are the Mayor. You can declare yourself during day discussion to gain 3 votes, but once revealed the Doctor cannot protect you.',
+  MAYOR: 'You are the Mayor. At the start of each day, you can reveal yourself to gain 3 votes, but once revealed the Doctor cannot protect you.',
 };
 
 const ROLE_ORDER: Role[] = ['MAFIA', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];

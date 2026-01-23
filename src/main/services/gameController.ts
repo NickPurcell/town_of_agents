@@ -130,7 +130,9 @@ export class GameController extends EventEmitter {
 
     this.phaseRunner.on('discussion_ended', (phase: Phase) => {
       // Transition based on phase
-      if (phase === 'DAY_DISCUSSION') {
+      if (phase === 'DAY_ONE_DISCUSSION') {
+        this.engine.nextPhase();
+      } else if (phase === 'DAY_DISCUSSION') {
         this.engine.transitionToDayVote();
       } else if (phase === 'NIGHT_DISCUSSION') {
         this.engine.transitionToNightVote();
@@ -276,6 +278,7 @@ export class GameController extends EventEmitter {
     }
 
     switch (phase) {
+      case 'DAY_ONE_DISCUSSION':
       case 'DAY_DISCUSSION':
       case 'NIGHT_DISCUSSION':
       case 'POST_EXECUTION_DISCUSSION':
@@ -290,6 +293,7 @@ export class GameController extends EventEmitter {
       case 'SHERIFF_CHOICE':
       case 'DOCTOR_CHOICE':
       case 'LOOKOUT_CHOICE':
+      case 'VIGILANTE_CHOICE':
         await this.phaseRunner.startChoicePhase();
         break;
 
@@ -299,6 +303,10 @@ export class GameController extends EventEmitter {
 
       case 'SHERIFF_POST_SPEECH':
         await this.handleSheriffPostSpeech();
+        break;
+
+      case 'VIGILANTE_PRE_SPEECH':
+        await this.handleVigilantePreSpeech();
         break;
 
       case 'LOOKOUT_POST_SPEECH':
@@ -332,18 +340,8 @@ export class GameController extends EventEmitter {
     const service = this.llmServices.get(agent.id);
     if (!service) return;
 
-    const state = this.engine.getState();
-    const systemPrompt = PromptBuilder.buildSystemPrompt(agent, phase, state);
-    const messages = PromptBuilder.buildMessagesForAgent(
-      agent,
-      state.events,
-      state.agents
-    );
-
     console.log('\n' + '-'.repeat(60));
     console.log(`SPEAK REQUEST: ${agent.name} (${agent.role}) - Phase: ${phase}`);
-    console.log(`Day: ${state.dayNumber}, Messages count: ${messages.length}`);
-    console.log('-'.repeat(60));
 
     if (!this.phaseRunner.isTurnActive(turnId)) {
       console.log(`${agent.name}: Turn cancelled before request`);
@@ -357,6 +355,33 @@ export class GameController extends EventEmitter {
     let lastError: unknown = null;
 
     try {
+      if (!this.phaseRunner.isTurnActive(turnId)) {
+        console.log(`${agent.name}: Turn cancelled before request`);
+        return;
+      }
+
+      this.phaseRunner.notifyResponseStarted(turnId);
+
+      if (this.shouldOfferMayorReveal(agent, phase)) {
+        await this.handleMayorRevealPrompt(agent, service);
+      }
+
+      if (!this.phaseRunner.isTurnActive(turnId)) {
+        console.log(`${agent.name}: Turn cancelled before request`);
+        return;
+      }
+
+      const state = this.engine.getState();
+      const systemPrompt = PromptBuilder.buildSystemPrompt(agent, phase, state);
+      const messages = PromptBuilder.buildMessagesForAgent(
+        agent,
+        state.events,
+        state.agents
+      );
+
+      console.log(`Day: ${state.dayNumber}, Messages count: ${messages.length}`);
+      console.log('-'.repeat(60));
+
       for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
         content = '';
         thinkingContent = '';
@@ -367,7 +392,6 @@ export class GameController extends EventEmitter {
             return;
           }
 
-          this.phaseRunner.notifyResponseStarted(turnId);
           const response = await service.generate(messages, systemPrompt, agent.model);
 
           content = response.content;
@@ -797,6 +821,92 @@ export class GameController extends EventEmitter {
     }
   }
 
+  private async handleVigilantePreSpeech(): Promise<void> {
+    const vigilante = this.engine.getAgentManager().getAliveVigilante();
+    if (!vigilante) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(vigilante.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(vigilante, 'VIGILANTE_PRE_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      vigilante,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(vigilante);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, vigilante.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', vigilante.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${vigilante.name}] LLM error on vigilante pre speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${vigilante.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting vigilante pre speech from ${vigilante.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: vigilante.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'vigilante_private', agentId: vigilante.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(vigilante);
+    }
+  }
+
   private async handleLookoutPostSpeech(): Promise<void> {
     const lookout = this.engine.getAgentManager().getAliveLookout();
     if (!lookout) {
@@ -880,6 +990,71 @@ export class GameController extends EventEmitter {
       this.engine.nextPhase();
     } finally {
       this.emitAgentThinkingDone(lookout);
+    }
+  }
+
+  private shouldOfferMayorReveal(agent: GameAgent, phase: Phase): boolean {
+    if (agent.role !== 'MAYOR' || agent.hasRevealedMayor) {
+      return false;
+    }
+
+    return (
+      phase === 'DAY_ONE_DISCUSSION' ||
+      phase === 'DAY_DISCUSSION' ||
+      phase === 'POST_EXECUTION_DISCUSSION'
+    );
+  }
+
+  private async handleMayorRevealPrompt(agent: GameAgent, service: LLMService): Promise<void> {
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(agent, 'MAYOR_REVEAL_CHOICE', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      agent,
+      state.events,
+      state.agents
+    );
+
+    let content = '';
+    let lastError: unknown = null;
+
+    for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+      content = '';
+
+      try {
+        const response = await service.generate(messages, systemPrompt, agent.model);
+
+        content = response.content;
+        this.emit('streaming_message', agent.id, content);
+
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        console.error(`\n[${agent.name}] LLM error on mayor reveal attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+        if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+          const delay = RETRY_DELAY_MS * attempt;
+          console.log(`[${agent.name}] Retrying in ${delay}ms...`);
+          await sleep(delay);
+          continue;
+        }
+
+        break;
+      }
+    }
+
+    if (lastError) {
+      console.error(
+        `Error getting mayor reveal choice from ${agent.name} (after ${MAX_LLM_RETRIES} attempts):`,
+        lastError
+      );
+      return;
+    }
+
+    const result = ResponseParser.parseMayorRevealResponse(content);
+    if (result.success && result.data?.reveal) {
+      this.engine.getAgentManager().revealMayor(agent.id);
+      this.engine.appendNarration(`**${agent.name} is the Mayor!**`);
     }
   }
 }

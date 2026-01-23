@@ -8,11 +8,15 @@ import { ROLE_COLORS } from '@shared/types';
 import styles from './GameChatScreen.module.css';
 
 const PHASE_LABELS: Record<Phase, string> = {
+  MAYOR_REVEAL_CHOICE: 'Mayor Decision',
+  DAY_ONE_DISCUSSION: 'Day 1 - Introductions',
   DAY_DISCUSSION: 'Day Discussion',
   DAY_VOTE: 'Day Voting',
   LAST_WORDS: 'Last Words',
   POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
   DOCTOR_CHOICE: 'Night - Doctor Protection',
+  VIGILANTE_PRE_SPEECH: 'Night - Vigilante Deliberation',
+  VIGILANTE_CHOICE: 'Night - Vigilante Shot',
   SHERIFF_CHOICE: 'Night - Sheriff Investigation',
   SHERIFF_POST_SPEECH: "Sheriff's Reaction",
   LOOKOUT_CHOICE: 'Night - Lookout Watch',
@@ -68,7 +72,9 @@ export function GameChatScreen() {
     gameState.phase === 'DOCTOR_CHOICE' ||
     gameState.phase === 'SHERIFF_POST_SPEECH' ||
     gameState.phase === 'LOOKOUT_CHOICE' ||
-    gameState.phase === 'LOOKOUT_POST_SPEECH';
+    gameState.phase === 'LOOKOUT_POST_SPEECH' ||
+    gameState.phase === 'VIGILANTE_PRE_SPEECH' ||
+    gameState.phase === 'VIGILANTE_CHOICE';
 
   const visibleEvents = gameState.events;
   const thinkingAgentModel = thinkingAgent ? getAgentById(thinkingAgent.agentId) : null;

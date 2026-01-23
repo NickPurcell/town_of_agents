@@ -33,11 +33,11 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - LLM integrations: `src/main/services/llm/*`
 
 ### Game Engine (`src/main/engine/`)
-- **GameEngine.ts**: EventEmitter-based state machine managing 14 game phases, agents, events, kills, investigations, and votes.
+- **GameEngine.ts**: EventEmitter-based state machine managing 14 gameplay phases, agents, events, kills, investigations, and votes.
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
 - **VoteResolver.ts**: Town vote (majority) and Mafia vote (unanimity) resolution with tie-breaking.
-- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, host).
+- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, host).
 
 ### Game Controller (`src/main/services/gameController.ts`)
 - Main orchestrator wiring engine, phase runner, and LLM services.
@@ -47,7 +47,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - Side chat functionality for user-to-agent conversations.
 
 ### LLM System (`src/main/llm/`)
-- **PromptBuilder.ts**: Builds system prompts dynamically based on agent role, phase, and game state. Maps 14 phases to prompt files.
+- **PromptBuilder.ts**: Builds system prompts dynamically based on agent role, phase, and game state. Maps phase types (including `MAYOR_REVEAL_CHOICE` for pre-speech reveal) to prompt files.
 - **PromptLoader.ts**: Loads and caches prompt MD files with template variable injection (`{{variableName}}`).
 - **ResponseParser.ts**: Parses LLM responses into typed game actions.
 
@@ -84,9 +84,9 @@ Update these types first when introducing new fields or IPC payloads.
 Key types in `src/shared/types/game.ts`:
 - **Roles**: MAFIA, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
 - **Factions**: MAFIA, TOWN
-- **Phases**: 14 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH)
+- **Phases**: 15 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE for pre-speech reveal)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive
-- **Visibility**: 7 types with agent-specific variants
+- **Visibility**: 8 types with agent-specific variants
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE, INVESTIGATION_RESULT, DEATH
 - **GameState**: Current game snapshot with agents, events, phase, day number, pending targets
 
@@ -104,6 +104,7 @@ Key types in `src/shared/types/game.ts`:
    - Collect responses via gameController
    - Process results (eliminate, protect, investigate)
    - Transition to next phase
+   - Before a Mayor speaks in day/post-execution discussion, GameController may request a reveal decision if unrevealed
 3. GameController bridges LLM and engine.
 
 ### Win Conditions
@@ -134,14 +135,15 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `vigilante/choice.md`: Kill target selection
 - `mafia/discuss.md`: Mafia night discussion
 - `mafia/vote.md`: Mafia night kill voting
-- `mayor/discuss_day_one.md`: First day discussion with mayor ability
-- `mayor/discuss_day.md`: Day discussion with mayor ability
+- `mayor/reveal_choice.md`: Pre-speech reveal decision
 - `mayor/vote_day.md`: Day voting with 3-vote format for revealed mayor
 
 **Role-Specific Override System**:
 PromptBuilder uses `ROLE_PROMPT_OVERRIDES` to serve role-specific prompts. When adding role-specific prompts:
 1. Add prompt file to `prompts/<role>/`
 2. Add override mapping to `ROLE_PROMPT_OVERRIDES` in PromptBuilder.ts
+
+Mayor overrides only `DAY_VOTE`; the pre-speech reveal uses `MAYOR_REVEAL_CHOICE` and is handled in `GameController` before mayor speech.
 
 If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a new prompt file.
 
