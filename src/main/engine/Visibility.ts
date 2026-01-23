@@ -35,6 +35,9 @@ export class VisibilityFilter {
       case 'framer_private':
         return visibility.agentId === agent.id;
 
+      case 'consigliere_private':
+        return visibility.agentId === agent.id;
+
       case 'host':
         return false; // Only visible to host/UI
     }
@@ -80,6 +83,11 @@ export class VisibilityFilter {
     return { kind: 'framer_private', agentId };
   }
 
+  // Create visibility for consigliere private events
+  static consiglierePrivate(agentId: string): Visibility {
+    return { kind: 'consigliere_private', agentId };
+  }
+
   // Create visibility for host-only events
   static host(): Visibility {
     return { kind: 'host' };
@@ -116,6 +124,9 @@ export class VisibilityFilter {
 
       case 'FRAMER_CHOICE':
         return agent ? this.framerPrivate(agent.id) : this.host();
+
+      case 'CONSIGLIERE_CHOICE':
+        return agent ? this.consiglierePrivate(agent.id) : this.host();
 
       case 'MAYOR_REVEAL_CHOICE':
         return agent ? this.mayorPrivate(agent.id) : this.host();

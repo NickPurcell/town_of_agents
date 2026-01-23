@@ -8,6 +8,7 @@ import styles from './GameSetupScreen.module.css';
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'MAFIA', label: 'Mafia' },
   { value: 'FRAMER', label: 'Framer' },
+  { value: 'CONSIGLIERE', label: 'Consigliere' },
   { value: 'SHERIFF', label: 'Sheriff' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'VIGILANTE', label: 'Vigilante' },
@@ -16,10 +17,10 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'CITIZEN', label: 'Citizen' },
 ];
 
-// Default game configuration: 1 mayor, 1 citizen, 1 vigilante, 1 doctor, 1 sheriff, 1 lookout, 2 mafia, 1 framer - all GPT-5
+// Default game configuration: 1 mayor, 1 citizen, 1 vigilante, 1 doctor, 1 sheriff, 1 lookout, 1 mafia, 1 framer, 1 consigliere - all GPT-5
 const DEFAULT_AGENTS = [
   { name: 'Marcus', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'MAFIA' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Elena', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'MAFIA' as Role, provider: 'openai' as const, model: 'gpt-5' },
+  { name: 'Elena', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CONSIGLIERE' as Role, provider: 'openai' as const, model: 'gpt-5' },
   { name: 'Riley', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'FRAMER' as Role, provider: 'openai' as const, model: 'gpt-5' },
   { name: 'James', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'SHERIFF' as Role, provider: 'openai' as const, model: 'gpt-5' },
   { name: 'Sophie', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'DOCTOR' as Role, provider: 'openai' as const, model: 'gpt-5' },
@@ -83,6 +84,7 @@ export function GameSetupScreen() {
   const agentsByRole: Record<Role, typeof pendingAgents> = {
     MAFIA: pendingAgents.filter(a => a.role === 'MAFIA'),
     FRAMER: pendingAgents.filter(a => a.role === 'FRAMER'),
+    CONSIGLIERE: pendingAgents.filter(a => a.role === 'CONSIGLIERE'),
     SHERIFF: pendingAgents.filter(a => a.role === 'SHERIFF'),
     DOCTOR: pendingAgents.filter(a => a.role === 'DOCTOR'),
     VIGILANTE: pendingAgents.filter(a => a.role === 'VIGILANTE'),

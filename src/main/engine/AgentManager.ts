@@ -92,6 +92,11 @@ export class AgentManager {
     return framers.length > 0 ? framers[0] : undefined;
   }
 
+  getAliveConsigliere(): GameAgent | undefined {
+    const consiglieres = this.getAliveAgentsByRole('CONSIGLIERE');
+    return consiglieres.length > 0 ? consiglieres[0] : undefined;
+  }
+
   revealMayor(agentId: string): void {
     const agent = this.agents.get(agentId);
     if (agent && agent.role === 'MAYOR') {
@@ -137,9 +142,9 @@ export class AgentManager {
     return this.getAliveAgents();
   }
 
-  // Get eligible voters for night vote (alive mafia only, excluding Framer)
+  // Get eligible voters for night vote (alive mafia only, excluding Framer and Consigliere)
   getNightVoters(): GameAgent[] {
-    return this.getAliveMafia().filter(a => a.role !== 'FRAMER');
+    return this.getAliveMafia().filter(a => a.role !== 'FRAMER' && a.role !== 'CONSIGLIERE');
   }
 
   // Get eligible targets for voting (alive agents)
@@ -170,6 +175,11 @@ export class AgentManager {
   // Get eligible targets for framer (alive agents except self and other mafia)
   getFramerTargets(framerId: string): GameAgent[] {
     return this.getAliveAgents().filter((a) => a.id !== framerId && a.faction !== 'MAFIA');
+  }
+
+  // Get eligible targets for consigliere investigation (alive agents except self)
+  getConsigliereTargets(consigliereId: string): GameAgent[] {
+    return this.getAliveAgents().filter((a) => a.id !== consigliereId);
   }
 
   // Reset all agents to alive for new game

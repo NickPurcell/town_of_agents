@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'FRAMER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
+export type Role = 'MAFIA' | 'FRAMER' | 'CONSIGLIERE' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
 
 // Narration categorization types
 export type NarrationCategory =
@@ -25,6 +25,7 @@ export type Phase =
   | 'VIGILANTE_PRE_SPEECH'
   | 'VIGILANTE_CHOICE'
   | 'FRAMER_CHOICE'
+  | 'CONSIGLIERE_CHOICE'
   | 'SHERIFF_CHOICE'
   | 'SHERIFF_POST_SPEECH'
   | 'LOOKOUT_CHOICE'
@@ -35,7 +36,7 @@ export type Phase =
 
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {
-  return (role === 'MAFIA' || role === 'FRAMER') ? 'MAFIA' : 'TOWN';
+  return (role === 'MAFIA' || role === 'FRAMER' || role === 'CONSIGLIERE') ? 'MAFIA' : 'TOWN';
 }
 
 // Game agent (extends base Agent with game-specific fields)
@@ -61,6 +62,7 @@ export type Visibility =
   | { kind: 'vigilante_private'; agentId: string }
   | { kind: 'mayor_private'; agentId: string }
   | { kind: 'framer_private'; agentId: string }
+  | { kind: 'consigliere_private'; agentId: string }
   | { kind: 'host' };
 
 // Game event types
@@ -110,7 +112,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -209,6 +211,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
 export const ROLE_COLORS: Record<Role, string> = {
   MAFIA: '#e53935',    // Red
   FRAMER: '#8b0000',   // Dark red
+  CONSIGLIERE: '#b71c1c', // Darker red
   CITIZEN: '#fdd835',  // Yellow
   SHERIFF: '#1e88e5',  // Blue
   DOCTOR: '#ffffff',   // White
@@ -237,6 +240,8 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'mayor_private':
       return visibility.agentId === agent.id;
     case 'framer_private':
+      return visibility.agentId === agent.id;
+    case 'consigliere_private':
       return visibility.agentId === agent.id;
     case 'host':
       return false; // Only visible to host/narrator

@@ -27,6 +27,7 @@ const PHASE_ORDER: Phase[] = [
   'VIGILANTE_PRE_SPEECH',
   'VIGILANTE_CHOICE',
   'FRAMER_CHOICE',
+  'CONSIGLIERE_CHOICE',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
   'NIGHT_DISCUSSION',
@@ -277,7 +278,18 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'FRAMER_CHOICE':
-        // After framer, go to sheriff
+        // After framer, go to consigliere (if available), then sheriff
+        const consigliere = this.agentManager.getAliveConsigliere();
+        if (!consigliere) {
+          this.skipConsiglierePhase();
+          return;
+        }
+        this.emitPhaseChange('CONSIGLIERE_CHOICE');
+        this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
+        return;
+
+      case 'CONSIGLIERE_CHOICE':
+        // After consigliere, go to sheriff
         const sheriff = this.agentManager.getAliveSheriff();
         if (!sheriff) {
           this.skipSheriffPhase();
@@ -395,8 +407,19 @@ export class GameEngine extends EventEmitter {
     this.skipFramerPhase();
   }
 
-  // Skip framer phase if dead - go to sheriff
+  // Skip framer phase if dead - go to consigliere
   private skipFramerPhase(): void {
+    const consigliere = this.agentManager.getAliveConsigliere();
+    if (consigliere) {
+      this.emitPhaseChange('CONSIGLIERE_CHOICE');
+      this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
+      return;
+    }
+    this.skipConsiglierePhase();
+  }
+
+  // Skip consigliere phase if dead - go to sheriff
+  private skipConsiglierePhase(): void {
     const sheriff = this.agentManager.getAliveSheriff();
     if (!sheriff) {
       this.skipSheriffPhase();

@@ -295,6 +295,7 @@ export class GameController extends EventEmitter {
       case 'LOOKOUT_CHOICE':
       case 'VIGILANTE_CHOICE':
       case 'FRAMER_CHOICE':
+      case 'CONSIGLIERE_CHOICE':
         await this.phaseRunner.startChoicePhase();
         break;
 

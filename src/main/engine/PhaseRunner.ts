@@ -137,7 +137,8 @@ export class PhaseRunner extends EventEmitter {
         phase === 'DOCTOR_CHOICE' ||
         phase === 'LOOKOUT_CHOICE' ||
         phase === 'VIGILANTE_CHOICE' ||
-        phase === 'FRAMER_CHOICE'
+        phase === 'FRAMER_CHOICE' ||
+        phase === 'CONSIGLIERE_CHOICE'
       ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
@@ -562,6 +563,8 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveVigilante();
     } else if (phase === 'FRAMER_CHOICE') {
       choiceAgent = agentManager.getAliveFramer();
+    } else if (phase === 'CONSIGLIERE_CHOICE') {
+      choiceAgent = agentManager.getAliveConsigliere();
     }
 
     if (choiceAgent) {
@@ -612,6 +615,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getVigilanteTargets(agent.id);
     } else if (phase === 'FRAMER_CHOICE') {
       eligibleTargets = agentManager.getFramerTargets(agent.id);
+    } else if (phase === 'CONSIGLIERE_CHOICE') {
+      eligibleTargets = agentManager.getConsigliereTargets(agent.id);
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -668,6 +673,25 @@ export class PhaseRunner extends EventEmitter {
         `**You have framed ${target.name}. If the Sheriff investigates them tonight, they will appear suspicious.**`,
         VisibilityFilter.framerPrivate(agent.id)
       );
+    } else if (phase === 'CONSIGLIERE_CHOICE') {
+      // Emit choice event for consigliere investigation
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'CONSIGLIERE_INVESTIGATE',
+        visibility: VisibilityFilter.consiglierePrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Track consigliere visit for lookout
+      this.engine.addNightVisit(agent.id, target.id);
+
+      // Emit immediate investigation result (exact role)
+      const resultMessage = `**Your investigation reveals that ${target.name}'s role is ${target.role}!**`;
+      this.engine.appendNarration(resultMessage, VisibilityFilter.consiglierePrivate(agent.id));
     } else if (phase === 'DOCTOR_CHOICE') {
       // Emit choice event for doctor protection
       const choiceEvent: ChoiceEvent = {
