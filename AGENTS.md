@@ -103,6 +103,10 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **settingsStore.ts**: API key management
 - Chat components: `src/renderer/components/chat/*`
   - **StreamingSpeech.tsx**: Displays speech content progressively token-by-token during streaming
+  - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths)
+  - **NarrationIcons.tsx**: 9 inline SVG icons for narration categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
+- Utilities: `src/renderer/utils/*`
+  - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
 
 ### Shared Types
@@ -117,6 +121,8 @@ Key types in `src/shared/types/game.ts`:
 - **Visibility**: 8 types with agent-specific variants
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE, INVESTIGATION_RESULT, DEATH
 - **GameState**: Current game snapshot with agents, events, phase, day number, pending targets
+- **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
+- **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
 
 ## Game Flow
 1. Renderer assembles pending agents and starts game via `game:start`.
