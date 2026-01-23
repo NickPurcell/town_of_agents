@@ -33,11 +33,11 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - LLM integrations: `src/main/services/llm/*`
 
 ### Game Engine (`src/main/engine/`)
-- **GameEngine.ts**: EventEmitter-based state machine managing 14 gameplay phases, agents, events, kills, investigations, and votes.
+- **GameEngine.ts**: EventEmitter-based state machine managing 16 gameplay phases, agents, events, kills, investigations, framing, and votes.
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
 - **VoteResolver.ts**: Town vote (majority) and Mafia vote (unanimity) resolution with tie-breaking.
-- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, host).
+- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, host).
 
 ### Game Controller (`src/main/services/gameController.ts`)
 - Main orchestrator wiring engine, phase runner, and LLM services.
@@ -114,13 +114,13 @@ All cross-layer types live in `src/shared/types/*` and are imported via `@shared
 Update these types first when introducing new fields or IPC payloads.
 
 Key types in `src/shared/types/game.ts`:
-- **Roles**: MAFIA, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
-- **Factions**: MAFIA, TOWN
-- **Phases**: 15 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE for pre-speech reveal)
+- **Roles**: MAFIA, FRAMER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
+- **Factions**: MAFIA, TOWN (Framer is MAFIA faction)
+- **Phases**: 16 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE for pre-speech reveal, and FRAMER_CHOICE for framing)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive
-- **Visibility**: 8 types with agent-specific variants
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE, INVESTIGATION_RESULT, DEATH
-- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets
+- **Visibility**: 9 types with agent-specific variants (includes framer_private)
+- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME), INVESTIGATION_RESULT, DEATH
+- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (includes pendingFramedTarget)
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
 
@@ -160,15 +160,16 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `vote_day.md`: Day voting mechanics (generic townsfolk)
 
 **Role-Specific Prompts** (in role folders):
-- `sheriff/choice.md`: Investigation target selection
+- `sheriff/choice.md`: Investigation target selection (detects "suspicious" = mafia OR framed)
 - `sheriff/choice_post.md`: Investigation result reaction
 - `lookout/choice.md`: Watch target selection
 - `lookout/choice_post.md`: Visitor information reaction
 - `doctor/choice.md`: Protection target selection
 - `vigilante/choice_pre.md`: Deliberation before killing
 - `vigilante/choice.md`: Kill target selection
-- `mafia/discuss.md`: Mafia night discussion
-- `mafia/vote.md`: Mafia night kill voting
+- `framer/choice.md`: Frame target selection (makes target appear suspicious to Sheriff)
+- `mafia/discuss.md`: Mafia night discussion (Framer participates but cannot vote)
+- `mafia/vote.md`: Mafia night kill voting (Framer excluded from voting)
 - `mayor/reveal_choice.md`: Pre-speech reveal decision
 - `mayor/vote_day.md`: Day voting with 3-vote format for revealed mayor
 

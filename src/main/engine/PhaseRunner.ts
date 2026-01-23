@@ -136,7 +136,8 @@ export class PhaseRunner extends EventEmitter {
         phase === 'SHERIFF_CHOICE' ||
         phase === 'DOCTOR_CHOICE' ||
         phase === 'LOOKOUT_CHOICE' ||
-        phase === 'VIGILANTE_CHOICE'
+        phase === 'VIGILANTE_CHOICE' ||
+        phase === 'FRAMER_CHOICE'
       ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
@@ -546,6 +547,8 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveLookout();
     } else if (phase === 'VIGILANTE_CHOICE') {
       choiceAgent = agentManager.getAliveVigilante();
+    } else if (phase === 'FRAMER_CHOICE') {
+      choiceAgent = agentManager.getAliveFramer();
     }
 
     if (choiceAgent) {
@@ -588,6 +591,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getLookoutTargets(agent.id);
     } else if (phase === 'VIGILANTE_CHOICE') {
       eligibleTargets = agentManager.getVigilanteTargets(agent.id);
+    } else if (phase === 'FRAMER_CHOICE') {
+      eligibleTargets = agentManager.getFramerTargets(agent.id);
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -612,12 +617,38 @@ export class PhaseRunner extends EventEmitter {
       // Track sheriff visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
 
-      // Emit immediate investigation result
+      // Emit immediate investigation result (check for framing)
       const isMafia = target.faction === 'MAFIA';
-      const resultMessage = isMafia
-        ? `**Your investigation reveals that ${target.name} IS a member of the Mafia!**`
-        : `**Your investigation reveals that ${target.name} is NOT a member of the Mafia.**`;
+      const isFramed = this.engine.isTargetFramed(target.id);
+      const isSuspicious = isMafia || isFramed;
+      const resultMessage = isSuspicious
+        ? `**Your investigation reveals that ${target.name} appears SUSPICIOUS!**`
+        : `**Your investigation reveals that ${target.name} does NOT appear suspicious.**`;
       this.engine.appendNarration(resultMessage, VisibilityFilter.sheriffPrivate(agent.id));
+    } else if (phase === 'FRAMER_CHOICE') {
+      // Emit choice event for framer framing
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'FRAMER_FRAME',
+        visibility: VisibilityFilter.framerPrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Track framer visit for lookout
+      this.engine.addNightVisit(agent.id, target.id);
+
+      // Set the framed target
+      this.engine.setPendingFramedTarget(target.id);
+
+      // Immediate feedback
+      this.engine.appendNarration(
+        `**You have framed ${target.name}. If the Sheriff investigates them tonight, they will appear suspicious.**`,
+        VisibilityFilter.framerPrivate(agent.id)
+      );
     } else if (phase === 'DOCTOR_CHOICE') {
       // Emit choice event for doctor protection
       const choiceEvent: ChoiceEvent = {

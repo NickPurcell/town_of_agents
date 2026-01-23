@@ -32,6 +32,9 @@ export class VisibilityFilter {
       case 'mayor_private':
         return visibility.agentId === agent.id;
 
+      case 'framer_private':
+        return visibility.agentId === agent.id;
+
       case 'host':
         return false; // Only visible to host/UI
     }
@@ -72,6 +75,11 @@ export class VisibilityFilter {
     return { kind: 'mayor_private', agentId };
   }
 
+  // Create visibility for framer private events
+  static framerPrivate(agentId: string): Visibility {
+    return { kind: 'framer_private', agentId };
+  }
+
   // Create visibility for host-only events
   static host(): Visibility {
     return { kind: 'host' };
@@ -105,6 +113,9 @@ export class VisibilityFilter {
       case 'VIGILANTE_PRE_SPEECH':
       case 'VIGILANTE_CHOICE':
         return agent ? this.vigilantePrivate(agent.id) : this.host();
+
+      case 'FRAMER_CHOICE':
+        return agent ? this.framerPrivate(agent.id) : this.host();
 
       case 'MAYOR_REVEAL_CHOICE':
         return agent ? this.mayorPrivate(agent.id) : this.host();

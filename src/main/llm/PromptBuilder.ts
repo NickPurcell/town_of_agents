@@ -20,6 +20,7 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   DOCTOR_CHOICE: 'doctor/choice.md',
   VIGILANTE_PRE_SPEECH: 'vigilante/choice_pre.md',
   VIGILANTE_CHOICE: 'vigilante/choice.md',
+  FRAMER_CHOICE: 'framer/choice.md',
   SHERIFF_CHOICE: 'sheriff/choice.md',
   SHERIFF_POST_SPEECH: 'sheriff/choice_post.md',
   LOOKOUT_CHOICE: 'lookout/choice.md',
@@ -38,7 +39,8 @@ const ROLE_PROMPT_OVERRIDES: Partial<Record<Role, Partial<Record<Phase, string>>
 // Role descriptions
 const ROLE_DESCRIPTIONS: Record<Role, string> = {
   MAFIA: 'You are a member of the Mafia. At night, you secretly choose a town member to eliminate. During the day, blend in with town and avoid suspicion.',
-  SHERIFF: 'You are the Sheriff. Each night you can investigate one player to learn their role. Use this information to help the town.',
+  FRAMER: 'You are the Framer, a Mafia-aligned role. Each night you can frame one player to appear suspicious to the Sheriff. You participate in Mafia discussions but cannot vote on night kills. During the day, blend in with town.',
+  SHERIFF: 'You are the Sheriff. Each night you can investigate one player to see if they appear suspicious. A player appears suspicious if they are Mafia-aligned OR if they have been framed that night.',
   DOCTOR: 'You are the Doctor. Each night you can protect one player. If the mafia targets them, they will survive. You can protect yourself.',
   CITIZEN: 'You are a Citizen. You have no special abilities, but your vote is crucial. Watch behavior and voting patterns to identify mafia.',
   LOOKOUT: 'You are the Lookout. Each night you can watch one player. If anyone visits that player during the night, you will see who visited them. Use this information to identify suspicious behavior.',
@@ -46,7 +48,7 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   MAYOR: 'You are the Mayor. At the start of each day, you can reveal yourself to gain 3 votes, but once revealed the Doctor cannot protect you.',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'FRAMER', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
 
 export class PromptBuilder {
   // Get the prompt path for a role and phase, considering role-specific overrides
@@ -205,6 +207,8 @@ export class PromptBuilder {
             action = 'investigate';
           } else if (event.choiceType === 'VIGILANTE_KILL') {
             action = 'eliminate';
+          } else if (event.choiceType === 'FRAMER_FRAME') {
+            action = 'frame';
           } else {
             action = 'watch';
           }

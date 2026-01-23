@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
+export type Role = 'MAFIA' | 'FRAMER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
 
 // Narration categorization types
 export type NarrationCategory =
@@ -24,6 +24,7 @@ export type Phase =
   | 'DOCTOR_CHOICE'
   | 'VIGILANTE_PRE_SPEECH'
   | 'VIGILANTE_CHOICE'
+  | 'FRAMER_CHOICE'
   | 'SHERIFF_CHOICE'
   | 'SHERIFF_POST_SPEECH'
   | 'LOOKOUT_CHOICE'
@@ -34,7 +35,7 @@ export type Phase =
 
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {
-  return role === 'MAFIA' ? 'MAFIA' : 'TOWN';
+  return (role === 'MAFIA' || role === 'FRAMER') ? 'MAFIA' : 'TOWN';
 }
 
 // Game agent (extends base Agent with game-specific fields)
@@ -59,6 +60,7 @@ export type Visibility =
   | { kind: 'lookout_private'; agentId: string }
   | { kind: 'vigilante_private'; agentId: string }
   | { kind: 'mayor_private'; agentId: string }
+  | { kind: 'framer_private'; agentId: string }
   | { kind: 'host' };
 
 // Game event types
@@ -108,7 +110,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -141,6 +143,7 @@ export interface GameState {
   pendingNightKillTarget?: string;
   pendingVigilanteKillTarget?: string;
   pendingDoctorProtectTarget?: string;
+  pendingFramedTarget?: string;
   sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]>;
   vigilanteSkipNextNight?: boolean;
   vigilanteGuiltyId?: string;
@@ -205,6 +208,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
 // Role colors for UI
 export const ROLE_COLORS: Record<Role, string> = {
   MAFIA: '#e53935',    // Red
+  FRAMER: '#8b0000',   // Dark red
   CITIZEN: '#fdd835',  // Yellow
   SHERIFF: '#1e88e5',  // Blue
   DOCTOR: '#ffffff',   // White
@@ -231,6 +235,8 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'vigilante_private':
       return visibility.agentId === agent.id;
     case 'mayor_private':
+      return visibility.agentId === agent.id;
+    case 'framer_private':
       return visibility.agentId === agent.id;
     case 'host':
       return false; // Only visible to host/narrator

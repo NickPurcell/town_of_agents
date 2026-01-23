@@ -18,6 +18,7 @@ const PHASE_LABELS: Record<Phase, string> = {
   DOCTOR_CHOICE: 'Night - Doctor Protection',
   VIGILANTE_PRE_SPEECH: 'Night - Vigilante Deliberation',
   VIGILANTE_CHOICE: 'Night - Vigilante Shot',
+  FRAMER_CHOICE: 'Night - Framer Framing',
   SHERIFF_CHOICE: 'Night - Sheriff Investigation',
   SHERIFF_POST_SPEECH: "Sheriff's Reaction",
   LOOKOUT_CHOICE: 'Night - Lookout Watch',

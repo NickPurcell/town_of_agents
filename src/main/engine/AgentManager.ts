@@ -77,6 +77,28 @@ export class AgentManager {
     return lookouts.length > 0 ? lookouts[0] : undefined;
   }
 
+  getAliveVigilante(): GameAgent | undefined {
+    const vigilantes = this.getAliveAgentsByRole('VIGILANTE');
+    return vigilantes.length > 0 ? vigilantes[0] : undefined;
+  }
+
+  getAliveMayor(): GameAgent | undefined {
+    const mayors = this.getAliveAgentsByRole('MAYOR');
+    return mayors.length > 0 ? mayors[0] : undefined;
+  }
+
+  getAliveFramer(): GameAgent | undefined {
+    const framers = this.getAliveAgentsByRole('FRAMER');
+    return framers.length > 0 ? framers[0] : undefined;
+  }
+
+  revealMayor(agentId: string): void {
+    const agent = this.agents.get(agentId);
+    if (agent && agent.role === 'MAYOR') {
+      agent.hasRevealedMayor = true;
+    }
+  }
+
   markAgentDead(agentId: string): void {
     const agent = this.agents.get(agentId);
     if (agent) {
@@ -104,6 +126,7 @@ export class AgentManager {
         ...config,
         faction: getFactionForRole(config.role),
         alive: true,
+        hasRevealedMayor: false,
       };
       this.addAgent(agent);
     }
@@ -114,9 +137,9 @@ export class AgentManager {
     return this.getAliveAgents();
   }
 
-  // Get eligible voters for night vote (alive mafia only)
+  // Get eligible voters for night vote (alive mafia only, excluding Framer)
   getNightVoters(): GameAgent[] {
-    return this.getAliveMafia();
+    return this.getAliveMafia().filter(a => a.role !== 'FRAMER');
   }
 
   // Get eligible targets for voting (alive agents)
@@ -139,10 +162,21 @@ export class AgentManager {
     return this.getAliveAgents().filter((a) => a.id !== lookoutId);
   }
 
+  // Get eligible targets for vigilante kill (alive agents except self)
+  getVigilanteTargets(vigilanteId: string): GameAgent[] {
+    return this.getAliveAgents().filter((a) => a.id !== vigilanteId);
+  }
+
+  // Get eligible targets for framer (alive agents except self and other mafia)
+  getFramerTargets(framerId: string): GameAgent[] {
+    return this.getAliveAgents().filter((a) => a.id !== framerId && a.faction !== 'MAFIA');
+  }
+
   // Reset all agents to alive for new game
   resetForNewGame(): void {
     for (const agent of this.agents.values()) {
       agent.alive = true;
+      agent.hasRevealedMayor = false;
     }
   }
 

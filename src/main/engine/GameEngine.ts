@@ -26,6 +26,7 @@ const PHASE_ORDER: Phase[] = [
   'DOCTOR_CHOICE',
   'VIGILANTE_PRE_SPEECH',
   'VIGILANTE_CHOICE',
+  'FRAMER_CHOICE',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
   'NIGHT_DISCUSSION',
@@ -55,6 +56,7 @@ export class GameEngine extends EventEmitter {
   private pendingVigilanteKillTarget?: string;
   private pendingDoctorProtectTarget?: string;
   private pendingLookoutWatchTarget?: string;
+  private pendingFramedTarget?: string;
   private vigilanteSkipNextNight: boolean = false;
   private vigilanteGuiltyId?: string;
   private sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]> = {};
@@ -82,6 +84,7 @@ export class GameEngine extends EventEmitter {
     this.pendingVigilanteKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
+    this.pendingFramedTarget = undefined;
     this.vigilanteSkipNextNight = false;
     this.vigilanteGuiltyId = undefined;
     this.sheriffIntelQueue = {};
@@ -117,6 +120,7 @@ export class GameEngine extends EventEmitter {
       pendingNightKillTarget: this.pendingNightKillTarget,
       pendingVigilanteKillTarget: this.pendingVigilanteKillTarget,
       pendingDoctorProtectTarget: this.pendingDoctorProtectTarget,
+      pendingFramedTarget: this.pendingFramedTarget,
       sheriffIntelQueue: this.sheriffIntelQueue,
       vigilanteSkipNextNight: this.vigilanteSkipNextNight,
       vigilanteGuiltyId: this.vigilanteGuiltyId,
@@ -262,7 +266,18 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'VIGILANTE_CHOICE':
-        // After vigilante, go to sheriff
+        // After vigilante, go to framer (if available), then sheriff
+        const framer = this.agentManager.getAliveFramer();
+        if (!framer) {
+          this.skipFramerPhase();
+          return;
+        }
+        this.emitPhaseChange('FRAMER_CHOICE');
+        this.appendNarration('**Framer, choose your target to frame.**', VisibilityFilter.framerPrivate(framer.id));
+        return;
+
+      case 'FRAMER_CHOICE':
+        // After framer, go to sheriff
         const sheriff = this.agentManager.getAliveSheriff();
         if (!sheriff) {
           this.skipSheriffPhase();
@@ -358,7 +373,7 @@ export class GameEngine extends EventEmitter {
     this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
   }
 
-  // Skip vigilante phase if dead or skipping - go to sheriff
+  // Skip vigilante phase if dead or skipping - go to framer, then sheriff
   private skipVigilantePhase(): void {
     if (this.vigilanteSkipNextNight) {
       const vigilante = this.agentManager.getAliveVigilante();
@@ -371,6 +386,17 @@ export class GameEngine extends EventEmitter {
       this.vigilanteSkipNextNight = false;
     }
     this.pendingVigilanteKillTarget = undefined;
+    const framer = this.agentManager.getAliveFramer();
+    if (framer) {
+      this.emitPhaseChange('FRAMER_CHOICE');
+      this.appendNarration('**Framer, choose your target to frame.**', VisibilityFilter.framerPrivate(framer.id));
+      return;
+    }
+    this.skipFramerPhase();
+  }
+
+  // Skip framer phase if dead - go to sheriff
+  private skipFramerPhase(): void {
     const sheriff = this.agentManager.getAliveSheriff();
     if (!sheriff) {
       this.skipSheriffPhase();
@@ -442,6 +468,7 @@ export class GameEngine extends EventEmitter {
     this.pendingVigilanteKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
+    this.pendingFramedTarget = undefined;
     this.nightVisits = [];
 
     // Check win condition
@@ -558,6 +585,21 @@ export class GameEngine extends EventEmitter {
   // Set pending doctor protect target
   setPendingDoctorProtectTarget(targetId: string | undefined): void {
     this.pendingDoctorProtectTarget = targetId;
+  }
+
+  // Set pending framed target
+  setPendingFramedTarget(targetId: string | undefined): void {
+    this.pendingFramedTarget = targetId;
+  }
+
+  // Get pending framed target
+  getPendingFramedTarget(): string | undefined {
+    return this.pendingFramedTarget;
+  }
+
+  // Check if a target is currently framed
+  isTargetFramed(targetId: string): boolean {
+    return this.pendingFramedTarget === targetId;
   }
 
   // Add sheriff intel to queue

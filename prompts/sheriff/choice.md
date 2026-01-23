@@ -1,4 +1,6 @@
-It is time to select a player to investigate.  You will learn the mafia affiliation of that player.
+It is time to select a player to investigate. You will learn if that player appears suspicious.
+
+A player appears suspicious if they are Mafia-aligned OR if they have been framed by the Framer that night.
 
 ## Response Format
 Respond with JSON:
