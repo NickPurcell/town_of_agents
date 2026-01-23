@@ -1,7 +1,6 @@
 import OpenAI from 'openai';
 import type { LLMResponse, RawResponse } from '@shared/types';
 import type { LLMService, LLMMessage } from './index';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 export class OpenAIService implements LLMService {
   private client: OpenAI;
@@ -15,21 +14,13 @@ export class OpenAIService implements LLMService {
     systemPrompt: string,
     model: string
   ): Promise<LLMResponse> {
-    // Build messages array with system prompt first
-    const chatMessages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt }
-    ];
+    const formattedMessages = messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
 
-    for (const m of messages) {
-      chatMessages.push({
-        role: m.role as 'user' | 'assistant',
-        content: m.content
-      });
-    }
-
-    // Ensure we have at least one user message
-    if (!chatMessages.some(m => m.role === 'user')) {
-      chatMessages.push({
+    if (formattedMessages.length === 0 || formattedMessages[0].role !== 'user') {
+      formattedMessages.unshift({
         role: 'user',
         content: 'Please begin the conversation based on the topic provided.'
       });
@@ -37,13 +28,18 @@ export class OpenAIService implements LLMService {
 
     let response;
     try {
-      response = await this.client.chat.completions.create({
+      // Use reasoning for gpt-5 series models
+      const useReasoning = model.toLowerCase().includes('gpt-5');
+
+      response = await this.client.responses.create({
         model,
-        messages: chatMessages,
+        input: formattedMessages,
+        instructions: systemPrompt,
+        ...(useReasoning ? { reasoning: { effort: 'low' } } : {}),
       });
     } catch (error) {
       console.error('\n' + '='.repeat(80));
-      console.error('OPENAI API ERROR - REQUEST FAILED');
+      console.error('OPENAI API ERROR - RESPONSES REQUEST FAILED');
       console.error('='.repeat(80));
       console.error('Model:', model);
       console.error('Error:', error);
@@ -51,16 +47,46 @@ export class OpenAIService implements LLMService {
       throw error;
     }
 
-    const content = response.choices[0]?.message?.content || '';
+    // Extract content and reasoning summary from response.output
+    let content = '';
+    let thinkingContent = '';
+
+    // @ts-ignore - response.output structure
+    for (const item of response.output || []) {
+      if (item.type === 'reasoning') {
+        // Extract reasoning summary if available
+        // @ts-ignore
+        if (item.summary && Array.isArray(item.summary)) {
+          // @ts-ignore
+          for (const summaryItem of item.summary) {
+            if (summaryItem.type === 'summary_text') {
+              thinkingContent += summaryItem.text || '';
+            }
+          }
+        }
+      } else if (item.type === 'message') {
+        // @ts-ignore
+        for (const contentBlock of item.content || []) {
+          if (contentBlock.type === 'output_text') {
+            content += contentBlock.text || '';
+          }
+        }
+      }
+    }
 
     const rawResponse: RawResponse = {
       provider: 'openai',
+      // @ts-ignore
       id: response.id,
       model,
-      stopReason: response.choices[0]?.finish_reason || 'unknown',
+      // @ts-ignore
+      stopReason: response.status,
       usage: {
-        inputTokens: response.usage?.prompt_tokens,
-        outputTokens: response.usage?.completion_tokens,
+        // @ts-ignore
+        inputTokens: response.usage?.input_tokens,
+        // @ts-ignore
+        outputTokens: response.usage?.output_tokens,
+        // @ts-ignore
         totalTokens: response.usage?.total_tokens
       },
       finishTime: Date.now()
@@ -68,6 +94,7 @@ export class OpenAIService implements LLMService {
 
     return {
       content,
+      thinkingContent: thinkingContent || undefined,
       rawResponse
     };
   }
@@ -78,59 +105,59 @@ export class OpenAIService implements LLMService {
     model: string,
     onChunk: (chunk: string) => void
   ): AsyncGenerator<string, LLMResponse, unknown> {
-    // Build messages array with system prompt first
-    const chatMessages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt }
-    ];
+    const formattedMessages = messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
 
-    for (const m of messages) {
-      chatMessages.push({
-        role: m.role as 'user' | 'assistant',
-        content: m.content
-      });
-    }
-
-    // Ensure we have at least one user message
-    if (!chatMessages.some(m => m.role === 'user')) {
-      chatMessages.push({
+    if (formattedMessages.length === 0 || formattedMessages[0].role !== 'user') {
+      formattedMessages.unshift({
         role: 'user',
         content: 'Please begin the conversation based on the topic provided.'
       });
     }
 
     let content = '';
-    let finishReason = '';
+    let thinkingContent = '';
+    let response: any;
 
     try {
-      const streamStartTime = Date.now();
-      console.log(`[TIMING] OpenAI: Creating stream for ${model}...`);
+      // Use reasoning for gpt-5 series models
+      const useReasoning = model.toLowerCase().includes('gpt-5');
 
-      const stream = await this.client.chat.completions.create({
+      const streamStartTime = Date.now();
+      console.log(`[TIMING] OpenAI: Creating stream for ${model} (reasoning: ${useReasoning})...`);
+
+      const stream = await this.client.responses.stream({
         model,
-        messages: chatMessages,
-        stream: true,
+        input: formattedMessages,
+        instructions: systemPrompt,
+        ...(useReasoning ? { reasoning: { effort: 'low' } } : {}),
       });
 
       console.log(`[TIMING] OpenAI: Stream created after ${Date.now() - streamStartTime}ms`);
 
-      let firstChunkLogged = false;
-      for await (const chunk of stream) {
-        if (!firstChunkLogged) {
-          firstChunkLogged = true;
-          console.log(`[TIMING] OpenAI: First stream chunk after ${Date.now() - streamStartTime}ms`);
+      let firstEventLogged = false;
+      for await (const event of stream) {
+        if (!firstEventLogged) {
+          firstEventLogged = true;
+          console.log(`[TIMING] OpenAI: First stream event after ${Date.now() - streamStartTime}ms, type: ${event.type}`);
         }
-
-        const delta = chunk.choices[0]?.delta?.content || '';
-        if (delta) {
+        // @ts-ignore - Handle different event types
+        if (event.type === 'response.output_text.delta') {
+          // @ts-ignore
+          const delta = event.delta || '';
           content += delta;
           onChunk(delta);
           yield delta;
-        }
-
-        if (chunk.choices[0]?.finish_reason) {
-          finishReason = chunk.choices[0].finish_reason;
+        } else if (event.type === 'response.reasoning_summary_text.delta') {
+          // @ts-ignore
+          const delta = event.delta || '';
+          thinkingContent += delta;
         }
       }
+
+      response = await stream.finalResponse();
     } catch (error) {
       console.error('\n' + '='.repeat(80));
       console.error('OPENAI API ERROR - STREAMING REQUEST FAILED');
@@ -143,20 +170,25 @@ export class OpenAIService implements LLMService {
 
     const rawResponse: RawResponse = {
       provider: 'openai',
-      id: 'stream-' + Date.now(),
+      // @ts-ignore
+      id: response.id,
       model,
-      stopReason: finishReason || 'unknown',
+      // @ts-ignore
+      stopReason: response.status,
       usage: {
-        // Usage not available in streaming mode
-        inputTokens: undefined,
-        outputTokens: undefined,
-        totalTokens: undefined
+        // @ts-ignore
+        inputTokens: response.usage?.input_tokens,
+        // @ts-ignore
+        outputTokens: response.usage?.output_tokens,
+        // @ts-ignore
+        totalTokens: response.usage?.total_tokens
       },
       finishTime: Date.now()
     };
 
     return {
       content,
+      thinkingContent: thinkingContent || undefined,
       rawResponse
     };
   }
