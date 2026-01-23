@@ -73,9 +73,6 @@ export function StreamingSpeech({ agent, content, isComplete }: StreamingSpeechP
           ) : (
             <span className={streamStyles.waiting}>Composing message...</span>
           )}
-          {!isComplete && content && (
-            <span className={streamStyles.cursor}>▋</span>
-          )}
         </div>
       </div>
     </div>
