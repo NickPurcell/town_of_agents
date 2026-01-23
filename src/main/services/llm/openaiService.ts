@@ -121,14 +121,22 @@ export class OpenAIService implements LLMService {
 
     try {
       const isGptModel = model.toLowerCase().startsWith('gpt');
+      const streamStartTime = Date.now();
+      console.log(`[TIMING] OpenAI: Creating stream for ${model}...`);
       const stream = await this.client.responses.stream({
         model,
         input: formattedMessages,
         instructions: systemPrompt,
         ...(isGptModel ? {} : { reasoning: { effort: 'medium', summary: 'auto' } }),
       });
+      console.log(`[TIMING] OpenAI: Stream created after ${Date.now() - streamStartTime}ms`);
 
+      let firstEventLogged = false;
       for await (const event of stream) {
+        if (!firstEventLogged) {
+          firstEventLogged = true;
+          console.log(`[TIMING] OpenAI: First stream event after ${Date.now() - streamStartTime}ms, type: ${event.type}`);
+        }
         // @ts-ignore - Handle different event types
         if (event.type === 'response.output_text.delta') {
           // @ts-ignore

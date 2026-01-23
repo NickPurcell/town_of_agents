@@ -294,6 +294,7 @@ export class GameController extends EventEmitter {
       case 'DOCTOR_CHOICE':
       case 'LOOKOUT_CHOICE':
       case 'VIGILANTE_CHOICE':
+      case 'FRAMER_CHOICE':
         await this.phaseRunner.startChoicePhase();
         break;
 
@@ -400,12 +401,17 @@ export class GameController extends EventEmitter {
           let streamedMessageContent = '';
 
           const llmRequestStart = Date.now();
+          let firstChunkReceived = false;
           console.log(`[TIMING] ${agent.name}: LLM request starting at ${new Date().toISOString()}`);
           const generator = service.generateStream(
             messages,
             systemPrompt,
             agent.model,
             (chunk: string) => {
+              if (!firstChunkReceived) {
+                firstChunkReceived = true;
+                console.log(`[TIMING] ${agent.name}: FIRST CHUNK received after ${Date.now() - llmRequestStart}ms`);
+              }
               content += chunk;
 
               // Check if we have parsed the header yet
