@@ -1,6 +1,16 @@
 // Game role types
 export type Role = 'MAFIA' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
 
+// Narration categorization types
+export type NarrationCategory =
+  | 'critical_death' | 'critical_win' | 'critical_saved' | 'critical_reveal'
+  | 'info_transition' | 'info_phase_prompt' | 'info_vote_outcome'
+  | 'private_sheriff' | 'private_lookout' | 'private_vigilante' | 'private_doctor';
+
+export type NarrationIcon =
+  | 'skull' | 'trophy' | 'shield' | 'crown'
+  | 'sun' | 'moon' | 'clock' | 'gavel' | 'eye';
+
 // Faction types
 export type Faction = 'MAFIA' | 'TOWN';
 

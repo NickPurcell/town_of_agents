@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent } from '@shared/types';
+import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, Phase } from '@shared/types';
 import { ROLE_COLORS } from '@shared/types';
+import { categorizeNarration, getCategoryClassName, getPrivateBadgeLabel } from '../../utils/narrationCategorizer';
+import { NarrationIconMap } from './NarrationIcons';
 import styles from './GameEventItem.module.css';
 
 interface GameEventItemProps {
@@ -19,6 +21,25 @@ const providerAvatarMap: Record<GameAgent['provider'], string> = {
   openai: '/avatars/chatgpt.png',
   anthropic: '/avatars/claude.png',
   google: '/avatars/gemini.png'
+};
+
+// Human-readable phase labels
+const PHASE_LABELS: Record<Phase, string> = {
+  DAY_ONE_DISCUSSION: 'Day 1 Discussion',
+  DAY_DISCUSSION: 'Day Discussion',
+  DAY_VOTE: 'Day Vote',
+  LAST_WORDS: 'Last Words',
+  POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
+  DOCTOR_CHOICE: 'Doctor\'s Choice',
+  VIGILANTE_PRE_SPEECH: 'Vigilante Deliberation',
+  VIGILANTE_CHOICE: 'Vigilante\'s Choice',
+  SHERIFF_CHOICE: 'Sheriff\'s Investigation',
+  SHERIFF_POST_SPEECH: 'Sheriff\'s Report',
+  LOOKOUT_CHOICE: 'Lookout\'s Watch',
+  LOOKOUT_POST_SPEECH: 'Lookout\'s Report',
+  NIGHT_DISCUSSION: 'Mafia Night Discussion',
+  NIGHT_VOTE: 'Mafia Night Vote',
+  MAYOR_REVEAL_CHOICE: 'Mayor\'s Decision',
 };
 
 function AgentAvatar({ agent }: { agent: GameAgent }) {
@@ -91,15 +112,37 @@ function ReasoningBlock({ reasoning, defaultExpanded = false }: ReasoningBlockPr
 
 export function GameEventItem({ event, agent, defaultReasoningExpanded = false }: GameEventItemProps) {
   switch (event.type) {
-    case 'NARRATION':
+    case 'NARRATION': {
+      const narrationEvent = event as NarrationEvent;
+      const { category, icon } = categorizeNarration(narrationEvent);
+      const IconComponent = NarrationIconMap[icon];
+      const categoryClass = getCategoryClassName(category);
+      const privateBadgeLabel = getPrivateBadgeLabel(category);
+
       return (
-        <div className={styles.narration}>
-          <ReactMarkdown>{event.textMarkdown}</ReactMarkdown>
+        <div className={`${styles.narration} ${styles[`narration${categoryClass}`]}`}>
+          {privateBadgeLabel && (
+            <span className={styles.privateBadge}>{privateBadgeLabel}</span>
+          )}
+          <div className={styles.narrationContent}>
+            <IconComponent className={styles.narrationIcon} />
+            <div>
+              <ReactMarkdown>{narrationEvent.textMarkdown}</ReactMarkdown>
+            </div>
+          </div>
         </div>
       );
+    }
 
-    case 'PHASE_CHANGE':
-      return null; // Phase changes are shown in header
+    case 'PHASE_CHANGE': {
+      return (
+        <div className={styles.phaseChange}>
+          <div className={styles.phaseDivider} />
+          <span className={styles.phaseChangeLabel}>{PHASE_LABELS[event.phase]}</span>
+          <div className={styles.phaseDivider} />
+        </div>
+      );
+    }
 
     case 'SPEECH': {
       if (!agent) return null;
@@ -135,7 +178,14 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
     case 'VOTE': {
       if (!agent) return null;
       const voteEvent = event as VoteEvent;
-      const voteTarget = voteEvent.targetName === 'DEFER' ? 'abstained' : `voted for ${voteEvent.targetName}`;
+      const multiVoteTargets = voteEvent.targetNames && voteEvent.targetNames.length > 0
+        ? voteEvent.targetNames.join(', ')
+        : null;
+      const voteTarget = multiVoteTargets
+        ? `voted for ${multiVoteTargets}`
+        : voteEvent.targetName === 'DEFER'
+          ? 'abstained'
+          : `voted for ${voteEvent.targetName}`;
       return (
         <AgentEventRow
           agent={agent}
@@ -161,9 +211,21 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
     case 'CHOICE': {
       if (!agent) return null;
       const choiceEvent = event as ChoiceEvent;
-      const actionText = choiceEvent.choiceType === 'DOCTOR_PROTECT'
-        ? `is protecting ${choiceEvent.targetName}`
-        : `is investigating ${choiceEvent.targetName}`;
+      let actionText = `is acting on ${choiceEvent.targetName}`;
+      switch (choiceEvent.choiceType) {
+        case 'DOCTOR_PROTECT':
+          actionText = `is protecting ${choiceEvent.targetName}`;
+          break;
+        case 'SHERIFF_INVESTIGATE':
+          actionText = `is investigating ${choiceEvent.targetName}`;
+          break;
+        case 'LOOKOUT_WATCH':
+          actionText = `is watching ${choiceEvent.targetName}`;
+          break;
+        case 'VIGILANTE_KILL':
+          actionText = `is targeting ${choiceEvent.targetName}`;
+          break;
+      }
       return (
         <AgentEventRow
           agent={agent}
@@ -198,9 +260,21 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
 
     case 'DEATH':
       if (!agent) return null;
-      const causeText = event.cause === 'DAY_ELIMINATION'
-        ? 'was eliminated by the town'
-        : 'was killed by the mafia';
+      let causeText = 'died';
+      switch (event.cause) {
+        case 'DAY_ELIMINATION':
+          causeText = 'was eliminated by the town';
+          break;
+        case 'NIGHT_KILL':
+          causeText = 'was killed by the mafia';
+          break;
+        case 'VIGILANTE_KILL':
+          causeText = 'was killed by the vigilante';
+          break;
+        case 'VIGILANTE_GUILT':
+          causeText = 'died from guilt';
+          break;
+      }
       return (
         <AgentEventRow
           agent={agent}

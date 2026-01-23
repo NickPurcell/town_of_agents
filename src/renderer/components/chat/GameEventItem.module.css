@@ -1,10 +1,8 @@
+/* Base narration styles */
 .narration {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(196, 30, 58, 0.18), rgba(0, 0, 0, 0.4));
-  border-left: 3px solid var(--accent-blood);
-  border-radius: 12px;
-  margin-bottom: 16px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(196, 30, 58, 0.2);
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 14px;
   position: relative;
   overflow: hidden;
   animation: fade-in-up 0.4s ease both;
@@ -14,8 +12,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 60%);
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 60%);
   opacity: 0.3;
+  pointer-events: none;
 }
 
 .narration p {
@@ -28,6 +27,205 @@
 
 .narration strong {
   color: var(--accent-blood-bright);
+}
+
+.narrationContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.narrationIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.9;
+}
+
+/* Private intel badge */
+.privateBadge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Critical styles - prominent with glows */
+.narrationCriticalDeath {
+  background: linear-gradient(135deg, rgba(229, 57, 53, 0.25), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #e53935;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 24px rgba(229, 57, 53, 0.3);
+}
+
+.narrationCriticalDeath .narrationIcon {
+  color: #e53935;
+}
+
+.narrationCriticalWin {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #ffd700;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 28px rgba(255, 215, 0, 0.35);
+}
+
+.narrationCriticalWin .narrationIcon {
+  color: #ffd700;
+}
+
+.narrationCriticalWin p {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.narrationCriticalSaved {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #10b981;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.25);
+}
+
+.narrationCriticalSaved .narrationIcon {
+  color: #10b981;
+}
+
+.narrationCriticalReveal {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #ff9800;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 152, 0, 0.25);
+}
+
+.narrationCriticalReveal .narrationIcon {
+  color: #ff9800;
+}
+
+/* Informational styles - muted */
+.narrationInfoTransition {
+  background: linear-gradient(135deg, rgba(100, 100, 120, 0.15), rgba(0, 0, 0, 0.3));
+  border-left: 3px solid rgba(150, 150, 170, 0.6);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.narrationInfoTransition .narrationIcon {
+  color: rgba(200, 200, 220, 0.8);
+}
+
+.narrationInfoPhasePrompt {
+  background: linear-gradient(135deg, rgba(80, 80, 100, 0.12), rgba(0, 0, 0, 0.25));
+  border-left: 2px solid rgba(120, 120, 140, 0.5);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.narrationInfoPhasePrompt .narrationIcon {
+  color: rgba(160, 160, 180, 0.7);
+}
+
+.narrationInfoVoteOutcome {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(0, 0, 0, 0.35));
+  border-left: 3px solid #f59e0b;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(245, 158, 11, 0.2);
+}
+
+.narrationInfoVoteOutcome .narrationIcon {
+  color: #f59e0b;
+}
+
+/* Private intel styles - role-colored */
+.narrationPrivateSheriff {
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.2), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #1e88e5;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(30, 136, 229, 0.25);
+}
+
+.narrationPrivateSheriff .narrationIcon {
+  color: #1e88e5;
+}
+
+.narrationPrivateSheriff .privateBadge {
+  background: rgba(30, 136, 229, 0.2);
+  border-color: rgba(30, 136, 229, 0.4);
+  color: #1e88e5;
+}
+
+.narrationPrivateLookout {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.2), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #9c27b0;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(156, 39, 176, 0.25);
+}
+
+.narrationPrivateLookout .narrationIcon {
+  color: #9c27b0;
+}
+
+.narrationPrivateLookout .privateBadge {
+  background: rgba(156, 39, 176, 0.2);
+  border-color: rgba(156, 39, 176, 0.4);
+  color: #9c27b0;
+}
+
+.narrationPrivateVigilante {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #4caf50;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(76, 175, 80, 0.25);
+}
+
+.narrationPrivateVigilante .narrationIcon {
+  color: #4caf50;
+}
+
+.narrationPrivateVigilante .privateBadge {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.4);
+  color: #4caf50;
+}
+
+.narrationPrivateDoctor {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.4));
+  border-left: 4px solid #ffffff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.narrationPrivateDoctor .narrationIcon {
+  color: #ffffff;
+}
+
+.narrationPrivateDoctor .privateBadge {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+/* Phase change banner */
+.phaseChange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 24px;
+  margin: 20px 0;
+  background: linear-gradient(90deg, transparent, rgba(196, 30, 58, 0.12), transparent);
+  border-top: 1px solid rgba(196, 30, 58, 0.25);
+  border-bottom: 1px solid rgba(196, 30, 58, 0.25);
+  animation: fade-in-up 0.3s ease both;
+}
+
+.phaseDivider {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196, 30, 58, 0.4), transparent);
+}
+
+.phaseChangeLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .eventRow {
