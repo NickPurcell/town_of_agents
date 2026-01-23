@@ -577,6 +577,12 @@ export class PhaseRunner extends EventEmitter {
     const normalizedTarget = response.target?.trim() ?? '';
     if (normalizedTarget.toUpperCase() === 'DEFER' || normalizedTarget.length === 0) {
       // Agent chose not to act
+      if (phase === 'VIGILANTE_CHOICE') {
+        this.engine.appendNarration(
+          '**The Vigilante chose not to kill anyone tonight.**',
+          VisibilityFilter.vigilantePrivate(agent.id)
+        );
+      }
       this.engine.nextPhase();
       return;
     }
