@@ -98,9 +98,11 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **AgentChatScreen.tsx**: Side chat for user-to-agent interaction
   - **SettingsScreen.tsx**: API key configuration
 - State: Zustand stores in `src/renderer/store/*`
-  - **gameStore.ts**: Game state, pending agents, side chat threads
+  - **gameStore.ts**: Game state, pending agents, side chat threads, streaming content
   - **uiStore.ts**: Screen navigation, side chat agent selection
   - **settingsStore.ts**: API key management
+- Chat components: `src/renderer/components/chat/*`
+  - **StreamingSpeech.tsx**: Displays speech content progressively token-by-token during streaming
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
 
 ### Shared Types
