@@ -212,20 +212,36 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
     case 'CHOICE': {
       if (!agent) return null;
       const choiceEvent = event as ChoiceEvent;
-      let actionText = `is acting on ${choiceEvent.targetName}`;
-      switch (choiceEvent.choiceType) {
-        case 'DOCTOR_PROTECT':
-          actionText = `is protecting ${choiceEvent.targetName}`;
-          break;
-        case 'SHERIFF_INVESTIGATE':
-          actionText = `is investigating ${choiceEvent.targetName}`;
-          break;
-        case 'LOOKOUT_WATCH':
-          actionText = `is watching ${choiceEvent.targetName}`;
-          break;
-        case 'VIGILANTE_KILL':
-          actionText = `is targeting ${choiceEvent.targetName}`;
-          break;
+      const isDefer = choiceEvent.targetName === 'DEFER';
+      let actionText = isDefer ? 'chose not to act' : `is acting on ${choiceEvent.targetName}`;
+
+      if (isDefer) {
+        // Abstained - show consistent message for all choice types
+        actionText = 'chose to abstain';
+      } else {
+        switch (choiceEvent.choiceType) {
+          case 'DOCTOR_PROTECT':
+            actionText = `is protecting ${choiceEvent.targetName}`;
+            break;
+          case 'SHERIFF_INVESTIGATE':
+            actionText = `is investigating ${choiceEvent.targetName}`;
+            break;
+          case 'LOOKOUT_WATCH':
+            actionText = `is watching ${choiceEvent.targetName}`;
+            break;
+          case 'VIGILANTE_KILL':
+            actionText = `is targeting ${choiceEvent.targetName}`;
+            break;
+          case 'FRAMER_FRAME':
+            actionText = `is framing ${choiceEvent.targetName}`;
+            break;
+          case 'CONSIGLIERE_INVESTIGATE':
+            actionText = `is investigating ${choiceEvent.targetName}`;
+            break;
+          case 'WEREWOLF_KILL':
+            actionText = `is rampaging at ${choiceEvent.targetName}`;
+            break;
+        }
       }
       return (
         <AgentEventRow

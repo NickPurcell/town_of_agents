@@ -10,6 +10,7 @@ import {
   ChoiceResponse,
   GameSettings,
   ROLE_TRAITS,
+  Visibility,
 } from '../../shared/types';
 import { GameEngine } from './GameEngine';
 import { VoteResolver } from './VoteResolver';
@@ -598,13 +599,46 @@ export class PhaseRunner extends EventEmitter {
 
     const normalizedTarget = response.target?.trim() ?? '';
     if (normalizedTarget.toUpperCase() === 'DEFER' || normalizedTarget.length === 0) {
-      // Agent chose not to act
+      // Agent chose not to act - emit a DEFER choice event like votes do
+      let choiceType: ChoiceEvent['choiceType'] | null = null;
+      let visibility: Visibility | null = null;
+
       if (phase === 'VIGILANTE_CHOICE') {
-        this.engine.appendNarration(
-          '**The Vigilante chose not to kill anyone tonight.**',
-          VisibilityFilter.vigilantePrivate(agent.id)
-        );
+        choiceType = 'VIGILANTE_KILL';
+        visibility = VisibilityFilter.vigilantePrivate(agent.id);
+      } else if (phase === 'SHERIFF_CHOICE') {
+        choiceType = 'SHERIFF_INVESTIGATE';
+        visibility = VisibilityFilter.sheriffPrivate(agent.id);
+      } else if (phase === 'DOCTOR_CHOICE') {
+        choiceType = 'DOCTOR_PROTECT';
+        visibility = VisibilityFilter.doctorPrivate(agent.id);
+      } else if (phase === 'LOOKOUT_CHOICE') {
+        choiceType = 'LOOKOUT_WATCH';
+        visibility = VisibilityFilter.lookoutPrivate(agent.id);
+      } else if (phase === 'FRAMER_CHOICE') {
+        choiceType = 'FRAMER_FRAME';
+        visibility = VisibilityFilter.framerPrivate(agent.id);
+      } else if (phase === 'CONSIGLIERE_CHOICE') {
+        choiceType = 'CONSIGLIERE_INVESTIGATE';
+        visibility = VisibilityFilter.consiglierePrivate(agent.id);
+      } else if (phase === 'WEREWOLF_CHOICE') {
+        choiceType = 'WEREWOLF_KILL';
+        visibility = VisibilityFilter.werewolfPrivate(agent.id);
       }
+
+      if (choiceType && visibility) {
+        const choiceEvent: ChoiceEvent = {
+          type: 'CHOICE',
+          agentId: agent.id,
+          targetName: 'DEFER',
+          choiceType,
+          visibility,
+          ts: Date.now(),
+          reasoning,
+        };
+        this.engine.appendEvent(choiceEvent);
+      }
+
       this.engine.nextPhase();
       return;
     }
