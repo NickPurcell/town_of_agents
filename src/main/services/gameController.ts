@@ -298,6 +298,7 @@ export class GameController extends EventEmitter {
       case 'VIGILANTE_CHOICE':
       case 'FRAMER_CHOICE':
       case 'CONSIGLIERE_CHOICE':
+      case 'WEREWOLF_CHOICE':
         await this.phaseRunner.startChoicePhase();
         break;
 
@@ -323,6 +324,10 @@ export class GameController extends EventEmitter {
 
       case 'VIGILANTE_PRE_SPEECH':
         await this.handleVigilantePreSpeech();
+        break;
+
+      case 'WEREWOLF_PRE_SPEECH':
+        await this.handleWerewolfPreSpeech();
         break;
 
       case 'LOOKOUT_POST_SPEECH':
@@ -1312,6 +1317,92 @@ export class GameController extends EventEmitter {
       this.engine.nextPhase();
     } finally {
       this.emitAgentThinkingDone(vigilante);
+    }
+  }
+
+  private async handleWerewolfPreSpeech(): Promise<void> {
+    const werewolf = this.engine.getAgentManager().getAliveWerewolf();
+    if (!werewolf) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(werewolf.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(werewolf, 'WEREWOLF_PRE_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      werewolf,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(werewolf);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, werewolf.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', werewolf.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${werewolf.name}] LLM error on werewolf pre speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${werewolf.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting werewolf pre speech from ${werewolf.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: werewolf.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'werewolf_private', agentId: werewolf.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(werewolf);
     }
   }
 

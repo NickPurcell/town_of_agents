@@ -180,14 +180,18 @@ Night actions resolve in this specific order:
 | 3 | Consigliere | Consigliere investigates target, learns exact role |
 | 4 | Sheriff | Sheriff investigates target (frame already applied) |
 | 5 | Doctor | Doctor applies Powerful protection to target |
-| 6 | Attacks | Mafia kill and Vigilante shots resolve simultaneously |
-| 7 | Lookout | Lookout sees all visitors (including attackers) |
+| 6 | Vigilante | Vigilante shoots target |
+| 7 | Werewolf | Werewolf rampages (only on even nights) |
+| 8 | Lookout | Lookout sees all visitors (including attackers) |
+| 9 | Night Resolution | All attacks resolve, notifications sent |
 
 ### Resolution Notes
 - Framer goes before Sheriff so frames are active during investigation
 - Doctor goes before attacks so protection is in place
+- Werewolf rampages after Vigilante so they can catch the Vigilante visiting
 - Lookout goes LAST so they see everyone who visited, including killers
 - Multiple attacks on same target: target dies once, **both attackers credited**
+- Werewolf rampage kills all visitors to target (Doctor, Sheriff, Lookout, etc.)
 
 ---
 
@@ -219,6 +223,27 @@ Night actions resolve in this specific order:
 
 - **Town roles:** Can have duplicates (multiple Citizens, Doctors, Sheriffs, etc.)
 - **Mafia roles:** Unique (one Godfather, one Framer, one Consigliere per game)
+
+---
+
+### Neutral Roles
+
+#### Werewolf
+- **Faction:** Neutral (wins alone)
+- **Ability:** Rampage at a target's location OR stay home
+- **Attack:** Powerful | **Defense:** Basic
+- **Visits:** Yes (when attacking, not when staying home)
+- **Detection:** Conditional - appears **Not Suspicious** on nights 1 and 3, **Suspicious** on nights 2, 4+
+- **Active Nights:** Only nights 2, 4, 6... (cannot act on nights 1 or 3)
+- **Rampage Effect:**
+  - Kills primary target AND all visitors to that target
+  - POWERFUL attack pierces BASIC defense (kills Godfather, blocked only by Doctor's POWERFUL protection)
+- **Stay Home:** Can target self to stay home and kill anyone who visits them
+- **Win Condition:** Be the LAST player alive (both Town and Mafia are enemies)
+- **Notes:**
+  - Game continues if Werewolf is alive even when Mafia/Town would normally win
+  - Lookout sees Werewolf visit (and sees victims at target location)
+  - Doctor can save rampage victims with POWERFUL protection
 
 ---
 
@@ -254,3 +279,7 @@ Night actions resolve in this specific order:
 | Godfather | Mafia | Basic | Basic | Yes | Not Suspicious |
 | Framer | Mafia | None | None | Yes | Suspicious |
 | Consigliere | Mafia | None | None | Yes | Suspicious |
+| Werewolf | Neutral | Powerful | Basic | Yes* | Conditional** |
+
+\* Werewolf visits when attacking, not when staying home
+\** Werewolf appears Not Suspicious on nights 1 and 3, Suspicious on nights 2, 4+

@@ -41,7 +41,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
 - **VoteResolver.ts**: Town vote (majority) and Mafia vote (Godfather final say, with unanimity fallback) resolution.
-- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, host).
+- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, werewolf_private, host).
 
 ### Game Controller (`src/main/services/gameController.ts`)
 - Main orchestrator wiring engine, phase runner, and LLM services.
@@ -125,17 +125,17 @@ All cross-layer types live in `src/shared/types/*` and are imported via `@shared
 Update these types first when introducing new fields or IPC payloads.
 
 Key types in `src/shared/types/game.ts`:
-- **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, JESTER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
-- **Factions**: MAFIA, TOWN, NEUTRAL (Godfather, Framer, and Consigliere are MAFIA faction; Jester is NEUTRAL faction)
+- **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, JESTER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE, WEREWOLF
+- **Factions**: MAFIA, TOWN, NEUTRAL (Godfather, Framer, and Consigliere are MAFIA faction; Jester and Werewolf are NEUTRAL faction)
 - **AttackLevel**: NONE, BASIC, POWERFUL, UNSTOPPABLE
 - **DefenseLevel**: NONE, BASIC, POWERFUL
 - **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
 - **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
-- **Phases**: 20 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_PRE_SPEECH, CONSIGLIERE_CHOICE, DOCTOR_PRE_SPEECH)
+- **Phases**: 22 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_PRE_SPEECH, CONSIGLIERE_CHOICE, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
-- **Visibility**: 10 types with agent-specific variants (includes framer_private, consigliere_private)
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE), INVESTIGATION_RESULT, DEATH
-- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, vigilanteBulletsRemaining, sheriffIntelQueue)
+- **Visibility**: 11 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private)
+- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL), INVESTIGATION_RESULT, DEATH
+- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
@@ -164,8 +164,9 @@ Helper functions:
 3. GameController bridges LLM and engine.
 
 ### Win Conditions
-- **Town wins**: All Mafia dead
-- **Mafia wins**: Mafia count >= Town count
+- **Town wins**: All Mafia dead (and no Werewolf alive)
+- **Mafia wins**: Mafia count >= Town count (and no Werewolf alive)
+- **Werewolf wins**: Werewolf is the ONLY player alive
 
 ### Night Phase Order (per MECHANICS.md)
 1. **Mafia Discussion** - Mafia members discuss
@@ -174,21 +175,25 @@ Helper functions:
 4. **Framer Choice** - Frame target (persists until investigated)
 5. **Consigliere Pre-Speech** - Consigliere deliberates (private)
 6. **Consigliere Choice** - Learn exact role
-7. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent)
+7. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
 8. **Sheriff Post-Speech** - Sheriff reacts to result
 9. **Doctor Pre-Speech** - Doctor deliberates (private)
 10. **Doctor Choice** - Protect target (grants POWERFUL defense)
 11. **Vigilante Pre-Speech** - Vigilante deliberates (private)
 12. **Vigilante Choice** - Shoot target (3 bullets total)
-13. **Lookout Choice** - Watch target (sees all visitors)
-14. **Lookout Post-Speech** - Lookout reacts to visitors seen
-15. **Night Resolution** - Attacks resolve, notifications sent
+13. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
+14. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
+15. **Lookout Choice** - Watch target (sees all visitors)
+16. **Lookout Post-Speech** - Lookout reacts to visitors seen
+17. **Night Resolution** - Attacks resolve, notifications sent
 
 ### Attack/Defense System
 - **Attack succeeds if**: attack_level > defense_level
 - **BASIC attack** (Mafia, Vigilante) beats NONE defense
+- **POWERFUL attack** (Werewolf) beats NONE and BASIC defense
 - **Doctor protection** grants POWERFUL defense (blocks BASIC and POWERFUL)
-- **Godfather** has BASIC innate defense (survives Vigilante)
+- **Godfather** has BASIC innate defense (survives Vigilante, NOT Werewolf)
+- **Werewolf** has BASIC innate defense (survives Mafia and Vigilante)
 - **Attacker notified** when target is immune
 
 ## Prompt Templates
@@ -218,6 +223,8 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `framer/choice.md`: Frame target selection (makes target appear suspicious to Sheriff)
 - `consigliere/choice_pre.md`: Deliberation before investigating
 - `consigliere/choice.md`: Investigation target selection (learns exact role, not just alignment)
+- `werewolf/choice_pre.md`: Deliberation before rampage (considers visitors, staying home)
+- `werewolf/choice.md`: Rampage target selection (can target self to stay home)
 - `mafia/discuss.md`: Mafia night discussion (Framer and Consigliere participate but cannot vote)
 - `mafia/vote.md`: Mafia night kill voting (Framer and Consigliere excluded from voting)
 - `mayor/reveal_choice.md`: Pre-speech reveal decision

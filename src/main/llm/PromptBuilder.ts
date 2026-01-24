@@ -27,6 +27,8 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   DOCTOR_CHOICE: 'doctor/choice.md',
   VIGILANTE_PRE_SPEECH: 'vigilante/choice_pre.md',
   VIGILANTE_CHOICE: 'vigilante/choice.md',
+  WEREWOLF_PRE_SPEECH: 'werewolf/choice_pre.md',
+  WEREWOLF_CHOICE: 'werewolf/choice.md',
   LOOKOUT_CHOICE: 'lookout/choice.md',
   LOOKOUT_POST_SPEECH: 'lookout/choice_post.md',
   NIGHT_DISCUSSION: 'mafia/discuss.md',
@@ -53,9 +55,10 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   LOOKOUT: 'You are the Lookout. Each night you can watch one player. If anyone visits that player during the night, you will see who visited them. Use this information to identify suspicious behavior.',
   VIGILANTE: 'You are the Vigilante. Each night you can choose one player to eliminate. If you kill a town member, you will be wracked with guilt and die after skipping your next night action. Choose carefully.',
   MAYOR: 'You are the Mayor. At the start of each day, you can reveal yourself to gain 3 votes, but once revealed the Doctor cannot protect you.',
+  WEREWOLF: 'You are the Werewolf, a lone predator who wins only by being the last one standing. You can only act on even nights (2, 4, 6...) when the full moon is out. When you act, you RAMPAGE - killing your primary target AND anyone who visits them. You can also target yourself to stay home and kill anyone who visits you. You have POWERFUL attack (kills through basic defense) and BASIC defense (survives normal attacks). The Sheriff cannot detect you on nights 1 and 3.',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'JESTER', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'JESTER', 'WEREWOLF', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
 
 export class PromptBuilder {
   // Get the prompt path for a role and phase, considering role-specific overrides
@@ -218,6 +221,8 @@ export class PromptBuilder {
             action = 'frame';
           } else if (event.choiceType === 'CONSIGLIERE_INVESTIGATE') {
             action = 'investigate';
+          } else if (event.choiceType === 'WEREWOLF_KILL') {
+            action = 'rampage at';
           } else {
             action = 'watch';
           }

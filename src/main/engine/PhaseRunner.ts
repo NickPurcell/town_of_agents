@@ -784,6 +784,41 @@ export class PhaseRunner extends EventEmitter {
         `**You have ${bulletsRemaining} bullet${bulletsRemaining === 1 ? '' : 's'} remaining.**`,
         VisibilityFilter.vigilantePrivate(agent.id)
       );
+    } else if (phase === 'WEREWOLF_CHOICE') {
+      const isStayingHome = target.id === agent.id;
+
+      // Emit choice event for werewolf kill
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'WEREWOLF_KILL',
+        visibility: VisibilityFilter.werewolfPrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Track werewolf visit for lookout (only if not staying home)
+      if (!isStayingHome) {
+        this.engine.addNightVisit(agent.id, target.id);
+      }
+
+      // Record kill target
+      this.engine.setPendingWerewolfKillTarget(target.id);
+
+      // Feedback based on stay home or attack
+      if (isStayingHome) {
+        this.engine.appendNarration(
+          `**You stay home and wait for visitors. Anyone who visits you tonight will be killed.**`,
+          VisibilityFilter.werewolfPrivate(agent.id)
+        );
+      } else {
+        this.engine.appendNarration(
+          `**You will rampage at ${target.name}'s location, killing them and anyone who visits them.**`,
+          VisibilityFilter.werewolfPrivate(agent.id)
+        );
+      }
     }
 
     this.engine.nextPhase();
