@@ -478,18 +478,24 @@ export class GameEngine extends EventEmitter {
   // Go to Werewolf phase (after Vigilante)
   private goToWerewolfPhase(): void {
     const werewolf = this.agentManager.getAliveWerewolf();
-    if (werewolf && this.canWerewolfActTonight()) {
-      this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
+    if (!werewolf) {
+      this.goToLookoutPhase();
+      return;
+    }
+
+    // Always emit phase change to show "Werewolf's Turn" banner
+    this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
+
+    if (this.canWerewolfActTonight()) {
       this.appendNarration('**Werewolf, gather your thoughts.**', VisibilityFilter.werewolfPrivate(werewolf.id));
       return;
     }
-    // Notify werewolf if alive but can't act tonight
-    if (werewolf && !this.canWerewolfActTonight()) {
-      this.appendNarration(
-        '**The full moon is not out tonight. You cannot act.**',
-        VisibilityFilter.werewolfPrivate(werewolf.id)
-      );
-    }
+
+    // Notify werewolf they can't act tonight, then skip to lookout
+    this.appendNarration(
+      '**The full moon is not out tonight. You cannot act.**',
+      VisibilityFilter.werewolfPrivate(werewolf.id)
+    );
     this.goToLookoutPhase();
   }
 
