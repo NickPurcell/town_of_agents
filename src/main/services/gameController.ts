@@ -22,6 +22,7 @@ import {
 } from '@shared/types';
 import { GameEngine } from '../engine/GameEngine';
 import { PhaseRunner } from '../engine/PhaseRunner';
+import { VisibilityFilter } from '../engine/Visibility';
 import { PromptBuilder } from '../llm/PromptBuilder';
 import { ResponseParser } from '../llm/ResponseParser';
 import { createLLMService, LLMService } from './llm';
@@ -1574,6 +1575,8 @@ export class GameController extends EventEmitter {
   }
 
   private async handleJailConversation(): Promise<void> {
+    if (!this.isRunning) return;
+
     const jailor = this.engine.getAgentManager().getAliveJailor();
     const prisonerId = this.engine.getPendingJailTarget();
     const prisoner = prisonerId ? this.engine.getAgentManager().getAgent(prisonerId) : null;
@@ -1583,16 +1586,20 @@ export class GameController extends EventEmitter {
       return;
     }
 
-    // Import VisibilityFilter locally
-    const { VisibilityFilter } = require('../engine/Visibility');
-
     // 6 turns: Jailor → Prisoner → Jailor → Prisoner → Jailor → Prisoner
     const speakers = [jailor, prisoner, jailor, prisoner, jailor, prisoner];
     const jailVisibility = VisibilityFilter.jailConversation(jailor.id, prisoner.id);
 
+    // Announce the jail conversation start
+    this.engine.appendNarration(
+      '**The Jailor interrogates their prisoner...**',
+      jailVisibility
+    );
+
     for (let i = 0; i < speakers.length; i++) {
+      if (!this.isRunning) return;
+
       const speaker = speakers[i];
-      const isJailor = speaker.id === jailor.id;
 
       const service = this.llmServices.get(speaker.id);
       if (!service) continue;
@@ -1605,9 +1612,7 @@ export class GameController extends EventEmitter {
 
       try {
         const state = this.engine.getState();
-        // Use appropriate prompt based on whether speaker is jailor or prisoner
-        const promptPhase = isJailor ? 'JAIL_CONVERSATION' : 'JAIL_CONVERSATION';
-        const systemPrompt = PromptBuilder.buildSystemPrompt(speaker, promptPhase, state);
+        const systemPrompt = PromptBuilder.buildSystemPrompt(speaker, 'JAIL_CONVERSATION', state);
         const messages = PromptBuilder.buildMessagesForAgent(
           speaker,
           state.events,
@@ -1640,6 +1645,15 @@ export class GameController extends EventEmitter {
 
         if (lastError) {
           console.error(`Error getting jail conversation from ${speaker.name}:`, lastError);
+          // Emit a placeholder event so the conversation continues
+          const event: SpeechEvent = {
+            type: 'SPEECH',
+            agentId: speaker.id,
+            messageMarkdown: '*chose not to speak.*',
+            visibility: jailVisibility,
+            ts: Date.now(),
+          };
+          this.engine.appendEvent(event);
           continue;
         }
 
@@ -1656,6 +1670,16 @@ export class GameController extends EventEmitter {
             reasoning: thinkingContent,
           };
           this.engine.appendEvent(event);
+        } else {
+          // Parse failed, emit placeholder
+          const event: SpeechEvent = {
+            type: 'SPEECH',
+            agentId: speaker.id,
+            messageMarkdown: '*chose not to speak.*',
+            visibility: jailVisibility,
+            ts: Date.now(),
+          };
+          this.engine.appendEvent(event);
         }
       } finally {
         this.emitAgentThinkingDone(speaker);
@@ -1666,6 +1690,8 @@ export class GameController extends EventEmitter {
   }
 
   private async handleJailorExecuteChoice(): Promise<void> {
+    if (!this.isRunning) return;
+
     const jailor = this.engine.getAgentManager().getAliveJailor();
     const prisonerId = this.engine.getPendingJailTarget();
     const prisoner = prisonerId ? this.engine.getAgentManager().getAgent(prisonerId) : null;
@@ -1677,7 +1703,6 @@ export class GameController extends EventEmitter {
 
     // Check if Jailor has execution power
     if (!this.engine.hasJailorExecutionPower()) {
-      const { VisibilityFilter } = require('../engine/Visibility');
       if (this.engine.hasJailorLostExecutionPower()) {
         this.engine.appendNarration(
           '**You have lost the ability to execute after killing a Town member.**',
@@ -1740,12 +1765,16 @@ export class GameController extends EventEmitter {
 
       if (lastError) {
         console.error(`Error getting execute choice from ${jailor.name}:`, lastError);
+        // Default to not executing on error
+        this.engine.appendNarration(
+          '**You have decided to spare your prisoner.**',
+          VisibilityFilter.jailorPrivate(jailor.id)
+        );
         this.engine.nextPhase();
         return;
       }
 
       const parseResult = ResponseParser.parseExecuteChoiceResponse(content);
-      const { VisibilityFilter } = require('../engine/Visibility');
 
       if (parseResult.success && parseResult.data?.execute) {
         // Jailor chose to execute
