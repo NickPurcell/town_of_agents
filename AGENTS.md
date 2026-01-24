@@ -114,8 +114,8 @@ All cross-layer types live in `src/shared/types/*` and are imported via `@shared
 Update these types first when introducing new fields or IPC payloads.
 
 Key types in `src/shared/types/game.ts`:
-- **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
-- **Factions**: MAFIA, TOWN (Godfather, Framer, and Consigliere are MAFIA faction)
+- **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, JESTER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
+- **Factions**: MAFIA, TOWN, NEUTRAL (Godfather, Framer, and Consigliere are MAFIA faction; Jester is NEUTRAL faction)
 - **Phases**: 17 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_CHOICE, and CONSIGLIERE_CHOICE)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive
 - **Visibility**: 10 types with agent-specific variants (includes framer_private, consigliere_private)

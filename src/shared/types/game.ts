@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
+export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
 
 // Narration categorization types
 export type NarrationCategory =
@@ -12,7 +12,7 @@ export type NarrationIcon =
   | 'sun' | 'moon' | 'clock' | 'gavel' | 'eye';
 
 // Faction types
-export type Faction = 'MAFIA' | 'TOWN';
+export type Faction = 'MAFIA' | 'TOWN' | 'NEUTRAL';
 
 // Game phase types
 export type Phase =
@@ -36,7 +36,13 @@ export type Phase =
 
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {
-  return (role === 'MAFIA' || role === 'GODFATHER' || role === 'FRAMER' || role === 'CONSIGLIERE') ? 'MAFIA' : 'TOWN';
+  if (role === 'MAFIA' || role === 'GODFATHER' || role === 'FRAMER' || role === 'CONSIGLIERE') {
+    return 'MAFIA';
+  }
+  if (role === 'JESTER') {
+    return 'NEUTRAL';
+  }
+  return 'TOWN';
 }
 
 // Game agent (extends base Agent with game-specific fields)
@@ -213,6 +219,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   GODFATHER: '#c62828', // Distinct red shade
   FRAMER: '#8b0000',   // Dark red
   CONSIGLIERE: '#b71c1c', // Darker red
+  JESTER: '#e91e63',   // Pink - playful/chaotic color
   CITIZEN: '#fdd835',  // Yellow
   SHERIFF: '#1e88e5',  // Blue
   DOCTOR: '#ffffff',   // White

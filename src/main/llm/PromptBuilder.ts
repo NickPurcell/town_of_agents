@@ -43,6 +43,7 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   GODFATHER: 'You are the Godfather, the leader of the Mafia. At night, you secretly choose a town member to eliminate. During the day, blend in with town and avoid suspicion.',
   FRAMER: 'You are the Framer, a Mafia-aligned role. Each night you can frame one player to appear suspicious to the Sheriff. You participate in Mafia discussions but cannot vote on night kills. During the day, blend in with town.',
   CONSIGLIERE: 'You are the Consigliere, the Mafia\'s investigator. Each night you can investigate one player to learn their EXACT role. You participate in Mafia discussions but cannot vote on night kills. During the day, blend in with town.',
+  JESTER: 'You are the Jester, a chaotic wildcard. You have no abilities and no allegiance. Your ONLY goal is to get yourself executed by the town during the day vote. Act suspicious, make contradictory statements, accuse others wildly - do whatever it takes to make the town vote you out. You win personally when you are executed, but the game continues without you.',
   SHERIFF: 'You are the Sheriff. Each night you can investigate one player to see if they appear suspicious. A player appears suspicious if they are Mafia-aligned OR if they have been framed that night.',
   DOCTOR: 'You are the Doctor. Each night you can protect one player. If the mafia targets them, they will survive. You can protect yourself.',
   CITIZEN: 'You are a Citizen. You have no special abilities, but your vote is crucial. Watch behavior and voting patterns to identify mafia.',
@@ -51,7 +52,7 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   MAYOR: 'You are the Mayor. At the start of each day, you can reveal yourself to gain 3 votes, but once revealed the Doctor cannot protect you.',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'JESTER', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
 
 export class PromptBuilder {
   // Get the prompt path for a role and phase, considering role-specific overrides
