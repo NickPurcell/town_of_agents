@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { useUIStore } from '../../store/uiStore';
 import { GameEventItem } from '../chat/GameEventItem';
@@ -31,6 +31,28 @@ export function GameChatScreen() {
   const { gameState, stopGame, resetGame, thinkingAgent, streamingContent, streamingThinkingContent, pauseGame, resumeGame } = useGameStore();
   const { setScreen } = useUIStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const eventsContainerRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
+
+  // Check if scrolled to bottom (with 50px tolerance)
+  const checkIfAtBottom = useCallback(() => {
+    const container = eventsContainerRef.current;
+    if (!container) return true;
+    const threshold = 50;
+    return container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+  }, []);
+
+  // Handle scroll events to track if user is at bottom
+  const handleScroll = useCallback(() => {
+    isAtBottomRef.current = checkIfAtBottom();
+  }, [checkIfAtBottom]);
+
+  // Auto-scroll to bottom when content changes, but only if already at bottom
+  useEffect(() => {
+    if (isAtBottomRef.current && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [gameState?.events.length, thinkingAgent, streamingContent, streamingThinkingContent]);
 
   if (!gameState) {
     return (
@@ -114,7 +136,7 @@ export function GameChatScreen() {
         </div>
       </div>
 
-      <div className={styles.events}>
+      <div className={styles.events} ref={eventsContainerRef} onScroll={handleScroll}>
         {visibleEvents.length === 0 && !thinkingAgent ? (
           <div className={styles.emptyEvents}>
             <p>Waiting for the game to start...</p>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { useUIStore } from '../../store/uiStore';
 import { MessageItem } from '../chat/MessageItem';
@@ -13,6 +13,21 @@ export function AgentChatScreen() {
   const { sideChatAgentId, closeSideChat } = useUIStore();
   const [userInput, setUserInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
+
+  // Check if scrolled to bottom (with 50px tolerance)
+  const checkIfAtBottom = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    const threshold = 50;
+    return container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+  }, []);
+
+  // Handle scroll events to track if user is at bottom
+  const handleScroll = useCallback(() => {
+    isAtBottomRef.current = checkIfAtBottom();
+  }, [checkIfAtBottom]);
 
   const agent = useMemo(() => {
     if (!gameState || !sideChatAgentId) return null;
@@ -54,8 +69,11 @@ export function AgentChatScreen() {
       }
     : null;
 
+  // Auto-scroll to bottom when content changes, but only if already at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isAtBottomRef.current && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, thinkingMessage?.timestamp]);
 
   if (!gameState) {
@@ -111,7 +129,7 @@ export function AgentChatScreen() {
         </div>
       </div>
 
-      <div className={styles.messages}>
+      <div className={styles.messages} ref={messagesContainerRef} onScroll={handleScroll}>
         {messages.length === 0 && !thinkingMessage ? (
           <div className={styles.emptyMessages}>
             <p>Ask a private question about their strategy or decisions.</p>
