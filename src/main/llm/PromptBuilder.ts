@@ -40,6 +40,7 @@ const ROLE_PROMPT_OVERRIDES: Partial<Record<Role, Partial<Record<Phase, string>>
 // Role descriptions
 const ROLE_DESCRIPTIONS: Record<Role, string> = {
   MAFIA: 'You are a member of the Mafia. At night, you secretly choose a town member to eliminate. During the day, blend in with town and avoid suspicion.',
+  GODFATHER: 'You are the Godfather, the leader of the Mafia. At night, you secretly choose a town member to eliminate. During the day, blend in with town and avoid suspicion.',
   FRAMER: 'You are the Framer, a Mafia-aligned role. Each night you can frame one player to appear suspicious to the Sheriff. You participate in Mafia discussions but cannot vote on night kills. During the day, blend in with town.',
   CONSIGLIERE: 'You are the Consigliere, the Mafia\'s investigator. Each night you can investigate one player to learn their EXACT role. You participate in Mafia discussions but cannot vote on night kills. During the day, blend in with town.',
   SHERIFF: 'You are the Sheriff. Each night you can investigate one player to see if they appear suspicious. A player appears suspicious if they are Mafia-aligned OR if they have been framed that night.',
@@ -50,7 +51,7 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   MAYOR: 'You are the Mayor. At the start of each day, you can reveal yourself to gain 3 votes, but once revealed the Doctor cannot protect you.',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'FRAMER', 'CONSIGLIERE', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
 
 export class PromptBuilder {
   // Get the prompt path for a role and phase, considering role-specific overrides

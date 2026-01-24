@@ -103,8 +103,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   canStartGame: () => {
     const { pendingAgents } = get();
-    // Need at least 1 of each required role
-    const hasMafia = pendingAgents.some(a => a.role === 'MAFIA');
+    // Need at least 1 of each required role (Godfather counts as Mafia)
+    const hasMafia = pendingAgents.some(a => a.role === 'MAFIA' || a.role === 'GODFATHER');
     const hasSheriff = pendingAgents.some(a => a.role === 'SHERIFF');
     const hasDoctor = pendingAgents.some(a => a.role === 'DOCTOR');
     const hasCitizen = pendingAgents.some(a => a.role === 'CITIZEN');
