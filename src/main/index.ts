@@ -1,9 +1,5 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import { join } from 'path';
+import { app, BrowserWindow } from 'electron';
 import { createSplashWindow } from './windows/splashWindow';
-import { createMainWindow } from './windows/mainWindow';
-import { registerIpcHandlers } from './ipc';
-import { initializeStorage } from './services/storage';
 
 // Disable sandbox on Linux for development
 if (process.platform === 'linux') {
@@ -14,14 +10,22 @@ let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 
 async function initialize() {
-  // Show splash screen
+  // Show splash screen FIRST, before loading anything else
   splashWindow = createSplashWindow();
+
+  // Now dynamically import heavy modules while splash is visible
+  const [
+    { createMainWindow },
+    { registerIpcHandlers },
+    { initializeStorage }
+  ] = await Promise.all([
+    import('./windows/mainWindow'),
+    import('./ipc'),
+    import('./services/storage')
+  ]);
 
   // Initialize storage
   await initializeStorage();
-
-  // Simulate loading time for splash (min 1.5 seconds)
-  await new Promise(resolve => setTimeout(resolve, 1500));
 
   // Create main window
   mainWindow = createMainWindow();
