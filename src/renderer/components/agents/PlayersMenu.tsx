@@ -18,10 +18,13 @@ export function PlayersMenu() {
 
   const townAgents = gameState.agents.filter(a => a.faction === 'TOWN');
   const mafiaAgents = gameState.agents.filter(a => a.faction === 'MAFIA');
+  const neutralAgents = gameState.agents.filter(a => a.faction === 'NEUTRAL');
   const townAlive = townAgents.filter(a => a.alive).length;
   const mafiaAlive = mafiaAgents.filter(a => a.alive).length;
+  const neutralAlive = neutralAgents.filter(a => a.alive).length;
   const townFactionStyle = { ['--faction-color' as any]: '#fdd835' } as React.CSSProperties;
   const mafiaFactionStyle = { ['--faction-color' as any]: '#e53935' } as React.CSSProperties;
+  const neutralFactionStyle = { ['--faction-color' as any]: '#9c27b0' } as React.CSSProperties;
 
   return (
     <div className={styles.container}>
@@ -97,6 +100,42 @@ export function PlayersMenu() {
             ))}
           </div>
         </div>
+
+        {neutralAgents.length > 0 && (
+          <div className={styles.factionGroup}>
+            <h4
+              className={styles.factionTitle}
+              style={neutralFactionStyle}
+            >
+              <span className={styles.factionLabel}>Neutral</span>
+              <span className={styles.factionCount}>
+                {neutralAlive}/{neutralAgents.length}
+              </span>
+            </h4>
+            <div className={styles.agentList}>
+              {neutralAgents.map(agent => (
+                <button
+                  key={agent.id}
+                  className={`${styles.gameAgentItem} ${!agent.alive ? styles.dead : ''} ${sideChatAgentId === agent.id ? styles.selected : ''}`}
+                  style={{ ['--agent-color' as any]: ROLE_COLORS[agent.role] } as React.CSSProperties}
+                  onClick={() => openSideChat(agent.id)}
+                  type="button"
+                >
+                  <span
+                    className={styles.gameAgentName}
+                    style={{ color: agent.alive ? ROLE_COLORS[agent.role] : 'var(--text-muted)' }}
+                  >
+                    {agent.name}
+                  </span>
+                  <span className={styles.gameAgentRole}>
+                    {agent.role}
+                  </span>
+                  {!agent.alive && <span className={styles.deadMarker}>Dead</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
