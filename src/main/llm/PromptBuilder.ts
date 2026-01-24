@@ -200,6 +200,15 @@ export class PromptBuilder {
         if (event.agentId === agent.id) {
           return { role: 'assistant', content: event.messageMarkdown };
         }
+        // For jail conversation: hide Jailor's identity from prisoner
+        if (event.visibility.kind === 'jail_conversation') {
+          const isJailorSpeaking = event.agentId === event.visibility.jailorId;
+          const viewerIsPrisoner = agent.id === event.visibility.prisonerId;
+          // Prisoner sees "Jailor" instead of actual name
+          if (isJailorSpeaking && viewerIsPrisoner) {
+            return { role: 'user', content: `Jailor said: ${event.messageMarkdown}` };
+          }
+        }
         // Other agents' speech is a user message
         return { role: 'user', content: `${this.getAgentNamePlaceholder(event.agentId)} said: ${event.messageMarkdown}` };
 

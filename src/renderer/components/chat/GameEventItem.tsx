@@ -234,6 +234,12 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
           case 'WEREWOLF_KILL':
             actionText = `is rampaging at ${choiceEvent.targetName}`;
             break;
+          case 'JAILOR_JAIL':
+            actionText = `is jailing ${choiceEvent.targetName}`;
+            break;
+          case 'JAILOR_EXECUTE':
+            actionText = `is executing ${choiceEvent.targetName}`;
+            break;
         }
       }
       return (
