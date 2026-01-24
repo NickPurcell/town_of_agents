@@ -464,7 +464,6 @@ export class GameEngine extends EventEmitter {
     // Night starts with Jailor (if alive), then Mafia
     const jailor = this.agentManager.getAliveJailor();
     if (jailor) {
-      this.appendNarration("**Jailor's Turn**", VisibilityFilter.public());
       this.emitPhaseChange('JAILOR_CHOICE');
       this.appendNarration('**Jailor, choose a player to jail.**', VisibilityFilter.jailorPrivate(jailor.id));
       return;

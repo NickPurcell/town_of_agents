@@ -29,6 +29,7 @@ const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   DAY_VOTE: 'Day Vote',
   LAST_WORDS: 'Last Words',
   POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
+  JAILOR_CHOICE: "Jailor's Turn",
   FRAMER_PRE_SPEECH: "Framer's Turn",
   CONSIGLIERE_PRE_SPEECH: "Consigliere's Turn",
   DOCTOR_PRE_SPEECH: "Doctor's Turn",
