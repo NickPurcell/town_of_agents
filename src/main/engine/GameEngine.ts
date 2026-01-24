@@ -316,11 +316,7 @@ export class GameEngine extends EventEmitter {
       case 'JAILOR_CHOICE':
         // If a target was jailed, go to conversation
         if (this.pendingJailTarget) {
-          const prisoner = this.agentManager.getAgent(this.pendingJailTarget);
-          if (prisoner) {
-            this.jailedThisNight.add(this.pendingJailTarget);
-            this.appendNarration(`**${prisoner.name} has been jailed!**`, VisibilityFilter.public());
-          }
+          this.jailedThisNight.add(this.pendingJailTarget);
           this.emitPhaseChange('JAIL_CONVERSATION');
           return;
         }
