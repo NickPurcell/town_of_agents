@@ -82,10 +82,10 @@ Your message here
 ### LLM Services (`src/main/services/llm/`)
 - **index.ts**: Factory for creating LLM services. `LLMService` interface has two methods:
   - `generate()`: Non-streaming request returning complete response
-  - `generateStream()`: Streaming async generator yielding chunks with callback
-- **openaiService.ts**: OpenAI responses API with reasoning.
-- **anthropicService.ts**: Claude with extended thinking (8000 token budget).
-- **geminiService.ts**: Google Gemini support.
+  - `generateStream()`: Streaming async generator yielding chunks with onChunk and optional onThinkingChunk callbacks
+- **openaiService.ts**: OpenAI responses API with reasoning (streams thinking via onThinkingChunk).
+- **anthropicService.ts**: Claude with extended thinking (8000 token budget, streams thinking via onThinkingChunk).
+- **geminiService.ts**: Google Gemini support (streams thinking via onThinkingChunk).
 - **rateLimiter.ts**: Rate limiting wrapper for both generate and generateStream.
 
 ### Preload Bridge
@@ -102,7 +102,7 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **AgentChatScreen.tsx**: Side chat for user-to-agent interaction
   - **SettingsScreen.tsx**: API key configuration
 - State: Zustand stores in `src/renderer/store/*`
-  - **gameStore.ts**: Game state, pending agents, side chat threads, streaming content
+  - **gameStore.ts**: Game state, pending agents, side chat threads, streaming content, streaming thinking content
   - **uiStore.ts**: Screen navigation, side chat agent selection
   - **settingsStore.ts**: API key management
 - Agent components: `src/renderer/components/agents/*`
@@ -115,7 +115,7 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths)
   - **NarrationIcons.tsx**: 9 inline SVG icons for narration categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
   - **MessageItem.tsx**: Individual message display component
-  - **ThinkingIndicator.tsx**: Shows agent thinking state
+  - **ThinkingIndicator.tsx**: Shows agent thinking state with streaming reasoning content
 - Utilities: `src/renderer/utils/*`
   - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
@@ -285,6 +285,7 @@ interface API {
   onGameAgentThinkingDone(callback): () => void
   onGameStreamingMessage(callback): () => void
   onGameStreamingChunk(callback: (data: { agentId: string; chunk: string; isComplete: boolean }) => void): () => void
+  onGameStreamingThinkingChunk(callback: (data: { agentId: string; chunk: string }) => void): () => void
   onGameStateUpdate(callback): () => void
 }
 ```
