@@ -34,6 +34,7 @@ const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   FRAMER_PRE_SPEECH: "Framer's Turn",
   DOCTOR_PRE_SPEECH: "Doctor's Turn",
   VIGILANTE_PRE_SPEECH: "Vigilante's Turn",
+  WEREWOLF_PRE_SPEECH: "Werewolf's Turn",
   SHERIFF_CHOICE: "Sheriff's Turn",
   LOOKOUT_CHOICE: "Lookout's Turn",
   NIGHT_DISCUSSION: "Mafia's Turn",
@@ -239,7 +240,7 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
             actionText = `is investigating ${choiceEvent.targetName}`;
             break;
           case 'WEREWOLF_KILL':
-            actionText = `is rampaging at ${choiceEvent.targetName}`;
+            actionText = `is attacking ${choiceEvent.targetName}`;
             break;
         }
       }
@@ -290,6 +291,9 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
           break;
         case 'VIGILANTE_GUILT':
           causeText = 'died from guilt';
+          break;
+        case 'WEREWOLF_KILL':
+          causeText = 'was mauled by the werewolf';
           break;
       }
       return (
