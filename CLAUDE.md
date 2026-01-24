@@ -102,10 +102,17 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **gameStore.ts**: Game state, pending agents, side chat threads, streaming content
   - **uiStore.ts**: Screen navigation, side chat agent selection
   - **settingsStore.ts**: API key management
+- Agent components: `src/renderer/components/agents/*`
+  - **AddAgentModal.tsx**: Modal for adding new agents with role/model selection
+  - **AgentCard.tsx**: Individual agent display card
+  - **AgentDetails.tsx**: Detailed agent info panel
+  - **PlayersMenu.tsx**: Player list menu in sidebar
 - Chat components: `src/renderer/components/chat/*`
   - **StreamingSpeech.tsx**: Displays speech content progressively token-by-token during streaming
   - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths)
   - **NarrationIcons.tsx**: 9 inline SVG icons for narration categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
+  - **MessageItem.tsx**: Individual message display component
+  - **ThinkingIndicator.tsx**: Shows agent thinking state
 - Utilities: `src/renderer/utils/*`
   - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
@@ -117,13 +124,24 @@ Update these types first when introducing new fields or IPC payloads.
 Key types in `src/shared/types/game.ts`:
 - **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, JESTER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE
 - **Factions**: MAFIA, TOWN, NEUTRAL (Godfather, Framer, and Consigliere are MAFIA faction; Jester is NEUTRAL faction)
+- **AttackLevel**: NONE, BASIC, POWERFUL, UNSTOPPABLE
+- **DefenseLevel**: NONE, BASIC, POWERFUL
+- **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
+- **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
 - **Phases**: 17 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_CHOICE, and CONSIGLIERE_CHOICE)
-- **GameAgent**: id, name, role, faction, personality, provider, model, alive
+- **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 10 types with agent-specific variants (includes framer_private, consigliere_private)
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE), INVESTIGATION_RESULT, DEATH
-- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (includes pendingFramedTarget)
+- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, vigilanteBulletsRemaining, sheriffIntelQueue)
+- **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
+
+Helper functions:
+- `getRoleTraits(role)`: Get traits for a role
+- `doesAttackSucceed(attack, defense)`: Compare attack vs defense levels
+- `getFactionForRole(role)`: Get faction from role
+- `canAgentSeeEvent(agent, event)`: Check event visibility for an agent
 
 ## Game Flow
 1. Renderer assembles pending agents and starts game via `game:start`.
@@ -174,6 +192,8 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `mafia/vote.md`: Mafia night kill voting (Framer and Consigliere excluded from voting)
 - `mayor/reveal_choice.md`: Pre-speech reveal decision
 - `mayor/vote_day.md`: Day voting with 3-vote format for revealed mayor
+- `mayor/discuss_day.md`: Day discussion for mayor (role-specific)
+- `mayor/discuss_day_one.md`: First day discussion for mayor (role-specific)
 
 **Role-Specific Override System**:
 PromptBuilder uses `ROLE_PROMPT_OVERRIDES` to serve role-specific prompts. When adding role-specific prompts:
@@ -188,9 +208,9 @@ If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a 
 Supported providers: OpenAI, Anthropic, Google (Gemini).
 
 Available models (defined in `src/shared/types/index.ts`):
-- `gpt-5`, `gpt-5-mini` (OpenAI)
+- `gpt-5`, `gpt-5-mini`, `gpt-4o-mini` (OpenAI)
 - `claude-opus-4-5` (Anthropic)
-- `gemini-3-pro-preview` (Google)
+- `gemini-3-pro-preview`, `gemini-3-flash-preview` (Google)
 
 To add a model/provider:
 1. Update provider types in `src/shared/types/index.ts`.
