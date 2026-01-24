@@ -10,6 +10,7 @@ export function createSplashWindow(): BrowserWindow {
     transparent: true,
     alwaysOnTop: true,
     resizable: false,
+    show: false, // Don't show until content is ready
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -24,6 +25,11 @@ export function createSplashWindow(): BrowserWindow {
     const logoPath = join(__dirname, '../renderer/logo.png');
     logoUrl = `file://${logoPath}`;
   }
+
+  // Show window only when content is ready to display
+  splash.once('ready-to-show', () => {
+    splash.show();
+  });
 
   // Load splash HTML directly
   splash.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(getSplashHTML(logoUrl))}`);
