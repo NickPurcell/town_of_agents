@@ -581,9 +581,9 @@ export class GameEngine extends EventEmitter {
     this.goToLookoutPhase();
   }
 
-  // Check if werewolf can act tonight (nights 2, 4, 6... - not nights 1 or 3)
+  // Check if werewolf can act tonight (even nights only: 2, 4, 6, 8...)
   canWerewolfActTonight(): boolean {
-    return this.dayNumber >= 2 && this.dayNumber !== 3;
+    return this.dayNumber % 2 === 0;
   }
 
   // Check if werewolf is detection immune tonight (nights 1 and 3)
@@ -672,6 +672,9 @@ export class GameEngine extends EventEmitter {
 
   // Resolve night and start new day
   private resolveNight(): void {
+    // Save night number BEFORE incrementing (used for Werewolf full moon check)
+    const nightNumber = this.dayNumber;
+    const wasFullMoon = nightNumber % 2 === 0;  // Even nights: 2, 4, 6, 8...
     this.dayNumber++;
 
     const morningMessages: string[] = [];
@@ -683,7 +686,7 @@ export class GameEngine extends EventEmitter {
     // Check for Werewolf-Jailor interaction FIRST
     // If Werewolf is jailed on a full moon night, Werewolf kills Jailor + anyone who visits Jailor
     let werewolfKilledJailor = false;
-    if (werewolf && jailor && this.isAgentJailed(werewolf.id) && this.canWerewolfActTonight()) {
+    if (werewolf && jailor && this.isAgentJailed(werewolf.id) && wasFullMoon) {
       werewolfKilledJailor = true;
       // Werewolf kills Jailor
       this.eliminateAgent(jailor.id, 'WEREWOLF_KILL');
