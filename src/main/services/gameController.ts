@@ -1766,10 +1766,6 @@ export class GameController extends EventEmitter {
       if (lastError) {
         console.error(`Error getting execute choice from ${jailor.name}:`, lastError);
         // Default to not executing on error
-        this.engine.appendNarration(
-          '**You have decided to spare your prisoner.**',
-          VisibilityFilter.jailorPrivate(jailor.id)
-        );
         this.engine.nextPhase();
         return;
       }
@@ -1796,20 +1792,7 @@ export class GameController extends EventEmitter {
         // Check if prisoner is Town - lose execution power
         if (prisoner.faction === 'TOWN') {
           this.engine.setJailorLostExecutionPower();
-          // Notify jailor they will lose execution power (but won't know until morning)
         }
-
-        const executionsRemaining = this.engine.getJailorExecutionsRemaining();
-        this.engine.appendNarration(
-          `**You have decided to execute your prisoner. ${executionsRemaining} execution${executionsRemaining === 1 ? '' : 's'} remaining.**`,
-          VisibilityFilter.jailorPrivate(jailor.id)
-        );
-      } else {
-        // Jailor chose not to execute
-        this.engine.appendNarration(
-          '**You have decided to spare your prisoner.**',
-          VisibilityFilter.jailorPrivate(jailor.id)
-        );
       }
 
       this.engine.nextPhase();
