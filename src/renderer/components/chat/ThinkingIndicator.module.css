@@ -1,21 +1,9 @@
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-}
-
-.compact {
-  padding: 0;
-  margin-bottom: 0;
-}
-
-.text {
+/* Animated "Thinking..." text */
+.thinkingText {
   display: inline-flex;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-style: italic;
+  color: var(--text-muted);
 }
 
 .letter {
@@ -26,23 +14,19 @@
 @keyframes glowWave {
   0%, 100% {
     color: var(--text-muted);
-    text-shadow: none;
+    opacity: 0.5;
   }
   50% {
-    color: var(--thinking-color, var(--accent));
-    text-shadow:
-      0 0 2px var(--thinking-glow, var(--accent)),
-      0 0 4px var(--thinking-glow, var(--accent)),
-      0 0 6px var(--thinking-glow, var(--accent));
+    color: var(--text-secondary);
+    opacity: 1;
   }
 }
 
-/* Match the ReasoningBlock styling from GameEventItem */
+/* Reasoning block - matches GameEventItem.module.css */
 .reasoningBlock {
-  margin-top: 8px;
+  margin-top: 12px;
   border-left: 2px solid rgba(196, 30, 58, 0.4);
   padding-left: 10px;
-  width: 100%;
 }
 
 .reasoningHeader {
@@ -74,7 +58,7 @@
   color: rgba(196, 30, 58, 0.8);
 }
 
-.thinkingContent {
+.reasoningContent {
   margin-top: 6px;
   padding: 10px 12px;
   background: linear-gradient(135deg, rgba(196, 30, 58, 0.12), rgba(0, 0, 0, 0.35));

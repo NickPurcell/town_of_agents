@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
+export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE' | 'WEREWOLF';
 
 // Attack and defense power levels
 export type AttackLevel = 'NONE' | 'BASIC' | 'POWERFUL' | 'UNSTOPPABLE';
@@ -27,6 +27,7 @@ export const ROLE_TRAITS: Record<Role, RoleTraits> = {
   FRAMER:       { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
   CONSIGLIERE:  { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
   JESTER:       { visits: false, attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  WEREWOLF:     { visits: true,  attack: 'POWERFUL', defense: 'BASIC', detection_immune: false, roleblock_immune: false },
 };
 
 // Helper function to get role traits
@@ -72,6 +73,8 @@ export type Phase =
   | 'DOCTOR_CHOICE'
   | 'VIGILANTE_PRE_SPEECH'
   | 'VIGILANTE_CHOICE'
+  | 'WEREWOLF_PRE_SPEECH'
+  | 'WEREWOLF_CHOICE'
   | 'LOOKOUT_CHOICE'
   | 'LOOKOUT_POST_SPEECH'
   | 'NIGHT_DISCUSSION'
@@ -83,7 +86,7 @@ export function getFactionForRole(role: Role): Faction {
   if (role === 'MAFIA' || role === 'GODFATHER' || role === 'FRAMER' || role === 'CONSIGLIERE') {
     return 'MAFIA';
   }
-  if (role === 'JESTER') {
+  if (role === 'JESTER' || role === 'WEREWOLF') {
     return 'NEUTRAL';
   }
   return 'TOWN';
@@ -113,6 +116,7 @@ export type Visibility =
   | { kind: 'mayor_private'; agentId: string }
   | { kind: 'framer_private'; agentId: string }
   | { kind: 'consigliere_private'; agentId: string }
+  | { kind: 'werewolf_private'; agentId: string }
   | { kind: 'host' };
 
 // Game event types
@@ -162,7 +166,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -180,7 +184,7 @@ export interface InvestigationResultEvent {
 export interface DeathEvent {
   type: 'DEATH';
   agentId: string;
-  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT';
+  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL';
   visibility: Visibility;
   ts: number;
 }
@@ -194,6 +198,7 @@ export interface GameState {
   isPaused?: boolean;
   pendingNightKillTarget?: string;
   pendingVigilanteKillTarget?: string;
+  pendingWerewolfKillTarget?: string;
   pendingDoctorProtectTarget?: string;
   pendingFramedTarget?: string;
   persistentFramedTargets: string[];  // Frames persist until investigated
@@ -272,6 +277,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   LOOKOUT: '#9c27b0',  // Purple
   MAYOR: '#ff9800',    // Orange
   VIGILANTE: '#4caf50', // Green
+  WEREWOLF: '#8B4513', // Saddle brown
 };
 
 // Helper to get visible events for an agent
@@ -296,6 +302,8 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'framer_private':
       return visibility.agentId === agent.id;
     case 'consigliere_private':
+      return visibility.agentId === agent.id;
+    case 'werewolf_private':
       return visibility.agentId === agent.id;
     case 'host':
       return false; // Only visible to host/narrator

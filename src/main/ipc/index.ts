@@ -1,17 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import {
-  getSettings,
-  saveSettings,
-  getChatIndex,
-  getChat,
-  saveChat,
-  deleteChat
-} from '../services/storage';
-import { ChatController } from '../services/chatController';
+import { getSettings, saveSettings } from '../services/storage';
 import { registerGameHandlers } from './gameHandlers';
-import type { Chat, Settings } from '@shared/types';
-
-const chatController = new ChatController();
+import type { Settings } from '@shared/types';
 
 export function registerIpcHandlers(mainWindow?: BrowserWindow): void {
   // Register game handlers if window provided
@@ -25,52 +15,6 @@ export function registerIpcHandlers(mainWindow?: BrowserWindow): void {
 
   ipcMain.handle('settings:save', async (_, settings: Settings) => {
     await saveSettings(settings);
-    return true;
-  });
-
-  // Chat handlers
-  ipcMain.handle('chat:list', async () => {
-    return await getChatIndex();
-  });
-
-  ipcMain.handle('chat:get', async (_, chatId: string) => {
-    return await getChat(chatId);
-  });
-
-  ipcMain.handle('chat:create', async (_, chat: Chat) => {
-    await saveChat(chat);
-    return chat;
-  });
-
-  ipcMain.handle('chat:update', async (_, chat: Chat) => {
-    await saveChat(chat);
-    return chat;
-  });
-
-  ipcMain.handle('chat:delete', async (_, chatId: string) => {
-    await chatController.stopChat(chatId);
-    await deleteChat(chatId);
-    return true;
-  });
-
-  // Chat control handlers
-  ipcMain.handle('chat:start', async (_, chatId: string) => {
-    const chat = await getChat(chatId);
-    if (!chat) {
-      throw new Error('Chat not found');
-    }
-    const settings = await getSettings();
-    await chatController.startChat(chat, settings);
-    return true;
-  });
-
-  ipcMain.handle('chat:stop', async (_, chatId: string) => {
-    await chatController.stopChat(chatId);
-    return true;
-  });
-
-  ipcMain.handle('chat:sendUserMessage', async (_, chatId: string, content: string) => {
-    await chatController.sendUserMessage(chatId, content);
     return true;
   });
 

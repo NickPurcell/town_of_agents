@@ -39,9 +39,22 @@ async function initialize() {
       splashWindow.close();
       splashWindow = null;
     }
-    mainWindow?.show();
-    mainWindow?.maximize();
-    mainWindow?.focus();
+
+    // On Linux, we need to be more aggressive to get proper focus
+    if (process.platform === 'linux') {
+      mainWindow?.setAlwaysOnTop(true);
+      mainWindow?.show();
+      mainWindow?.maximize();
+      mainWindow?.focus();
+      // Delay removing alwaysOnTop to let window manager settle
+      setTimeout(() => {
+        mainWindow?.setAlwaysOnTop(false);
+      }, 100);
+    } else {
+      mainWindow?.show();
+      mainWindow?.maximize();
+      mainWindow?.focus();
+    }
   });
 }
 

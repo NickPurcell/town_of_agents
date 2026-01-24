@@ -21,7 +21,7 @@ import { ConversationStore } from '../store/ConversationStore';
 import { VisibilityFilter } from './Visibility';
 
 // Phase order for state machine (night phases per MECHANICS.md)
-// Night order: Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Attacks → Lookout
+// Night order: Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Vigilante → Werewolf → Lookout
 const PHASE_ORDER: Phase[] = [
   'DAY_ONE_DISCUSSION',
   'DAY_DISCUSSION',
@@ -41,6 +41,8 @@ const PHASE_ORDER: Phase[] = [
   'DOCTOR_CHOICE',
   'VIGILANTE_PRE_SPEECH',
   'VIGILANTE_CHOICE',
+  'WEREWOLF_PRE_SPEECH',
+  'WEREWOLF_CHOICE',
   'LOOKOUT_CHOICE',
   'LOOKOUT_POST_SPEECH',
 ];
@@ -51,7 +53,7 @@ export interface GameEngineEvents {
   'game_over': (winner: Faction) => void;
   'agent_died': (
     agentId: string,
-    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT'
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL'
   ) => void;
 }
 
@@ -64,6 +66,7 @@ export class GameEngine extends EventEmitter {
   private phase: Phase = 'DAY_ONE_DISCUSSION';
   private pendingNightKillTarget?: string;
   private pendingVigilanteKillTarget?: string;
+  private pendingWerewolfKillTarget?: string;
   private pendingDoctorProtectTarget?: string;
   private pendingLookoutWatchTarget?: string;
   private pendingFramedTarget?: string;  // Deprecated, kept for compatibility
@@ -94,6 +97,7 @@ export class GameEngine extends EventEmitter {
     this.phase = 'DAY_ONE_DISCUSSION';
     this.pendingNightKillTarget = undefined;
     this.pendingVigilanteKillTarget = undefined;
+    this.pendingWerewolfKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
     this.pendingFramedTarget = undefined;
@@ -133,6 +137,7 @@ export class GameEngine extends EventEmitter {
       events: this.conversationStore.getAllEvents(),
       pendingNightKillTarget: this.pendingNightKillTarget,
       pendingVigilanteKillTarget: this.pendingVigilanteKillTarget,
+      pendingWerewolfKillTarget: this.pendingWerewolfKillTarget,
       pendingDoctorProtectTarget: this.pendingDoctorProtectTarget,
       pendingFramedTarget: this.pendingFramedTarget,
       persistentFramedTargets: Array.from(this.persistentFramedTargets),
@@ -337,8 +342,24 @@ export class GameEngine extends EventEmitter {
         this.appendNarration('**Vigilante, choose your target.**', VisibilityFilter.vigilantePrivate(activeVigilante.id));
         return;
 
-      // 9. Vigilante Choice → Lookout (or resolve night)
+      // 9. Vigilante Choice → Werewolf (or skip to Lookout)
       case 'VIGILANTE_CHOICE':
+        this.goToWerewolfPhase();
+        return;
+
+      // 10a. Werewolf Pre-Speech → Werewolf Choice
+      case 'WEREWOLF_PRE_SPEECH':
+        const activeWerewolf = this.agentManager.getAliveWerewolf();
+        if (activeWerewolf && this.canWerewolfActTonight()) {
+          this.emitPhaseChange('WEREWOLF_CHOICE');
+          this.appendNarration('**Werewolf, choose your target.**', VisibilityFilter.werewolfPrivate(activeWerewolf.id));
+          return;
+        }
+        this.goToLookoutPhase();
+        return;
+
+      // 10b. Werewolf Choice → Lookout (or resolve night)
+      case 'WEREWOLF_CHOICE':
         this.goToLookoutPhase();
         return;
 
@@ -451,7 +472,35 @@ export class GameEngine extends EventEmitter {
     }
 
     this.pendingVigilanteKillTarget = undefined;
+    this.goToWerewolfPhase();
+  }
+
+  // Go to Werewolf phase (after Vigilante)
+  private goToWerewolfPhase(): void {
+    const werewolf = this.agentManager.getAliveWerewolf();
+    if (werewolf && this.canWerewolfActTonight()) {
+      this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
+      this.appendNarration('**Werewolf, gather your thoughts.**', VisibilityFilter.werewolfPrivate(werewolf.id));
+      return;
+    }
+    // Notify werewolf if alive but can't act tonight
+    if (werewolf && !this.canWerewolfActTonight()) {
+      this.appendNarration(
+        '**The full moon is not out tonight. You cannot act.**',
+        VisibilityFilter.werewolfPrivate(werewolf.id)
+      );
+    }
     this.goToLookoutPhase();
+  }
+
+  // Check if werewolf can act tonight (nights 2, 4, 6... - not nights 1 or 3)
+  canWerewolfActTonight(): boolean {
+    return this.dayNumber >= 2 && this.dayNumber !== 3;
+  }
+
+  // Check if werewolf is detection immune tonight (nights 1 and 3)
+  isWerewolfDetectionImmuneTonight(): boolean {
+    return this.dayNumber === 1 || this.dayNumber === 3;
   }
 
   // Go to Lookout phase (after Vigilante)
@@ -487,7 +536,7 @@ export class GameEngine extends EventEmitter {
   }
 
   // Notify attacker their target was immune
-  private notifyAttackerImmune(attackerSource: 'MAFIA' | 'VIGILANTE', targetId: string): void {
+  private notifyAttackerImmune(attackerSource: 'MAFIA' | 'VIGILANTE' | 'WEREWOLF', targetId: string): void {
     const target = this.agentManager.getAgent(targetId);
     if (!target) return;
 
@@ -496,12 +545,20 @@ export class GameEngine extends EventEmitter {
         `**Your target was immune to your attack.**`,
         VisibilityFilter.mafia()
       );
-    } else {
+    } else if (attackerSource === 'VIGILANTE') {
       const vigilante = this.agentManager.getAliveVigilante();
       if (vigilante) {
         this.appendNarration(
           `**Your target was immune to your attack.**`,
           VisibilityFilter.vigilantePrivate(vigilante.id)
+        );
+      }
+    } else {
+      const werewolf = this.agentManager.getAliveWerewolf();
+      if (werewolf) {
+        this.appendNarration(
+          `**Your target was immune to your attack.**`,
+          VisibilityFilter.werewolfPrivate(werewolf.id)
         );
       }
     }

@@ -5,7 +5,6 @@ import { GameEventItem } from '../chat/GameEventItem';
 import { ThinkingIndicator } from '../chat/ThinkingIndicator';
 import { StreamingSpeech } from '../chat/StreamingSpeech';
 import type { Phase } from '@shared/types';
-import { ROLE_COLORS } from '@shared/types';
 import styles from './GameChatScreen.module.css';
 
 const PHASE_LABELS: Record<Phase, string> = {
@@ -144,11 +143,12 @@ export function GameChatScreen() {
                 defaultReasoningExpanded={index === lastReasoningIndex}
               />
             ))}
-            {thinkingAgent && (() => {
+            {thinkingAgent && thinkingAgentModel && (() => {
               const streamingData = streamingContent.get(thinkingAgent.agentId);
               const hasStreamingContent = streamingData && streamingData.content.length > 0;
 
-              if (hasStreamingContent && thinkingAgentModel) {
+              // Show StreamingSpeech when message content starts streaming
+              if (hasStreamingContent) {
                 return (
                   <StreamingSpeech
                     agent={thinkingAgentModel}
@@ -158,16 +158,13 @@ export function GameChatScreen() {
                 );
               }
 
+              // Show ThinkingIndicator while waiting or reasoning is streaming
               const thinkingData = streamingThinkingContent.get(thinkingAgent.agentId);
               return (
-                <div className={styles.thinkingIndicator}>
-                  <ThinkingIndicator
-                    agentName={thinkingAgent.agentName}
-                    color={thinkingAgentModel ? ROLE_COLORS[thinkingAgentModel.role] : undefined}
-                    thinkingContent={thinkingData?.content}
-                    compact
-                  />
-                </div>
+                <ThinkingIndicator
+                  agent={thinkingAgentModel}
+                  thinkingContent={thinkingData?.content}
+                />
               );
             })()}
           </>
