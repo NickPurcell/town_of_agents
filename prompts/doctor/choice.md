@@ -1,6 +1,6 @@
 It is time to select a character to protect!
 
-If the character you choose whas selected by the mafia, they will survive.
+If the character you choose was selected by the mafia, they will survive.
 
 You can select yourself.
 

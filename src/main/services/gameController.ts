@@ -309,6 +309,18 @@ export class GameController extends EventEmitter {
         await this.handleSheriffPostSpeech();
         break;
 
+      case 'FRAMER_PRE_SPEECH':
+        await this.handleFramerPreSpeech();
+        break;
+
+      case 'CONSIGLIERE_PRE_SPEECH':
+        await this.handleConsiglierePreSpeech();
+        break;
+
+      case 'DOCTOR_PRE_SPEECH':
+        await this.handleDoctorPreSpeech();
+        break;
+
       case 'VIGILANTE_PRE_SPEECH':
         await this.handleVigilantePreSpeech();
         break;
@@ -956,6 +968,264 @@ export class GameController extends EventEmitter {
       this.engine.nextPhase();
     } finally {
       this.emitAgentThinkingDone(sheriff);
+    }
+  }
+
+  private async handleFramerPreSpeech(): Promise<void> {
+    const framer = this.engine.getAgentManager().getAliveFramer();
+    if (!framer) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(framer.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(framer, 'FRAMER_PRE_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      framer,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(framer);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, framer.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', framer.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${framer.name}] LLM error on framer pre speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${framer.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting framer pre speech from ${framer.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: framer.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'framer_private', agentId: framer.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(framer);
+    }
+  }
+
+  private async handleConsiglierePreSpeech(): Promise<void> {
+    const consigliere = this.engine.getAgentManager().getAliveConsigliere();
+    if (!consigliere) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(consigliere.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(consigliere, 'CONSIGLIERE_PRE_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      consigliere,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(consigliere);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, consigliere.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', consigliere.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${consigliere.name}] LLM error on consigliere pre speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${consigliere.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting consigliere pre speech from ${consigliere.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: consigliere.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'consigliere_private', agentId: consigliere.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(consigliere);
+    }
+  }
+
+  private async handleDoctorPreSpeech(): Promise<void> {
+    const doctor = this.engine.getAgentManager().getAliveDoctor();
+    if (!doctor) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(doctor.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(doctor, 'DOCTOR_PRE_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      doctor,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(doctor);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, doctor.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', doctor.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${doctor.name}] LLM error on doctor pre speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${doctor.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting doctor pre speech from ${doctor.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: doctor.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'doctor_private', agentId: doctor.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(doctor);
     }
   }
 

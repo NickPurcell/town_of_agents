@@ -37,7 +37,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - LLM integrations: `src/main/services/llm/*`
 
 ### Game Engine (`src/main/engine/`)
-- **GameEngine.ts**: EventEmitter-based state machine managing 17 gameplay phases, agents, events, kills, investigations, framing, and votes.
+- **GameEngine.ts**: EventEmitter-based state machine managing 20 gameplay phases, agents, events, kills, investigations, framing, and votes.
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
 - **VoteResolver.ts**: Town vote (majority) and Mafia vote (Godfather final say, with unanimity fallback) resolution.
@@ -131,7 +131,7 @@ Key types in `src/shared/types/game.ts`:
 - **DefenseLevel**: NONE, BASIC, POWERFUL
 - **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
 - **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
-- **Phases**: 17 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_CHOICE, and CONSIGLIERE_CHOICE)
+- **Phases**: 20 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_PRE_SPEECH, CONSIGLIERE_CHOICE, DOCTOR_PRE_SPEECH)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 10 types with agent-specific variants (includes framer_private, consigliere_private)
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE), INVESTIGATION_RESULT, DEATH
@@ -170,13 +170,19 @@ Helper functions:
 ### Night Phase Order (per MECHANICS.md)
 1. **Mafia Discussion** - Mafia members discuss
 2. **Mafia Vote** - Godfather has final say; unanimity fallback
-3. **Framer Choice** - Frame target (persists until investigated)
-4. **Consigliere Choice** - Learn exact role
-5. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent)
-6. **Doctor Choice** - Protect target (grants POWERFUL defense)
-7. **Vigilante Choice** - Shoot target (3 bullets total)
-8. **Lookout Choice** - Watch target (sees all visitors)
-9. **Night Resolution** - Attacks resolve, notifications sent
+3. **Framer Pre-Speech** - Framer deliberates (private)
+4. **Framer Choice** - Frame target (persists until investigated)
+5. **Consigliere Pre-Speech** - Consigliere deliberates (private)
+6. **Consigliere Choice** - Learn exact role
+7. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent)
+8. **Sheriff Post-Speech** - Sheriff reacts to result
+9. **Doctor Pre-Speech** - Doctor deliberates (private)
+10. **Doctor Choice** - Protect target (grants POWERFUL defense)
+11. **Vigilante Pre-Speech** - Vigilante deliberates (private)
+12. **Vigilante Choice** - Shoot target (3 bullets total)
+13. **Lookout Choice** - Watch target (sees all visitors)
+14. **Lookout Post-Speech** - Lookout reacts to visitors seen
+15. **Night Resolution** - Attacks resolve, notifications sent
 
 ### Attack/Defense System
 - **Attack succeeds if**: attack_level > defense_level
@@ -204,10 +210,13 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `sheriff/choice_post.md`: Investigation result reaction
 - `lookout/choice.md`: Watch target selection
 - `lookout/choice_post.md`: Visitor information reaction
+- `doctor/choice_pre.md`: Deliberation before protecting
 - `doctor/choice.md`: Protection target selection
 - `vigilante/choice_pre.md`: Deliberation before killing
 - `vigilante/choice.md`: Kill target selection
+- `framer/choice_pre.md`: Deliberation before framing
 - `framer/choice.md`: Frame target selection (makes target appear suspicious to Sheriff)
+- `consigliere/choice_pre.md`: Deliberation before investigating
 - `consigliere/choice.md`: Investigation target selection (learns exact role, not just alignment)
 - `mafia/discuss.md`: Mafia night discussion (Framer and Consigliere participate but cannot vote)
 - `mafia/vote.md`: Mafia night kill voting (Framer and Consigliere excluded from voting)

@@ -24,17 +24,18 @@ const providerAvatarMap: Record<GameAgent['provider'], string> = {
 };
 
 // Phases that should show a banner (first phase of each role's turn)
+// Note: Pre-speech phases mark the start of a role's turn, choice phases are hidden
 const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   DAY_ONE_DISCUSSION: 'Day 1 Discussion',
   DAY_DISCUSSION: 'Day Discussion',
   DAY_VOTE: 'Day Vote',
   LAST_WORDS: 'Last Words',
   POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
-  DOCTOR_CHOICE: "Doctor's Turn",
+  FRAMER_PRE_SPEECH: "Framer's Turn",
+  DOCTOR_PRE_SPEECH: "Doctor's Turn",
   VIGILANTE_PRE_SPEECH: "Vigilante's Turn",
   SHERIFF_CHOICE: "Sheriff's Turn",
   LOOKOUT_CHOICE: "Lookout's Turn",
-  FRAMER_CHOICE: "Framer's Turn",
   NIGHT_DISCUSSION: "Mafia's Turn",
   MAYOR_REVEAL_CHOICE: "Mayor's Turn",
 };

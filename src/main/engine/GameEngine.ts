@@ -31,10 +31,13 @@ const PHASE_ORDER: Phase[] = [
   // Night phases in order per MECHANICS.md:
   'NIGHT_DISCUSSION',
   'NIGHT_VOTE',
+  'FRAMER_PRE_SPEECH',
   'FRAMER_CHOICE',
+  'CONSIGLIERE_PRE_SPEECH',
   'CONSIGLIERE_CHOICE',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
+  'DOCTOR_PRE_SPEECH',
   'DOCTOR_CHOICE',
   'VIGILANTE_PRE_SPEECH',
   'VIGILANTE_CHOICE',
@@ -265,12 +268,34 @@ export class GameEngine extends EventEmitter {
         this.goToFramerPhase();
         return;
 
-      // 3. Framer → Consigliere (or skip to Sheriff)
+      // 3a. Framer Pre-Speech → Framer Choice
+      case 'FRAMER_PRE_SPEECH':
+        const activeFramer = this.agentManager.getAliveFramer();
+        if (activeFramer) {
+          this.emitPhaseChange('FRAMER_CHOICE');
+          this.appendNarration('**Framer, choose your target to frame.**', VisibilityFilter.framerPrivate(activeFramer.id));
+          return;
+        }
+        this.goToConsiglierePhase();
+        return;
+
+      // 3b. Framer Choice → Consigliere (or skip to Sheriff)
       case 'FRAMER_CHOICE':
         this.goToConsiglierePhase();
         return;
 
-      // 4. Consigliere → Sheriff (or skip to Doctor)
+      // 4a. Consigliere Pre-Speech → Consigliere Choice
+      case 'CONSIGLIERE_PRE_SPEECH':
+        const activeConsigliere = this.agentManager.getAliveConsigliere();
+        if (activeConsigliere) {
+          this.emitPhaseChange('CONSIGLIERE_CHOICE');
+          this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(activeConsigliere.id));
+          return;
+        }
+        this.goToSheriffPhase();
+        return;
+
+      // 4b. Consigliere Choice → Sheriff (or skip to Doctor)
       case 'CONSIGLIERE_CHOICE':
         this.goToSheriffPhase();
         return;
@@ -285,7 +310,18 @@ export class GameEngine extends EventEmitter {
         this.goToDoctorPhase();
         return;
 
-      // 7. Doctor → Vigilante (or skip to Lookout)
+      // 7a. Doctor Pre-Speech → Doctor Choice
+      case 'DOCTOR_PRE_SPEECH':
+        const activeDoctor = this.agentManager.getAliveDoctor();
+        if (activeDoctor) {
+          this.emitPhaseChange('DOCTOR_CHOICE');
+          this.appendNarration('**Doctor, choose your target to protect.**', VisibilityFilter.doctorPrivate(activeDoctor.id));
+          return;
+        }
+        this.goToVigilantePhase();
+        return;
+
+      // 7b. Doctor Choice → Vigilante (or skip to Lookout)
       case 'DOCTOR_CHOICE':
         this.goToVigilantePhase();
         return;
@@ -345,8 +381,8 @@ export class GameEngine extends EventEmitter {
   private goToFramerPhase(): void {
     const framer = this.agentManager.getAliveFramer();
     if (framer) {
-      this.emitPhaseChange('FRAMER_CHOICE');
-      this.appendNarration('**Framer, choose your target to frame.**', VisibilityFilter.framerPrivate(framer.id));
+      this.emitPhaseChange('FRAMER_PRE_SPEECH');
+      this.appendNarration('**Framer, gather your thoughts.**', VisibilityFilter.framerPrivate(framer.id));
       return;
     }
     this.goToConsiglierePhase();
@@ -356,8 +392,8 @@ export class GameEngine extends EventEmitter {
   private goToConsiglierePhase(): void {
     const consigliere = this.agentManager.getAliveConsigliere();
     if (consigliere) {
-      this.emitPhaseChange('CONSIGLIERE_CHOICE');
-      this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
+      this.emitPhaseChange('CONSIGLIERE_PRE_SPEECH');
+      this.appendNarration('**Consigliere, gather your thoughts.**', VisibilityFilter.consiglierePrivate(consigliere.id));
       return;
     }
     this.goToSheriffPhase();
@@ -378,8 +414,8 @@ export class GameEngine extends EventEmitter {
   private goToDoctorPhase(): void {
     const doctor = this.agentManager.getAliveDoctor();
     if (doctor) {
-      this.emitPhaseChange('DOCTOR_CHOICE');
-      this.appendNarration('**Doctor, choose your target.**', VisibilityFilter.doctorPrivate(doctor.id));
+      this.emitPhaseChange('DOCTOR_PRE_SPEECH');
+      this.appendNarration('**Doctor, gather your thoughts.**', VisibilityFilter.doctorPrivate(doctor.id));
       return;
     }
     this.goToVigilantePhase();
