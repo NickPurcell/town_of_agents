@@ -20,6 +20,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - `assets/avatars`: Provider/user avatar images used in the UI.
 - `out/`: Build output (generated; do not edit).
 - `spec.md`: Product spec and UX expectations.
+- `MECHANICS.md`: Game mechanics specification (attack/defense, visiting, night order, role traits).
 
 ## Architecture Map
 
