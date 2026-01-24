@@ -1344,6 +1344,12 @@ export class GameController extends EventEmitter {
       return;
     }
 
+    // Skip pre-speech if werewolf can't act tonight (odd nights)
+    // The engine already transitions to lookout phase, so just return
+    if (!this.engine.canWerewolfActTonight()) {
+      return;
+    }
+
     const service = this.llmServices.get(werewolf.id);
     if (!service) {
       this.engine.nextPhase();
