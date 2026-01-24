@@ -52,6 +52,7 @@ A role **visits** when their night ability requires them to go to the target's l
 | Doctor | ✓ | Heals target |
 | Lookout | ✓ | Watches target (but excluded from own visitor list) |
 | Vigilante | ✓ | Shoots target |
+| Jailor | ✗ | Prisoner comes to jail (invisible to Lookout) |
 | Mayor | ✗ | Day ability only |
 | Citizen | ✗ | No ability |
 | Mafia (kill) | ✓ | Godfather or designated killer visits |
@@ -122,6 +123,28 @@ A role **visits** when their night ability requires them to go to the target's l
   - Vote count becomes 3
   - **Cannot be healed by Doctor** after revealing
 
+#### Jailor
+- **Faction:** Town
+- **Ability:** Jail one player per night, interrogate them, optionally execute
+- **Attack:** Unstoppable (execution only) | **Defense:** None
+- **Visits:** No (prisoner comes to jail)
+- **Executions:** 3 total across the game
+- **Night Order:** Goes FIRST (before Mafia discussion)
+- **Jail Effect:**
+  - Target cannot use their night ability (role blocked)
+  - Jailed Mafia cannot participate in Mafia discussion OR vote
+  - Private 3-round interrogation (Jailor and prisoner only)
+- **Execution:**
+  - UNSTOPPABLE attack (bypasses all defense including Doctor)
+  - If Jailor executes a Town member: **permanently loses execution ability**
+- **Werewolf Interaction:** If Jailor jails Werewolf on a full moon night (2, 4, 6...):
+  - Werewolf kills the Jailor
+  - Werewolf also kills anyone who visited the Jailor
+  - Werewolf's attack takes precedence over Jailor's execution
+- **Notes:**
+  - Jailor does NOT know prisoner's actual role
+  - Cannot jail the same person two nights in a row (future mechanic)
+
 ---
 
 ### Mafia Roles
@@ -175,15 +198,18 @@ Night actions resolve in this specific order:
 
 | Priority | Phase | Description |
 |----------|-------|-------------|
-| 1 | Mafia Discussion | Mafia members discuss and Godfather decides kill target |
-| 2 | Framer | Framer applies frame to target |
-| 3 | Consigliere | Consigliere investigates target, learns exact role, reacts to findings |
-| 4 | Sheriff | Sheriff investigates target (frame already applied) |
-| 5 | Doctor | Doctor applies Powerful protection to target |
-| 6 | Vigilante | Vigilante shoots target |
-| 7 | Werewolf | Werewolf rampages (only on even nights) |
-| 8 | Lookout | Lookout sees all visitors (including attackers) |
-| 9 | Night Resolution | All attacks resolve, notifications sent |
+| 1 | **Jailor Choice** | Jailor selects who to jail |
+| 2 | Jail Conversation | Private 3-round interrogation |
+| 3 | Jailor Execute | Jailor decides whether to execute prisoner |
+| 4 | Mafia Discussion | Mafia members discuss (jailed Mafia excluded) |
+| 5 | Framer | Framer applies frame to target |
+| 6 | Consigliere | Consigliere investigates target, learns exact role |
+| 7 | Sheriff | Sheriff investigates target (frame already applied) |
+| 8 | Doctor | Doctor applies Powerful protection to target |
+| 9 | Vigilante | Vigilante shoots target |
+| 10 | Werewolf | Werewolf rampages (only on even nights) |
+| 11 | Lookout | Lookout sees all visitors (including attackers) |
+| 12 | Night Resolution | All attacks resolve, notifications sent |
 
 ### Resolution Notes
 - Framer goes before Sheriff so frames are active during investigation
@@ -275,11 +301,13 @@ Night actions resolve in this specific order:
 | Lookout | Town | None | None | Yes | - |
 | Vigilante | Town | Basic | None | Yes | - |
 | Mayor | Town | None | None | No | - |
+| Jailor | Town | Unstoppable* | None | No | - |
 | Mafia | Mafia | Basic | None | Yes | Suspicious |
 | Godfather | Mafia | Basic | Basic | Yes | Not Suspicious |
 | Framer | Mafia | None | None | Yes | Suspicious |
 | Consigliere | Mafia | None | None | Yes | Suspicious |
-| Werewolf | Neutral | Powerful | Basic | Yes* | Conditional** |
+| Werewolf | Neutral | Powerful | Basic | Yes** | Conditional*** |
 
-\* Werewolf visits when attacking, not when staying home
-\** Werewolf appears Not Suspicious on nights 1 and 3, Suspicious on nights 2, 4+
+\* Jailor's attack is Unstoppable but only when executing (3 executions total)
+\** Werewolf visits when attacking, not when staying home
+\*** Werewolf appears Not Suspicious on nights 1 and 3, Suspicious on nights 2, 4+

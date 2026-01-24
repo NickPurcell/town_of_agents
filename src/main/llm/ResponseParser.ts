@@ -4,6 +4,7 @@ import {
   ChoiceResponse,
   AgentResponse,
   MayorRevealResponse,
+  ExecuteChoiceResponse,
   StreamingSpeakHeader,
 } from '../../shared/types';
 
@@ -37,6 +38,8 @@ export class ResponseParser {
         return this.validateChoiceResponse(parsed);
       } else if (parsed.type === 'mayor_reveal') {
         return this.validateMayorRevealResponse(parsed);
+      } else if (parsed.type === 'execute_choice') {
+        return this.validateExecuteChoiceResponse(parsed);
       }
 
       return {
@@ -123,6 +126,26 @@ export class ResponseParser {
     return {
       success: true,
       data: result.data as MayorRevealResponse,
+    };
+  }
+
+  // Parse execute choice response (for Jailor)
+  static parseExecuteChoiceResponse(content: string): ParseResult<ExecuteChoiceResponse> {
+    const result = this.parse(content);
+    if (!result.success || result.data?.type !== 'execute_choice') {
+      // Try fallback extraction
+      const fallback = this.tryExtractExecuteChoiceFallback(content);
+      if (fallback) {
+        return { success: true, data: fallback };
+      }
+      return {
+        success: false,
+        error: result.error || 'Not an execute choice response',
+      };
+    }
+    return {
+      success: true,
+      data: result.data as ExecuteChoiceResponse,
     };
   }
 
@@ -249,6 +272,23 @@ export class ResponseParser {
     return { success: true, data: response };
   }
 
+  // Validate execute choice response
+  private static validateExecuteChoiceResponse(parsed: any): ParseResult<ExecuteChoiceResponse> {
+    if (typeof parsed.execute !== 'boolean') {
+      return {
+        success: false,
+        error: 'Missing execute field',
+      };
+    }
+
+    const response: ExecuteChoiceResponse = {
+      type: 'execute_choice',
+      execute: parsed.execute,
+    };
+
+    return { success: true, data: response };
+  }
+
   // Fallback extraction for speak responses
   private static tryExtractSpeakFallback(content: string): SpeakResponse | null {
     // If content looks like a chat message, treat it as SAY
@@ -316,6 +356,32 @@ export class ResponseParser {
     }
 
     return null;
+  }
+
+  // Fallback extraction for execute choice responses
+  private static tryExtractExecuteChoiceFallback(content: string): ExecuteChoiceResponse | null {
+    const trimmed = content.trim().toLowerCase();
+
+    // Look for explicit execute/spare keywords
+    if (trimmed.includes('execute') && !trimmed.includes("don't execute") && !trimmed.includes('not execute')) {
+      return {
+        type: 'execute_choice',
+        execute: true,
+      };
+    }
+
+    if (trimmed.includes('spare') || trimmed.includes("don't execute") || trimmed.includes('not execute')) {
+      return {
+        type: 'execute_choice',
+        execute: false,
+      };
+    }
+
+    // Default to not executing if unclear
+    return {
+      type: 'execute_choice',
+      execute: false,
+    };
   }
 
   // Accumulate streaming content

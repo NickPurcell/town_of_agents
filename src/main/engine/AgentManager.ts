@@ -107,6 +107,16 @@ export class AgentManager {
     return werewolves.length > 0 ? werewolves[0] : undefined;
   }
 
+  getAliveJailor(): GameAgent | undefined {
+    const jailors = this.getAliveAgentsByRole('JAILOR');
+    return jailors.length > 0 ? jailors[0] : undefined;
+  }
+
+  // Get eligible targets for jailor (alive agents except self)
+  getJailorTargets(jailorId: string): GameAgent[] {
+    return this.getAliveAgents().filter((a) => a.id !== jailorId);
+  }
+
   revealMayor(agentId: string): void {
     const agent = this.agents.get(agentId);
     if (agent && agent.role === 'MAYOR') {

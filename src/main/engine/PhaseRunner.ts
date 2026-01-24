@@ -141,7 +141,9 @@ export class PhaseRunner extends EventEmitter {
         phase === 'VIGILANTE_CHOICE' ||
         phase === 'FRAMER_CHOICE' ||
         phase === 'CONSIGLIERE_CHOICE' ||
-        phase === 'WEREWOLF_CHOICE'
+        phase === 'WEREWOLF_CHOICE' ||
+        phase === 'JAILOR_CHOICE' ||
+        phase === 'JAILOR_EXECUTE_CHOICE'
       ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
@@ -243,7 +245,8 @@ export class PhaseRunner extends EventEmitter {
       case 'POST_EXECUTION_DISCUSSION':
         return agentManager.getAliveAgents();
       case 'NIGHT_DISCUSSION':
-        return agentManager.getAliveMafia();
+        // Exclude jailed Mafia from discussion
+        return agentManager.getAliveMafia().filter(a => !this.engine.isAgentJailed(a.id));
       default:
         return [];
     }
@@ -386,7 +389,8 @@ export class PhaseRunner extends EventEmitter {
       case 'DAY_VOTE':
         return agentManager.getDayVoters();
       case 'NIGHT_VOTE':
-        return agentManager.getNightVoters();
+        // Exclude jailed Mafia from voting
+        return agentManager.getNightVoters().filter(a => !this.engine.isAgentJailed(a.id));
       default:
         return [];
     }
@@ -572,9 +576,23 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveConsigliere();
     } else if (phase === 'WEREWOLF_CHOICE') {
       choiceAgent = agentManager.getAliveWerewolf();
+    } else if (phase === 'JAILOR_CHOICE' || phase === 'JAILOR_EXECUTE_CHOICE') {
+      choiceAgent = agentManager.getAliveJailor();
     }
 
     if (choiceAgent) {
+      // Check if agent is jailed (role blocked) - except Jailor who can't be jailed
+      if (phase !== 'JAILOR_CHOICE' && phase !== 'JAILOR_EXECUTE_CHOICE' && this.engine.isAgentJailed(choiceAgent.id)) {
+        // Agent is jailed and cannot perform their night action
+        const roleVisibility = this.getPrivateVisibilityForPhase(phase, choiceAgent.id);
+        this.engine.appendNarration(
+          '**You were jailed and could not perform your night action.**',
+          roleVisibility
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
       this.currentTurnAgentId = choiceAgent.id;
       this.currentTurnId = this.nextTurnId++;
       this.startTurnTimeout();
@@ -583,6 +601,26 @@ export class PhaseRunner extends EventEmitter {
       // Skip if no one to make choice
       this.engine.nextPhase();
     }
+  }
+
+  // Get private visibility for a role phase (for jailed agent notifications)
+  private getPrivateVisibilityForPhase(phase: Phase, agentId: string): Visibility {
+    if (phase === 'SHERIFF_CHOICE') {
+      return VisibilityFilter.sheriffPrivate(agentId);
+    } else if (phase === 'DOCTOR_CHOICE') {
+      return VisibilityFilter.doctorPrivate(agentId);
+    } else if (phase === 'LOOKOUT_CHOICE') {
+      return VisibilityFilter.lookoutPrivate(agentId);
+    } else if (phase === 'VIGILANTE_CHOICE') {
+      return VisibilityFilter.vigilantePrivate(agentId);
+    } else if (phase === 'FRAMER_CHOICE') {
+      return VisibilityFilter.framerPrivate(agentId);
+    } else if (phase === 'CONSIGLIERE_CHOICE') {
+      return VisibilityFilter.consiglierePrivate(agentId);
+    } else if (phase === 'WEREWOLF_CHOICE') {
+      return VisibilityFilter.werewolfPrivate(agentId);
+    }
+    return VisibilityFilter.host();
   }
 
   // Handle choice response
@@ -659,6 +697,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getConsigliereTargets(agent.id);
     } else if (phase === 'WEREWOLF_CHOICE') {
       eligibleTargets = agentManager.getWerewolfTargets();
+    } else if (phase === 'JAILOR_CHOICE') {
+      eligibleTargets = agentManager.getJailorTargets(agent.id);
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -853,6 +893,27 @@ export class PhaseRunner extends EventEmitter {
           VisibilityFilter.werewolfPrivate(agent.id)
         );
       }
+    } else if (phase === 'JAILOR_CHOICE') {
+      // Emit choice event for jailor jailing
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'JAILOR_JAIL',
+        visibility: VisibilityFilter.jailorPrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Set pending jail target
+      this.engine.setPendingJailTarget(target.id);
+
+      // Feedback
+      this.engine.appendNarration(
+        `**You have chosen to jail ${target.name}. You will interrogate them privately.**`,
+        VisibilityFilter.jailorPrivate(agent.id)
+      );
     }
 
     this.engine.nextPhase();

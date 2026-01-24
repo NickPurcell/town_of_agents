@@ -32,14 +32,18 @@ function numberToOrdinal(n: number): string {
 }
 
 // Phase order for state machine (night phases per MECHANICS.md)
-// Night order: Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Vigilante → Werewolf → Lookout
+// Night order: Jailor → Jail Conversation → Execute → Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Vigilante → Werewolf → Lookout
 const PHASE_ORDER: Phase[] = [
   'DAY_ONE_DISCUSSION',
   'DAY_DISCUSSION',
   'DAY_VOTE',
   'LAST_WORDS',
   'POST_EXECUTION_DISCUSSION',
-  // Night phases in order per MECHANICS.md:
+  // Night phases - JAILOR FIRST:
+  'JAILOR_CHOICE',
+  'JAIL_CONVERSATION',
+  'JAILOR_EXECUTE_CHOICE',
+  // Then Mafia
   'NIGHT_DISCUSSION',
   'NIGHT_VOTE',
   'FRAMER_PRE_SPEECH',
@@ -64,7 +68,7 @@ export interface GameEngineEvents {
   'game_over': (winner: Faction) => void;
   'agent_died': (
     agentId: string,
-    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL'
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE'
   ) => void;
 }
 
@@ -92,6 +96,12 @@ export class GameEngine extends EventEmitter {
   private winner?: Faction;
   private lastWordsAgentId?: string;
   private isRunning: boolean = false;
+  // Jailor state
+  private pendingJailTarget?: string;
+  private jailorExecutionsRemaining: number = 3;
+  private jailorLostExecutionPower: boolean = false;
+  private jailedThisNight: Set<string> = new Set();
+  private pendingJailorExecution?: string;
 
   constructor(settings: GameSettings = DEFAULT_GAME_SETTINGS) {
     super();
@@ -122,6 +132,12 @@ export class GameEngine extends EventEmitter {
     this.winner = undefined;
     this.lastWordsAgentId = undefined;
     this.isRunning = false;
+    // Reset Jailor state
+    this.pendingJailTarget = undefined;
+    this.jailorExecutionsRemaining = 3;
+    this.jailorLostExecutionPower = false;
+    this.jailedThisNight.clear();
+    this.pendingJailorExecution = undefined;
   }
 
   // Start the game
@@ -156,6 +172,10 @@ export class GameEngine extends EventEmitter {
       vigilanteSkipNextNight: this.vigilanteSkipNextNight,
       vigilanteGuiltyId: this.vigilanteGuiltyId,
       vigilanteBulletsRemaining: this.vigilanteBulletsRemaining,
+      pendingJailTarget: this.pendingJailTarget,
+      jailorExecutionsRemaining: this.jailorExecutionsRemaining,
+      jailorLostExecutionPower: this.jailorLostExecutionPower,
+      jailedAgentIds: Array.from(this.jailedThisNight),
       winner: this.winner,
     };
   }
@@ -292,6 +312,32 @@ export class GameEngine extends EventEmitter {
         this.startNight();
         return;
 
+      // Night phases - JAILOR FIRST:
+      case 'JAILOR_CHOICE':
+        // If a target was jailed, go to conversation
+        if (this.pendingJailTarget) {
+          const prisoner = this.agentManager.getAgent(this.pendingJailTarget);
+          if (prisoner) {
+            this.jailedThisNight.add(this.pendingJailTarget);
+            this.appendNarration(`**${prisoner.name} has been jailed!**`, VisibilityFilter.public());
+          }
+          this.emitPhaseChange('JAIL_CONVERSATION');
+          return;
+        }
+        // No target jailed, skip to Mafia
+        this.goToMafiaDiscussion();
+        return;
+
+      case 'JAIL_CONVERSATION':
+        // After conversation, Jailor decides whether to execute
+        this.emitPhaseChange('JAILOR_EXECUTE_CHOICE');
+        return;
+
+      case 'JAILOR_EXECUTE_CHOICE':
+        // After execution decision, go to Mafia discussion
+        this.goToMafiaDiscussion();
+        return;
+
       // Night phases per MECHANICS.md order:
       // 1. Mafia Discussion → Mafia Vote
       case 'NIGHT_DISCUSSION':
@@ -415,7 +461,24 @@ export class GameEngine extends EventEmitter {
       return;
     }
 
-    // Night starts with Mafia discussion (per MECHANICS.md)
+    // Night starts with Jailor (if alive), then Mafia
+    const jailor = this.agentManager.getAliveJailor();
+    if (jailor) {
+      this.appendNarration("**Jailor's Turn**", VisibilityFilter.public());
+      this.emitPhaseChange('JAILOR_CHOICE');
+      this.appendNarration('**Jailor, choose a player to jail.**', VisibilityFilter.jailorPrivate(jailor.id));
+      return;
+    }
+
+    this.goToMafiaDiscussion();
+  }
+
+  // Go to Mafia discussion phase
+  private goToMafiaDiscussion(): void {
+    if (this.agentManager.getAliveMafiaCount() === 0) {
+      this.endGame('TOWN');
+      return;
+    }
     this.emitPhaseChange('NIGHT_DISCUSSION');
     this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
   }
@@ -619,6 +682,43 @@ export class GameEngine extends EventEmitter {
     const morningMessages: string[] = [];
     const killTargets = new Map<string, Set<'MAFIA' | 'VIGILANTE'>>();
     const werewolfKills = new Set<string>();  // Track werewolf rampage victims
+    const jailor = this.agentManager.getAliveJailor();
+    const werewolf = this.agentManager.getAliveWerewolf();
+
+    // Check for Werewolf-Jailor interaction FIRST
+    // If Werewolf is jailed on a full moon night, Werewolf kills Jailor + anyone who visits Jailor
+    let werewolfKilledJailor = false;
+    if (werewolf && jailor && this.isAgentJailed(werewolf.id) && this.canWerewolfActTonight()) {
+      werewolfKilledJailor = true;
+      // Werewolf kills Jailor
+      this.eliminateAgent(jailor.id, 'WEREWOLF_KILL');
+      morningMessages.push(`**${jailor.name} was mauled by their prisoner!**`);
+
+      // Kill anyone who visited the Jailor
+      const visitorsToJailor = this.nightVisits
+        .filter((visit) => visit.targetId === jailor.id)
+        .map((visit) => visit.visitorId);
+      for (const visitorId of visitorsToJailor) {
+        const visitor = this.agentManager.getAgent(visitorId);
+        if (visitor && visitor.alive) {
+          this.eliminateAgent(visitorId, 'WEREWOLF_KILL');
+          morningMessages.push(`**${visitor.name} was mauled by a werewolf.**`);
+        }
+      }
+
+      // Clear Jailor execution (Jailor is dead, can't execute)
+      this.pendingJailorExecution = undefined;
+    }
+
+    // Process Jailor execution FIRST (UNSTOPPABLE attack - nothing can stop it)
+    // Only if Werewolf didn't kill the Jailor
+    if (!werewolfKilledJailor && this.pendingJailorExecution) {
+      const prisoner = this.agentManager.getAgent(this.pendingJailorExecution);
+      if (prisoner && prisoner.alive) {
+        this.eliminateAgent(prisoner.id, 'JAILOR_EXECUTE');
+        morningMessages.push(`**${prisoner.name} was executed by the Jailor.**`);
+      }
+    }
 
     if (this.pendingNightKillTarget) {
       const sources = killTargets.get(this.pendingNightKillTarget)
@@ -634,9 +734,8 @@ export class GameEngine extends EventEmitter {
       killTargets.set(this.pendingVigilanteKillTarget, sources);
     }
 
-    // Process werewolf rampage (POWERFUL attack)
-    const werewolf = this.agentManager.getAliveWerewolf();
-    if (this.pendingWerewolfKillTarget && werewolf) {
+    // Process werewolf rampage (POWERFUL attack) - skip if werewolf is jailed
+    if (this.pendingWerewolfKillTarget && werewolf && !this.isAgentJailed(werewolf.id)) {
       const isStayingHome = this.pendingWerewolfKillTarget === werewolf.id;
 
       if (isStayingHome) {
@@ -759,6 +858,10 @@ export class GameEngine extends EventEmitter {
     this.pendingLookoutWatchTarget = undefined;
     this.pendingFramedTarget = undefined;  // Deprecated, kept for compatibility
     this.nightVisits = [];
+    // Clear Jailor state for next night
+    this.pendingJailTarget = undefined;
+    this.pendingJailorExecution = undefined;
+    this.jailedThisNight.clear();
 
     // Check win condition
     if (this.winner) return;
@@ -939,6 +1042,63 @@ export class GameEngine extends EventEmitter {
     return this.vigilanteBulletsRemaining;
   }
 
+  // =====================================================
+  // Jailor Methods
+  // =====================================================
+
+  // Set pending jail target
+  setPendingJailTarget(targetId: string | undefined): void {
+    this.pendingJailTarget = targetId;
+  }
+
+  // Get pending jail target
+  getPendingJailTarget(): string | undefined {
+    return this.pendingJailTarget;
+  }
+
+  // Check if an agent is jailed this night
+  isAgentJailed(agentId: string): boolean {
+    return this.jailedThisNight.has(agentId);
+  }
+
+  // Get Jailor executions remaining
+  getJailorExecutionsRemaining(): number {
+    return this.jailorExecutionsRemaining;
+  }
+
+  // Check if Jailor has execution power
+  hasJailorExecutionPower(): boolean {
+    return this.jailorExecutionsRemaining > 0 && !this.jailorLostExecutionPower;
+  }
+
+  // Use a Jailor execution
+  // Returns true if execution was used, false if no executions remaining
+  useJailorExecution(): boolean {
+    if (!this.hasJailorExecutionPower()) return false;
+    this.jailorExecutionsRemaining--;
+    return true;
+  }
+
+  // Set Jailor lost execution power (executed a Town member)
+  setJailorLostExecutionPower(): void {
+    this.jailorLostExecutionPower = true;
+  }
+
+  // Check if Jailor lost execution power
+  hasJailorLostExecutionPower(): boolean {
+    return this.jailorLostExecutionPower;
+  }
+
+  // Set pending Jailor execution target
+  setPendingJailorExecution(targetId: string | undefined): void {
+    this.pendingJailorExecution = targetId;
+  }
+
+  // Get pending Jailor execution target
+  getPendingJailorExecution(): string | undefined {
+    return this.pendingJailorExecution;
+  }
+
   // Add sheriff intel to queue
   addSheriffIntel(sheriffId: string, targetId: string, role: Role): void {
     if (!this.sheriffIntelQueue[sheriffId]) {
@@ -950,7 +1110,7 @@ export class GameEngine extends EventEmitter {
   // Eliminate an agent
   eliminateAgent(
     agentId: string,
-    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL'
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE'
   ): void {
     const agent = this.agentManager.getAgent(agentId);
     if (!agent || !agent.alive) return;

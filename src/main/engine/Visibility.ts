@@ -41,6 +41,12 @@ export class VisibilityFilter {
       case 'werewolf_private':
         return visibility.agentId === agent.id;
 
+      case 'jailor_private':
+        return visibility.agentId === agent.id;
+
+      case 'jail_conversation':
+        return agent.id === visibility.jailorId || agent.id === visibility.prisonerId;
+
       case 'host':
         return false; // Only visible to host/UI
     }
@@ -96,6 +102,16 @@ export class VisibilityFilter {
     return { kind: 'werewolf_private', agentId };
   }
 
+  // Create visibility for jailor private events
+  static jailorPrivate(agentId: string): Visibility {
+    return { kind: 'jailor_private', agentId };
+  }
+
+  // Create visibility for jail conversation (visible to both jailor and prisoner)
+  static jailConversation(jailorId: string, prisonerId: string): Visibility {
+    return { kind: 'jail_conversation', jailorId, prisonerId };
+  }
+
   // Create visibility for host-only events
   static host(): Visibility {
     return { kind: 'host' };
@@ -145,6 +161,14 @@ export class VisibilityFilter {
 
       case 'MAYOR_REVEAL_CHOICE':
         return agent ? this.mayorPrivate(agent.id) : this.host();
+
+      case 'JAILOR_CHOICE':
+      case 'JAILOR_EXECUTE_CHOICE':
+        return agent ? this.jailorPrivate(agent.id) : this.host();
+
+      case 'JAIL_CONVERSATION':
+        // This requires both jailor and prisoner, handled specially in GameController
+        return this.host();
     }
   }
 

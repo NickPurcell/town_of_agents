@@ -267,7 +267,12 @@ export interface MayorRevealResponse {
   message_markdown?: string; // Optional message when revealing
 }
 
-export type AgentResponse = SpeakResponse | VoteResponse | ChoiceResponse | MayorRevealResponse;
+export interface ExecuteChoiceResponse {
+  type: 'execute_choice';
+  execute: boolean;
+}
+
+export type AgentResponse = SpeakResponse | VoteResponse | ChoiceResponse | MayorRevealResponse | ExecuteChoiceResponse;
 
 // Game settings
 export interface GameSettings {
@@ -326,6 +331,10 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
       return visibility.agentId === agent.id;
     case 'werewolf_private':
       return visibility.agentId === agent.id;
+    case 'jailor_private':
+      return visibility.agentId === agent.id;
+    case 'jail_conversation':
+      return agent.id === visibility.jailorId || agent.id === visibility.prisonerId;
     case 'host':
       return false; // Only visible to host/narrator
   }

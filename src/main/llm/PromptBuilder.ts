@@ -33,6 +33,9 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   LOOKOUT_POST_SPEECH: 'lookout/choice_post.md',
   NIGHT_DISCUSSION: 'mafia/discuss.md',
   NIGHT_VOTE: 'mafia/vote.md',
+  JAILOR_CHOICE: 'jailor/choice.md',
+  JAIL_CONVERSATION: 'jailor/conversation.md',
+  JAILOR_EXECUTE_CHOICE: 'jailor/execute_choice.md',
 };
 
 // Role-specific prompt overrides
@@ -56,9 +59,10 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   VIGILANTE: 'You are the Vigilante. Each night you can choose one player to eliminate. If you kill a town member, you will be wracked with guilt and die after skipping your next night action. Choose carefully.',
   MAYOR: 'You are the Mayor. At the start of each day, you can reveal yourself to gain 3 votes, but once revealed the Doctor cannot protect you.',
   WEREWOLF: 'You are the Werewolf, a lone predator who wins only by being the last one standing. You can only act on even nights (2, 4, 6...) when the full moon is out. When you act, you RAMPAGE - killing your primary target AND anyone who visits them. You can also target yourself to stay home and kill anyone who visits you. You have POWERFUL attack (kills through basic defense) and BASIC defense (survives normal attacks). The Sheriff cannot detect you on nights 1 and 3.',
+  JAILOR: 'You are the Jailor. Each night you jail one player, preventing their night action. You interrogate them privately and may execute them (3 executions total, UNSTOPPABLE attack). If you execute a Town member, you permanently lose execution ability. WARNING: Jailing the Werewolf on a full moon night results in your death!',
 };
 
-const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'JESTER', 'WEREWOLF', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
+const ROLE_ORDER: Role[] = ['MAFIA', 'GODFATHER', 'FRAMER', 'CONSIGLIERE', 'JESTER', 'WEREWOLF', 'JAILOR', 'VIGILANTE', 'SHERIFF', 'DOCTOR', 'LOOKOUT', 'MAYOR', 'CITIZEN'];
 
 export class PromptBuilder {
   // Get the prompt path for a role and phase, considering role-specific overrides
@@ -136,10 +140,13 @@ export class PromptBuilder {
         state.phase.includes('SHERIFF') ||
         state.phase.includes('DOCTOR') ||
         state.phase.includes('LOOKOUT') ||
-        state.phase.includes('VIGILANTE')
+        state.phase.includes('VIGILANTE') ||
+        state.phase.includes('JAILOR') ||
+        state.phase.includes('JAIL')
         ? 'Night'
         : 'Day',
       dayNumber: String(state.dayNumber),
+      jailorExecutionsRemaining: String(state.jailorExecutionsRemaining ?? 3),
     };
   }
 

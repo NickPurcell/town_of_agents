@@ -12,6 +12,7 @@ import {
   VoteResponse,
   ChoiceResponse,
   SpeechEvent,
+  ChoiceEvent,
   Settings,
   GameSettings,
   DEFAULT_GAME_SETTINGS,
@@ -305,7 +306,16 @@ export class GameController extends EventEmitter {
       case 'FRAMER_CHOICE':
       case 'CONSIGLIERE_CHOICE':
       case 'WEREWOLF_CHOICE':
+      case 'JAILOR_CHOICE':
         await this.phaseRunner.startChoicePhase();
+        break;
+
+      case 'JAIL_CONVERSATION':
+        await this.handleJailConversation();
+        break;
+
+      case 'JAILOR_EXECUTE_CHOICE':
+        await this.handleJailorExecuteChoice();
         break;
 
       case 'LAST_WORDS':
@@ -1560,6 +1570,222 @@ export class GameController extends EventEmitter {
     if (result.success && result.data?.reveal) {
       this.engine.getAgentManager().revealMayor(agent.id);
       this.engine.appendNarration(`**${agent.name} is the Mayor!**`);
+    }
+  }
+
+  private async handleJailConversation(): Promise<void> {
+    const jailor = this.engine.getAgentManager().getAliveJailor();
+    const prisonerId = this.engine.getPendingJailTarget();
+    const prisoner = prisonerId ? this.engine.getAgentManager().getAgent(prisonerId) : null;
+
+    if (!jailor || !prisoner) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    // Import VisibilityFilter locally
+    const { VisibilityFilter } = require('../engine/Visibility');
+
+    // 6 turns: Jailor → Prisoner → Jailor → Prisoner → Jailor → Prisoner
+    const speakers = [jailor, prisoner, jailor, prisoner, jailor, prisoner];
+    const jailVisibility = VisibilityFilter.jailConversation(jailor.id, prisoner.id);
+
+    for (let i = 0; i < speakers.length; i++) {
+      const speaker = speakers[i];
+      const isJailor = speaker.id === jailor.id;
+
+      const service = this.llmServices.get(speaker.id);
+      if (!service) continue;
+
+      this.emitAgentThinking(speaker);
+
+      let content = '';
+      let thinkingContent = '';
+      let lastError: unknown = null;
+
+      try {
+        const state = this.engine.getState();
+        // Use appropriate prompt based on whether speaker is jailor or prisoner
+        const promptPhase = isJailor ? 'JAIL_CONVERSATION' : 'JAIL_CONVERSATION';
+        const systemPrompt = PromptBuilder.buildSystemPrompt(speaker, promptPhase, state);
+        const messages = PromptBuilder.buildMessagesForAgent(
+          speaker,
+          state.events,
+          state.agents
+        );
+
+        for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+          content = '';
+          thinkingContent = '';
+
+          try {
+            const response = await service.generate(messages, systemPrompt, speaker.model);
+            content = response.content;
+            thinkingContent = response.thinkingContent || '';
+            this.emit('streaming_message', speaker.id, content);
+            lastError = null;
+            break;
+          } catch (error) {
+            lastError = error;
+            console.error(`\n[${speaker.name}] LLM error on jail conversation attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+            if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+              const delay = RETRY_DELAY_MS * attempt;
+              await sleep(delay);
+              continue;
+            }
+            break;
+          }
+        }
+
+        if (lastError) {
+          console.error(`Error getting jail conversation from ${speaker.name}:`, lastError);
+          continue;
+        }
+
+        const parseResult = ResponseParser.parseStreamingSpeakResponse(content);
+        if (parseResult.success && parseResult.data) {
+          const event: SpeechEvent = {
+            type: 'SPEECH',
+            agentId: speaker.id,
+            messageMarkdown: parseResult.data.action === 'SAY' && parseResult.data.message_markdown?.trim()
+              ? parseResult.data.message_markdown
+              : '*chose not to speak.*',
+            visibility: jailVisibility,
+            ts: Date.now(),
+            reasoning: thinkingContent,
+          };
+          this.engine.appendEvent(event);
+        }
+      } finally {
+        this.emitAgentThinkingDone(speaker);
+      }
+    }
+
+    this.engine.nextPhase();
+  }
+
+  private async handleJailorExecuteChoice(): Promise<void> {
+    const jailor = this.engine.getAgentManager().getAliveJailor();
+    const prisonerId = this.engine.getPendingJailTarget();
+    const prisoner = prisonerId ? this.engine.getAgentManager().getAgent(prisonerId) : null;
+
+    if (!jailor || !prisoner) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    // Check if Jailor has execution power
+    if (!this.engine.hasJailorExecutionPower()) {
+      const { VisibilityFilter } = require('../engine/Visibility');
+      if (this.engine.hasJailorLostExecutionPower()) {
+        this.engine.appendNarration(
+          '**You have lost the ability to execute after killing a Town member.**',
+          VisibilityFilter.jailorPrivate(jailor.id)
+        );
+      } else {
+        this.engine.appendNarration(
+          '**You have no executions remaining.**',
+          VisibilityFilter.jailorPrivate(jailor.id)
+        );
+      }
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(jailor.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    this.emitAgentThinking(jailor);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      const state = this.engine.getState();
+      const systemPrompt = PromptBuilder.buildSystemPrompt(jailor, 'JAILOR_EXECUTE_CHOICE', state);
+      const messages = PromptBuilder.buildMessagesForAgent(
+        jailor,
+        state.events,
+        state.agents
+      );
+
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, jailor.model);
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', jailor.id, content);
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${jailor.name}] LLM error on execute choice attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            await sleep(delay);
+            continue;
+          }
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(`Error getting execute choice from ${jailor.name}:`, lastError);
+        this.engine.nextPhase();
+        return;
+      }
+
+      const parseResult = ResponseParser.parseExecuteChoiceResponse(content);
+      const { VisibilityFilter } = require('../engine/Visibility');
+
+      if (parseResult.success && parseResult.data?.execute) {
+        // Jailor chose to execute
+        this.engine.useJailorExecution();
+        this.engine.setPendingJailorExecution(prisoner.id);
+
+        // Emit choice event
+        const choiceEvent: ChoiceEvent = {
+          type: 'CHOICE',
+          agentId: jailor.id,
+          targetName: prisoner.name,
+          choiceType: 'JAILOR_EXECUTE',
+          visibility: VisibilityFilter.jailorPrivate(jailor.id),
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(choiceEvent);
+
+        // Check if prisoner is Town - lose execution power
+        if (prisoner.faction === 'TOWN') {
+          this.engine.setJailorLostExecutionPower();
+          // Notify jailor they will lose execution power (but won't know until morning)
+        }
+
+        const executionsRemaining = this.engine.getJailorExecutionsRemaining();
+        this.engine.appendNarration(
+          `**You have decided to execute your prisoner. ${executionsRemaining} execution${executionsRemaining === 1 ? '' : 's'} remaining.**`,
+          VisibilityFilter.jailorPrivate(jailor.id)
+        );
+      } else {
+        // Jailor chose not to execute
+        this.engine.appendNarration(
+          '**You have decided to spare your prisoner.**',
+          VisibilityFilter.jailorPrivate(jailor.id)
+        );
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(jailor);
     }
   }
 }
