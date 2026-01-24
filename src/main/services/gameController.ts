@@ -318,6 +318,10 @@ export class GameController extends EventEmitter {
         await this.handleConsiglierePreSpeech();
         break;
 
+      case 'CONSIGLIERE_POST_SPEECH':
+        await this.handleConsiglierePostSpeech();
+        break;
+
       case 'DOCTOR_PRE_SPEECH':
         await this.handleDoctorPreSpeech();
         break;
@@ -1121,6 +1125,92 @@ export class GameController extends EventEmitter {
       if (lastError) {
         console.error(
           `Error getting consigliere pre speech from ${consigliere.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: consigliere.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: { kind: 'consigliere_private', agentId: consigliere.id },
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(consigliere);
+    }
+  }
+
+  private async handleConsiglierePostSpeech(): Promise<void> {
+    const consigliere = this.engine.getAgentManager().getAliveConsigliere();
+    if (!consigliere) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(consigliere.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(consigliere, 'CONSIGLIERE_POST_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      consigliere,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(consigliere);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, consigliere.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', consigliere.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${consigliere.name}] LLM error on consigliere post speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${consigliere.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting consigliere post speech from ${consigliere.name} (after ${MAX_LLM_RETRIES} attempts):`,
           lastError
         );
         this.engine.nextPhase();

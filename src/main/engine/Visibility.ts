@@ -137,6 +137,7 @@ export class VisibilityFilter {
 
       case 'CONSIGLIERE_PRE_SPEECH':
       case 'CONSIGLIERE_CHOICE':
+      case 'CONSIGLIERE_POST_SPEECH':
         return agent ? this.consiglierePrivate(agent.id) : this.host();
 
       case 'WEREWOLF_PRE_SPEECH':

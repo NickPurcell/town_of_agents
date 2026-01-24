@@ -131,7 +131,7 @@ Key types in `src/shared/types/game.ts`:
 - **DefenseLevel**: NONE, BASIC, POWERFUL
 - **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
 - **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
-- **Phases**: 22 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_PRE_SPEECH, CONSIGLIERE_CHOICE, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE)
+- **Phases**: 23 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_PRE_SPEECH, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 11 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private)
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL), INVESTIGATION_RESULT, DEATH
@@ -175,17 +175,18 @@ Helper functions:
 4. **Framer Choice** - Frame target (persists until investigated)
 5. **Consigliere Pre-Speech** - Consigliere deliberates (private)
 6. **Consigliere Choice** - Learn exact role
-7. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
-8. **Sheriff Post-Speech** - Sheriff reacts to result
-9. **Doctor Pre-Speech** - Doctor deliberates (private)
-10. **Doctor Choice** - Protect target (grants POWERFUL defense)
-11. **Vigilante Pre-Speech** - Vigilante deliberates (private)
-12. **Vigilante Choice** - Shoot target (3 bullets total)
-13. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
-14. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
-15. **Lookout Choice** - Watch target (sees all visitors)
-16. **Lookout Post-Speech** - Lookout reacts to visitors seen
-17. **Night Resolution** - Attacks resolve, notifications sent
+7. **Consigliere Post-Speech** - Consigliere reacts to findings (private)
+8. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
+9. **Sheriff Post-Speech** - Sheriff reacts to result
+10. **Doctor Pre-Speech** - Doctor deliberates (private)
+11. **Doctor Choice** - Protect target (grants POWERFUL defense)
+12. **Vigilante Pre-Speech** - Vigilante deliberates (private)
+13. **Vigilante Choice** - Shoot target (3 bullets total)
+14. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
+15. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
+16. **Lookout Choice** - Watch target (sees all visitors)
+17. **Lookout Post-Speech** - Lookout reacts to visitors seen
+18. **Night Resolution** - Attacks resolve, notifications sent
 
 ### Attack/Defense System
 - **Attack succeeds if**: attack_level > defense_level
@@ -223,6 +224,7 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `framer/choice.md`: Frame target selection (makes target appear suspicious to Sheriff)
 - `consigliere/choice_pre.md`: Deliberation before investigating
 - `consigliere/choice.md`: Investigation target selection (learns exact role, not just alignment)
+- `consigliere/choice_post.md`: Investigation result reaction
 - `werewolf/choice_pre.md`: Deliberation before rampage (considers visitors, staying home)
 - `werewolf/choice.md`: Rampage target selection (can target self to stay home)
 - `mafia/discuss.md`: Mafia night discussion (Framer and Consigliere participate but cannot vote)

@@ -21,6 +21,7 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   FRAMER_CHOICE: 'framer/choice.md',
   CONSIGLIERE_PRE_SPEECH: 'consigliere/choice_pre.md',
   CONSIGLIERE_CHOICE: 'consigliere/choice.md',
+  CONSIGLIERE_POST_SPEECH: 'consigliere/choice_post.md',
   SHERIFF_CHOICE: 'sheriff/choice.md',
   SHERIFF_POST_SPEECH: 'sheriff/choice_post.md',
   DOCTOR_PRE_SPEECH: 'doctor/choice_pre.md',

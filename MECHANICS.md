@@ -177,7 +177,7 @@ Night actions resolve in this specific order:
 |----------|-------|-------------|
 | 1 | Mafia Discussion | Mafia members discuss and Godfather decides kill target |
 | 2 | Framer | Framer applies frame to target |
-| 3 | Consigliere | Consigliere investigates target, learns exact role |
+| 3 | Consigliere | Consigliere investigates target, learns exact role, reacts to findings |
 | 4 | Sheriff | Sheriff investigates target (frame already applied) |
 | 5 | Doctor | Doctor applies Powerful protection to target |
 | 6 | Vigilante | Vigilante shoots target |

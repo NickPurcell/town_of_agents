@@ -35,6 +35,7 @@ const PHASE_ORDER: Phase[] = [
   'FRAMER_CHOICE',
   'CONSIGLIERE_PRE_SPEECH',
   'CONSIGLIERE_CHOICE',
+  'CONSIGLIERE_POST_SPEECH',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
   'DOCTOR_PRE_SPEECH',
@@ -300,8 +301,13 @@ export class GameEngine extends EventEmitter {
         this.goToSheriffPhase();
         return;
 
-      // 4b. Consigliere Choice → Sheriff (or skip to Doctor)
+      // 4b. Consigliere Choice → Consigliere Post-Speech
       case 'CONSIGLIERE_CHOICE':
+        this.emitPhaseChange('CONSIGLIERE_POST_SPEECH');
+        return;
+
+      // 4c. Consigliere Post-Speech → Sheriff (or skip to Doctor)
+      case 'CONSIGLIERE_POST_SPEECH':
         this.goToSheriffPhase();
         return;
 
