@@ -22,9 +22,9 @@
   }
 }
 
-/* Reasoning block - matches GameEventItem.module.css */
+/* Reasoning block - matches GameEventItem.module.css exactly */
 .reasoningBlock {
-  margin-top: 12px;
+  margin: 8px 0;
   border-left: 2px solid rgba(196, 30, 58, 0.4);
   padding-left: 10px;
 }
@@ -34,21 +34,12 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
+  color: var(--text-muted);
 }
 
 .reasoningIcon {
   font-size: 8px;
   color: rgba(196, 30, 58, 0.7);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 .reasoningLabel {

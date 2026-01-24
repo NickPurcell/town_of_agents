@@ -65,7 +65,7 @@ export function StreamingSpeech({ agent, content, isComplete, reasoningContent }
         {reasoningContent && (
           <div className={streamStyles.reasoningBlock}>
             <div className={streamStyles.reasoningHeader}>
-              <span className={streamStyles.reasoningIcon}>●</span>
+              <span className={streamStyles.reasoningIcon}>▼</span>
               <span className={streamStyles.reasoningLabel}>Reasoning</span>
             </div>
             <div className={streamStyles.reasoningContent}>

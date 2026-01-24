@@ -62,6 +62,17 @@ export function ThinkingIndicator({ agent, thinkingContent }: Props) {
           </span>
         </div>
         <div className={styles.speechContent}>
+          {thinkingContent && (
+            <div className={thinkingStyles.reasoningBlock}>
+              <div className={thinkingStyles.reasoningHeader}>
+                <span className={thinkingStyles.reasoningIcon}>▼</span>
+                <span className={thinkingStyles.reasoningLabel}>Reasoning</span>
+              </div>
+              <div className={thinkingStyles.reasoningContent}>
+                {thinkingContent}
+              </div>
+            </div>
+          )}
           <div className={thinkingStyles.thinkingText}>
             {thinkingText.split('').map((char, index) => (
               <span
@@ -73,17 +84,6 @@ export function ThinkingIndicator({ agent, thinkingContent }: Props) {
               </span>
             ))}
           </div>
-          {thinkingContent && (
-            <div className={thinkingStyles.reasoningBlock}>
-              <div className={thinkingStyles.reasoningHeader}>
-                <span className={thinkingStyles.reasoningIcon}>●</span>
-                <span className={thinkingStyles.reasoningLabel}>Reasoning</span>
-              </div>
-              <div className={thinkingStyles.reasoningContent}>
-                {thinkingContent}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
