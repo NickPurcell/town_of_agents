@@ -529,6 +529,15 @@ export class GameController extends EventEmitter {
         console.error('='.repeat(80));
         console.error('Error:', lastError);
         console.error('='.repeat(80) + '\n');
+
+        // If circuit breaker is open, pause the game to prevent infinite error loop
+        const errorMessage = lastError instanceof Error ? lastError.message : '';
+        if (errorMessage.includes('Circuit breaker')) {
+          console.error('[GameController] Circuit breaker detected - pausing game to prevent error loop');
+          this.pauseGame();
+          this.engine.appendNarration('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
+        }
+
         this.phaseRunner.handleSpeechResponse(agent, {
           type: 'speak',
           action: 'DEFER',
@@ -636,6 +645,15 @@ export class GameController extends EventEmitter {
 
       if (lastError) {
         console.error(`Error getting vote from ${agent.name} (after ${MAX_LLM_RETRIES} attempts):`, lastError);
+
+        // If circuit breaker is open, pause the game to prevent infinite error loop
+        const errorMessage = lastError instanceof Error ? lastError.message : '';
+        if (errorMessage.includes('Circuit breaker')) {
+          console.error('[GameController] Circuit breaker detected - pausing game to prevent error loop');
+          this.pauseGame();
+          this.engine.appendNarration('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
+        }
+
         this.phaseRunner.handleVoteResponse(agent, {
           type: 'vote',
           vote: 'DEFER',
@@ -728,6 +746,15 @@ export class GameController extends EventEmitter {
 
       if (lastError) {
         console.error(`Error getting choice from ${agent.name} (after ${MAX_LLM_RETRIES} attempts):`, lastError);
+
+        // If circuit breaker is open, pause the game to prevent infinite error loop
+        const errorMessage = lastError instanceof Error ? lastError.message : '';
+        if (errorMessage.includes('Circuit breaker')) {
+          console.error('[GameController] Circuit breaker detected - pausing game to prevent error loop');
+          this.pauseGame();
+          this.engine.appendNarration('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
+        }
+
         this.phaseRunner.handleChoiceResponse(agent, {
           type: 'choice',
           target: 'DEFER',
