@@ -89,6 +89,13 @@ contextBridge.exposeInMainWorld('api', {
     return () => ipcRenderer.removeListener('game:streamingChunk', handler);
   },
 
+  onGameStreamingThinkingChunk: (callback: (data: { agentId: string; chunk: string }) => void) => {
+    const handler = (_: Electron.IpcRendererEvent, data: { agentId: string; chunk: string }) =>
+      callback(data);
+    ipcRenderer.on('game:streamingThinkingChunk', handler);
+    return () => ipcRenderer.removeListener('game:streamingThinkingChunk', handler);
+  },
+
   onGameStateUpdate: (callback: (state: GameState) => void) => {
     const handler = (_: Electron.IpcRendererEvent, state: GameState) => callback(state);
     ipcRenderer.on('game:stateUpdate', handler);

@@ -19,7 +19,8 @@ export interface LLMService {
     messages: LLMMessage[],
     systemPrompt: string,
     model: string,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    onThinkingChunk?: (chunk: string) => void
   ): AsyncGenerator<string, LLMResponse, unknown>;
 }
 

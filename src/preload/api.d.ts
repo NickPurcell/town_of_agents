@@ -33,6 +33,7 @@ export interface API {
   onGameAgentThinkingDone(callback: (data: { agentId: string }) => void): () => void;
   onGameStreamingMessage(callback: (data: { agentId: string; content: string }) => void): () => void;
   onGameStreamingChunk(callback: (data: { agentId: string; chunk: string; isComplete: boolean }) => void): () => void;
+  onGameStreamingThinkingChunk(callback: (data: { agentId: string; chunk: string }) => void): () => void;
   onGameStateUpdate(callback: (state: GameState) => void): () => void;
 }
 

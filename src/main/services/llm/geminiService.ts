@@ -93,7 +93,8 @@ export class GeminiService implements LLMService {
     messages: LLMMessage[],
     systemPrompt: string,
     model: string,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    onThinkingChunk?: (chunk: string) => void
   ): AsyncGenerator<string, LLMResponse, unknown> {
     // Convert messages to Gemini format
     const history: Content[] = messages.slice(0, -1).map(m => ({
@@ -132,6 +133,9 @@ export class GeminiService implements LLMService {
         if (typeof part.text !== 'string' || part.text.length === 0) continue;
         if (part.thought) {
           thinkingContent += part.text;
+          if (onThinkingChunk) {
+            onThinkingChunk(part.text);
+          }
         } else {
           content += part.text;
           onChunk(part.text);

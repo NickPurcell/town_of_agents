@@ -29,7 +29,7 @@ const PHASE_LABELS: Record<Phase, string> = {
 };
 
 export function GameChatScreen() {
-  const { gameState, stopGame, resetGame, thinkingAgent, streamingContent, pauseGame, resumeGame } = useGameStore();
+  const { gameState, stopGame, resetGame, thinkingAgent, streamingContent, streamingThinkingContent, pauseGame, resumeGame } = useGameStore();
   const { setScreen } = useUIStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -158,11 +158,13 @@ export function GameChatScreen() {
                 );
               }
 
+              const thinkingData = streamingThinkingContent.get(thinkingAgent.agentId);
               return (
                 <div className={styles.thinkingIndicator}>
                   <ThinkingIndicator
                     agentName={thinkingAgent.agentName}
                     color={thinkingAgentModel ? ROLE_COLORS[thinkingAgentModel.role] : undefined}
+                    thinkingContent={thinkingData?.content}
                     compact
                   />
                 </div>

@@ -407,6 +407,7 @@ export class GameController extends EventEmitter {
 
           const llmRequestStart = Date.now();
           let firstChunkReceived = false;
+          let thinkingStreamStarted = false;
           console.log(`[TIMING] ${agent.name}: LLM request starting at ${new Date().toISOString()}`);
           const generator = service.generateStream(
             messages,
@@ -478,6 +479,14 @@ export class GameController extends EventEmitter {
                   }
                 }
               }
+            },
+            // onThinkingChunk callback - stream thinking/reasoning content
+            (thinkingChunk: string) => {
+              if (!thinkingStreamStarted) {
+                thinkingStreamStarted = true;
+                console.log(`[TIMING] ${agent.name}: THINKING stream started after ${Date.now() - llmRequestStart}ms`);
+              }
+              this.emit('streaming_thinking_chunk', agent.id, thinkingChunk);
             }
           );
 

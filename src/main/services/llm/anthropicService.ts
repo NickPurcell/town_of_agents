@@ -77,7 +77,8 @@ export class AnthropicService implements LLMService {
     messages: LLMMessage[],
     systemPrompt: string,
     model: string,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    onThinkingChunk?: (chunk: string) => void
   ): AsyncGenerator<string, LLMResponse, unknown> {
     const formattedMessages: Anthropic.MessageParam[] = messages.map(m => ({
       role: m.role,
@@ -114,7 +115,11 @@ export class AnthropicService implements LLMService {
         // @ts-ignore - delta structure
         if (event.delta?.type === 'thinking_delta') {
           // @ts-ignore
-          thinkingContent += event.delta.thinking || '';
+          const delta = event.delta.thinking || '';
+          thinkingContent += delta;
+          if (onThinkingChunk && delta) {
+            onThinkingChunk(delta);
+          }
         } else if (event.delta?.type === 'text_delta') {
           // @ts-ignore
           const delta = event.delta.text || '';

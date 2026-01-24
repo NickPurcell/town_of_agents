@@ -5,9 +5,10 @@ interface Props {
   agentName: string;
   compact?: boolean;
   color?: string;
+  thinkingContent?: string;
 }
 
-export function ThinkingIndicator({ agentName, compact, color }: Props) {
+export function ThinkingIndicator({ agentName, compact, color, thinkingContent }: Props) {
   const safeName = agentName.trim() || 'Agent';
   const displayText = `${safeName} is thinking...`;
   const containerClassName = compact
@@ -33,6 +34,11 @@ export function ThinkingIndicator({ agentName, compact, color }: Props) {
           </span>
         ))}
       </div>
+      {thinkingContent && (
+        <div className={styles.thinkingContent}>
+          {thinkingContent}
+        </div>
+      )}
     </div>
   );
 }

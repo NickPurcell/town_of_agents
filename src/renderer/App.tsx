@@ -14,6 +14,7 @@ function App() {
     setStreamingMessage,
     appendStreamingChunk,
     completeStreaming,
+    appendStreamingThinkingChunk,
     setThinkingAgent: setGameThinkingAgent,
     clearThinkingAgent: clearGameThinkingAgent,
   } = useGameStore();
@@ -59,6 +60,10 @@ function App() {
       }
     });
 
+    const unsubscribeStreamingThinkingChunk = window.api.onGameStreamingThinkingChunk(({ agentId, chunk }) => {
+      appendStreamingThinkingChunk(agentId, chunk);
+    });
+
     const unsubscribeGameState = window.api.onGameStateUpdate((state) => {
       setGameState(state);
     });
@@ -72,6 +77,7 @@ function App() {
       unsubscribeGameThinkingDone();
       unsubscribeStreaming();
       unsubscribeStreamingChunk();
+      unsubscribeStreamingThinkingChunk();
       unsubscribeGameState();
     };
   }, []);

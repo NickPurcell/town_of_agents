@@ -27,6 +27,10 @@ interface StreamingContent {
   isComplete: boolean;
 }
 
+interface StreamingThinkingContent {
+  content: string;
+}
+
 interface GameStore {
   // Setup state
   pendingAgents: PendingAgent[];
@@ -37,6 +41,7 @@ interface GameStore {
   isGameActive: boolean;
   streamingMessage: { agentId: string; content: string } | null;
   streamingContent: Map<string, StreamingContent>;
+  streamingThinkingContent: Map<string, StreamingThinkingContent>;
   thinkingAgent: ThinkingAgent | null;
   sideChatThreads: Record<string, SideChatThread>;
 
@@ -55,6 +60,8 @@ interface GameStore {
   setStreamingMessage: (message: { agentId: string; content: string } | null) => void;
   appendStreamingChunk: (agentId: string, chunk: string) => void;
   completeStreaming: (agentId: string) => void;
+  appendStreamingThinkingChunk: (agentId: string, chunk: string) => void;
+  clearStreamingThinking: (agentId: string) => void;
   setThinkingAgent: (agentId: string, agentName: string) => void;
   clearThinkingAgent: (agentId?: string) => void;
   sendSideChatMessage: (agentId: string, content: string) => Promise<void>;
@@ -78,6 +85,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isGameActive: false,
   streamingMessage: null,
   streamingContent: new Map(),
+  streamingThinkingContent: new Map(),
   thinkingAgent: null,
   sideChatThreads: {},
 
@@ -131,7 +139,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   appendEvent: (event: GameEvent) => {
-    const { gameState, thinkingAgent, streamingContent } = get();
+    const { gameState, thinkingAgent, streamingContent, streamingThinkingContent } = get();
     if (gameState) {
       const eventAgentId = 'agentId' in event ? (event as { agentId?: string }).agentId : null;
       const shouldClearThinking = Boolean(
@@ -147,6 +155,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         newStreamingContent.delete(eventAgentId);
       }
 
+      // Clear streaming thinking content for this agent when event is appended
+      let newStreamingThinkingContent = streamingThinkingContent;
+      if (eventAgentId && streamingThinkingContent.has(eventAgentId)) {
+        newStreamingThinkingContent = new Map(streamingThinkingContent);
+        newStreamingThinkingContent.delete(eventAgentId);
+      }
+
       set({
         gameState: {
           ...gameState,
@@ -154,6 +169,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         },
         thinkingAgent: shouldClearThinking ? null : thinkingAgent,
         streamingContent: newStreamingContent,
+        streamingThinkingContent: newStreamingThinkingContent,
       });
     }
   },
@@ -212,6 +228,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       }
       return { streamingContent: newMap };
+    });
+  },
+
+  appendStreamingThinkingChunk: (agentId: string, chunk: string) => {
+    set(state => {
+      const newMap = new Map(state.streamingThinkingContent);
+      const existing = newMap.get(agentId);
+      newMap.set(agentId, {
+        content: (existing?.content || '') + chunk,
+      });
+      return { streamingThinkingContent: newMap };
+    });
+  },
+
+  clearStreamingThinking: (agentId: string) => {
+    set(state => {
+      const newMap = new Map(state.streamingThinkingContent);
+      newMap.delete(agentId);
+      return { streamingThinkingContent: newMap };
     });
   },
 
@@ -316,6 +351,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isGameActive: false,
       streamingMessage: null,
       streamingContent: new Map(),
+      streamingThinkingContent: new Map(),
       thinkingAgent: null,
       isSettingUp: true,
       sideChatThreads: {},
@@ -331,7 +367,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     try {
-      set({ sideChatThreads: {}, streamingContent: new Map() });
+      set({ sideChatThreads: {}, streamingContent: new Map(), streamingThinkingContent: new Map() });
       set({ isSettingUp: false });
       await window.api.gameStart(pendingAgents);
     } catch (error) {

@@ -103,7 +103,8 @@ export class OpenAIService implements LLMService {
     messages: LLMMessage[],
     systemPrompt: string,
     model: string,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    onThinkingChunk?: (chunk: string) => void
   ): AsyncGenerator<string, LLMResponse, unknown> {
     const formattedMessages = messages.map(m => ({
       role: m.role,
@@ -154,6 +155,9 @@ export class OpenAIService implements LLMService {
           // @ts-ignore
           const delta = event.delta || '';
           thinkingContent += delta;
+          if (onThinkingChunk && delta) {
+            onThinkingChunk(delta);
+          }
         }
       }
 

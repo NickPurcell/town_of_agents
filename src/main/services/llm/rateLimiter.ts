@@ -172,7 +172,8 @@ export class RateLimitedLLMService implements LLMService {
     messages: LLMMessage[],
     systemPrompt: string,
     model: string,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    onThinkingChunk?: (chunk: string) => void
   ): AsyncGenerator<string, LLMResponse, unknown> {
     // Check circuit breaker
     if (this.isCircuitOpen()) {
@@ -191,7 +192,7 @@ export class RateLimitedLLMService implements LLMService {
     this.requestTimestamps.push(Date.now());
 
     try {
-      const generator = this.service.generateStream(messages, systemPrompt, model, onChunk);
+      const generator = this.service.generateStream(messages, systemPrompt, model, onChunk, onThinkingChunk);
       let result: IteratorResult<string, LLMResponse>;
 
       while (true) {
