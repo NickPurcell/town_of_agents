@@ -65,7 +65,6 @@ export type Phase =
   | 'POST_EXECUTION_DISCUSSION'
   | 'FRAMER_PRE_SPEECH'
   | 'FRAMER_CHOICE'
-  | 'CONSIGLIERE_PRE_SPEECH'
   | 'CONSIGLIERE_CHOICE'
   | 'CONSIGLIERE_POST_SPEECH'
   | 'SHERIFF_CHOICE'
@@ -128,7 +127,8 @@ export type GameEvent =
   | VoteEvent
   | ChoiceEvent
   | InvestigationResultEvent
-  | DeathEvent;
+  | DeathEvent
+  | TransitionEvent;
 
 export interface NarrationEvent {
   type: 'NARRATION';
@@ -186,6 +186,15 @@ export interface DeathEvent {
   type: 'DEATH';
   agentId: string;
   cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL';
+  visibility: Visibility;
+  ts: number;
+}
+
+export interface TransitionEvent {
+  type: 'TRANSITION';
+  transitionType: 'DAY' | 'NIGHT';
+  heading: string;
+  subtitle: string;
   visibility: Visibility;
   ts: number;
 }

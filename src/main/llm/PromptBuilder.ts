@@ -19,7 +19,6 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   POST_EXECUTION_DISCUSSION: 'discuss_day_post.md',
   FRAMER_PRE_SPEECH: 'framer/choice_pre.md',
   FRAMER_CHOICE: 'framer/choice.md',
-  CONSIGLIERE_PRE_SPEECH: 'consigliere/choice_pre.md',
   CONSIGLIERE_CHOICE: 'consigliere/choice.md',
   CONSIGLIERE_POST_SPEECH: 'consigliere/choice_post.md',
   SHERIFF_CHOICE: 'sheriff/choice.md',

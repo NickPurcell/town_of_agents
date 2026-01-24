@@ -135,7 +135,6 @@ export class VisibilityFilter {
       case 'FRAMER_CHOICE':
         return agent ? this.framerPrivate(agent.id) : this.host();
 
-      case 'CONSIGLIERE_PRE_SPEECH':
       case 'CONSIGLIERE_CHOICE':
       case 'CONSIGLIERE_POST_SPEECH':
         return agent ? this.consiglierePrivate(agent.id) : this.host();

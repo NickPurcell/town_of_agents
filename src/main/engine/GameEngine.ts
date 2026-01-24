@@ -11,6 +11,7 @@ import {
   NarrationEvent,
   PhaseChangeEvent,
   DeathEvent,
+  TransitionEvent,
   AttackLevel,
   DefenseLevel,
   ROLE_TRAITS,
@@ -33,7 +34,6 @@ const PHASE_ORDER: Phase[] = [
   'NIGHT_VOTE',
   'FRAMER_PRE_SPEECH',
   'FRAMER_CHOICE',
-  'CONSIGLIERE_PRE_SPEECH',
   'CONSIGLIERE_CHOICE',
   'CONSIGLIERE_POST_SPEECH',
   'SHERIFF_CHOICE',
@@ -290,23 +290,12 @@ export class GameEngine extends EventEmitter {
         this.goToConsiglierePhase();
         return;
 
-      // 4a. Consigliere Pre-Speech → Consigliere Choice
-      case 'CONSIGLIERE_PRE_SPEECH':
-        const activeConsigliere = this.agentManager.getAliveConsigliere();
-        if (activeConsigliere) {
-          this.emitPhaseChange('CONSIGLIERE_CHOICE');
-          this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(activeConsigliere.id));
-          return;
-        }
-        this.goToSheriffPhase();
-        return;
-
-      // 4b. Consigliere Choice → Consigliere Post-Speech
+      // 4. Consigliere Choice → Consigliere Post-Speech
       case 'CONSIGLIERE_CHOICE':
         this.emitPhaseChange('CONSIGLIERE_POST_SPEECH');
         return;
 
-      // 4c. Consigliere Post-Speech → Sheriff (or skip to Doctor)
+      // 5. Consigliere Post-Speech → Sheriff (or skip to Doctor)
       case 'CONSIGLIERE_POST_SPEECH':
         this.goToSheriffPhase();
         return;
@@ -419,8 +408,8 @@ export class GameEngine extends EventEmitter {
   private goToConsiglierePhase(): void {
     const consigliere = this.agentManager.getAliveConsigliere();
     if (consigliere) {
-      this.emitPhaseChange('CONSIGLIERE_PRE_SPEECH');
-      this.appendNarration('**Consigliere, gather your thoughts.**', VisibilityFilter.consiglierePrivate(consigliere.id));
+      this.emitPhaseChange('CONSIGLIERE_CHOICE');
+      this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
       return;
     }
     this.goToSheriffPhase();
