@@ -117,7 +117,7 @@ export class RateLimitedLLMService implements LLMService {
       request.resolve(result);
     } catch (error) {
       this.consecutiveErrors++;
-      console.error(`[RateLimiter] Request failed (consecutive errors: ${this.consecutiveErrors})`);
+      console.error(`[RateLimiter] Request failed (consecutive errors: ${this.consecutiveErrors}):`, error instanceof Error ? error.message : error);
 
       if (this.consecutiveErrors >= this.config.circuitBreakerThreshold) {
         console.error(`[RateLimiter] Circuit breaker TRIPPED - stopping all requests for ${this.config.circuitBreakerResetMs / 1000}s`);
@@ -204,7 +204,7 @@ export class RateLimitedLLMService implements LLMService {
       }
     } catch (error) {
       this.consecutiveErrors++;
-      console.error(`[RateLimiter] Stream request failed (consecutive errors: ${this.consecutiveErrors})`);
+      console.error(`[RateLimiter] Stream request failed (consecutive errors: ${this.consecutiveErrors}):`, error instanceof Error ? error.message : error);
 
       if (this.consecutiveErrors >= this.config.circuitBreakerThreshold) {
         console.error(`[RateLimiter] Circuit breaker TRIPPED - stopping all requests for ${this.config.circuitBreakerResetMs / 1000}s`);
