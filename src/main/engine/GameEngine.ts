@@ -11,27 +11,33 @@ import {
   NarrationEvent,
   PhaseChangeEvent,
   DeathEvent,
+  AttackLevel,
+  DefenseLevel,
+  ROLE_TRAITS,
+  doesAttackSucceed,
 } from '../../shared/types';
 import { AgentManager } from './AgentManager';
 import { ConversationStore } from '../store/ConversationStore';
 import { VisibilityFilter } from './Visibility';
 
-// Phase order for state machine
+// Phase order for state machine (night phases per MECHANICS.md)
+// Night order: Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Attacks → Lookout
 const PHASE_ORDER: Phase[] = [
   'DAY_ONE_DISCUSSION',
   'DAY_DISCUSSION',
   'DAY_VOTE',
   'LAST_WORDS',
   'POST_EXECUTION_DISCUSSION',
-  'DOCTOR_CHOICE',
-  'VIGILANTE_PRE_SPEECH',
-  'VIGILANTE_CHOICE',
+  // Night phases in order per MECHANICS.md:
+  'NIGHT_DISCUSSION',
+  'NIGHT_VOTE',
   'FRAMER_CHOICE',
   'CONSIGLIERE_CHOICE',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
-  'NIGHT_DISCUSSION',
-  'NIGHT_VOTE',
+  'DOCTOR_CHOICE',
+  'VIGILANTE_PRE_SPEECH',
+  'VIGILANTE_CHOICE',
   'LOOKOUT_CHOICE',
   'LOOKOUT_POST_SPEECH',
 ];
@@ -57,9 +63,11 @@ export class GameEngine extends EventEmitter {
   private pendingVigilanteKillTarget?: string;
   private pendingDoctorProtectTarget?: string;
   private pendingLookoutWatchTarget?: string;
-  private pendingFramedTarget?: string;
+  private pendingFramedTarget?: string;  // Deprecated, kept for compatibility
+  private persistentFramedTargets: Set<string> = new Set();  // Frames persist until investigated
   private vigilanteSkipNextNight: boolean = false;
   private vigilanteGuiltyId?: string;
+  private vigilanteBulletsRemaining: number = 3;  // Vigilante has 3 bullets
   private sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]> = {};
   private lookoutIntelQueue: Record<string, { watchedId: string; visitors: string[] }[]> = {};
   // Track who visited whom during the night (visitor -> target)
@@ -86,8 +94,10 @@ export class GameEngine extends EventEmitter {
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
     this.pendingFramedTarget = undefined;
+    this.persistentFramedTargets.clear();  // Clear persistent frames
     this.vigilanteSkipNextNight = false;
     this.vigilanteGuiltyId = undefined;
+    this.vigilanteBulletsRemaining = 3;  // Reset Vigilante bullets
     this.sheriffIntelQueue = {};
     this.lookoutIntelQueue = {};
     this.nightVisits = [];
@@ -122,9 +132,11 @@ export class GameEngine extends EventEmitter {
       pendingVigilanteKillTarget: this.pendingVigilanteKillTarget,
       pendingDoctorProtectTarget: this.pendingDoctorProtectTarget,
       pendingFramedTarget: this.pendingFramedTarget,
+      persistentFramedTargets: Array.from(this.persistentFramedTargets),
       sheriffIntelQueue: this.sheriffIntelQueue,
       vigilanteSkipNextNight: this.vigilanteSkipNextNight,
       vigilanteGuiltyId: this.vigilanteGuiltyId,
+      vigilanteBulletsRemaining: this.vigilanteBulletsRemaining,
       winner: this.winner,
     };
   }
@@ -208,9 +220,7 @@ export class GameEngine extends EventEmitter {
 
   // Transition to next phase
   nextPhase(): void {
-    const currentIndex = PHASE_ORDER.indexOf(this.phase);
-
-    // Handle special transitions
+    // Handle special transitions based on current phase
     switch (this.phase) {
       case 'DAY_ONE_DISCUSSION':
         // First day has discussion only; go straight to night
@@ -244,102 +254,73 @@ export class GameEngine extends EventEmitter {
         this.startNight();
         return;
 
-      case 'DOCTOR_CHOICE':
-        // After doctor, go to vigilante (if available)
-        const vigilante = this.agentManager.getAliveVigilante();
-        if (!vigilante || this.vigilanteSkipNextNight) {
-          this.skipVigilantePhase();
-          return;
-        }
-        this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
-        this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
+      // Night phases per MECHANICS.md order:
+      // 1. Mafia Discussion → Mafia Vote
+      case 'NIGHT_DISCUSSION':
+        this.transitionToNightVote();
         return;
 
+      // 2. Mafia Vote → Framer (or skip to Consigliere/Sheriff)
+      case 'NIGHT_VOTE':
+        this.goToFramerPhase();
+        return;
+
+      // 3. Framer → Consigliere (or skip to Sheriff)
+      case 'FRAMER_CHOICE':
+        this.goToConsiglierePhase();
+        return;
+
+      // 4. Consigliere → Sheriff (or skip to Doctor)
+      case 'CONSIGLIERE_CHOICE':
+        this.goToSheriffPhase();
+        return;
+
+      // 5. Sheriff → Sheriff Post-Speech
+      case 'SHERIFF_CHOICE':
+        this.emitPhaseChange('SHERIFF_POST_SPEECH');
+        return;
+
+      // 6. Sheriff Post-Speech → Doctor (or skip to Vigilante)
+      case 'SHERIFF_POST_SPEECH':
+        this.goToDoctorPhase();
+        return;
+
+      // 7. Doctor → Vigilante (or skip to Lookout)
+      case 'DOCTOR_CHOICE':
+        this.goToVigilantePhase();
+        return;
+
+      // 8. Vigilante Pre-Speech → Vigilante Choice
       case 'VIGILANTE_PRE_SPEECH':
-        // After vigilante deliberation, go to vigilante choice
         const activeVigilante = this.agentManager.getAliveVigilante();
         if (!activeVigilante || this.vigilanteSkipNextNight) {
-          this.skipVigilantePhase();
+          this.skipVigilanteToLookout();
           return;
         }
         this.emitPhaseChange('VIGILANTE_CHOICE');
         this.appendNarration('**Vigilante, choose your target.**', VisibilityFilter.vigilantePrivate(activeVigilante.id));
         return;
 
+      // 9. Vigilante Choice → Lookout (or resolve night)
       case 'VIGILANTE_CHOICE':
-        // After vigilante, go to framer (if available), then sheriff
-        const framer = this.agentManager.getAliveFramer();
-        if (!framer) {
-          this.skipFramerPhase();
-          return;
-        }
-        this.emitPhaseChange('FRAMER_CHOICE');
-        this.appendNarration('**Framer, choose your target to frame.**', VisibilityFilter.framerPrivate(framer.id));
+        this.goToLookoutPhase();
         return;
 
-      case 'FRAMER_CHOICE':
-        // After framer, go to consigliere (if available), then sheriff
-        const consigliere = this.agentManager.getAliveConsigliere();
-        if (!consigliere) {
-          this.skipConsiglierePhase();
-          return;
-        }
-        this.emitPhaseChange('CONSIGLIERE_CHOICE');
-        this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
-        return;
-
-      case 'CONSIGLIERE_CHOICE':
-        // After consigliere, go to sheriff
-        const sheriff = this.agentManager.getAliveSheriff();
-        if (!sheriff) {
-          this.skipSheriffPhase();
-          return;
-        }
-        this.emitPhaseChange('SHERIFF_CHOICE');
-        this.appendNarration('**Sheriff, choose your target.**', VisibilityFilter.sheriffPrivate(sheriff.id));
-        return;
-
-      case 'SHERIFF_CHOICE':
-        // After sheriff, go to sheriff post-speech
-        this.emitPhaseChange('SHERIFF_POST_SPEECH');
-        return;
-
-      case 'SHERIFF_POST_SPEECH':
-        // After sheriff speech, go to mafia discussion
-        this.emitPhaseChange('NIGHT_DISCUSSION');
-        this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
-        return;
-
+      // 10. Lookout Choice → Lookout Post-Speech
       case 'LOOKOUT_CHOICE':
-        // After lookout choice, deliver results and go to lookout post-speech
         this.processLookoutIntel();
         this.deliverLookoutIntel();
         this.emitPhaseChange('LOOKOUT_POST_SPEECH');
         return;
 
+      // 11. Lookout Post-Speech → Resolve Night
       case 'LOOKOUT_POST_SPEECH':
-        // After lookout speech, resolve night
         this.resolveNight();
         return;
 
-      case 'NIGHT_VOTE':
-        // After mafia vote, let the lookout act last if alive
-        const postVoteLookout = this.agentManager.getAliveLookout();
-        if (!postVoteLookout) {
-          this.skipLookoutPhase();
-          return;
-        }
-        this.emitPhaseChange('LOOKOUT_CHOICE');
-        this.appendNarration(
-          '**Lookout, choose your target to watch.**',
-          VisibilityFilter.lookoutPrivate(postVoteLookout.id)
-        );
-        return;
-
       default:
-        // Normal progression
-        const nextIndex = (currentIndex + 1) % PHASE_ORDER.length;
-        this.emitPhaseChange(PHASE_ORDER[nextIndex]);
+        // Should not reach here during normal gameplay
+        console.warn(`Unexpected phase transition from ${this.phase}`);
     }
   }
 
@@ -353,80 +334,159 @@ export class GameEngine extends EventEmitter {
       return;
     }
 
-    // Night starts with doctor choice
-    const doctor = this.agentManager.getAliveDoctor();
-    if (!doctor) {
-      this.skipDoctorPhase();
-      return;
-    }
-    this.emitPhaseChange('DOCTOR_CHOICE');
-    this.appendNarration('**Doctor, choose your target.**', VisibilityFilter.doctorPrivate(doctor.id));
-  }
-
-  // Skip sheriff phase if dead - go to mafia discussion
-  private skipSheriffPhase(): void {
+    // Night starts with Mafia discussion (per MECHANICS.md)
     this.emitPhaseChange('NIGHT_DISCUSSION');
     this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
   }
 
-  // Skip lookout phase if dead - resolve night immediately
-  private skipLookoutPhase(): void {
-    this.resolveNight();
-  }
+  // Night phase flow methods (per MECHANICS.md order)
 
-  // Skip doctor phase if dead - go to vigilante
-  private skipDoctorPhase(): void {
-    const vigilante = this.agentManager.getAliveVigilante();
-    if (!vigilante || this.vigilanteSkipNextNight) {
-      this.skipVigilantePhase();
-      return;
-    }
-    this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
-    this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
-  }
-
-  // Skip vigilante phase if dead or skipping - go to framer, then sheriff
-  private skipVigilantePhase(): void {
-    if (this.vigilanteSkipNextNight) {
-      const vigilante = this.agentManager.getAliveVigilante();
-      if (vigilante) {
-        this.appendNarration(
-          '**Guilt overwhelms you tonight. You cannot act.**',
-          VisibilityFilter.vigilantePrivate(vigilante.id)
-        );
-      }
-      this.vigilanteSkipNextNight = false;
-    }
-    this.pendingVigilanteKillTarget = undefined;
+  // Go to Framer phase (after Mafia vote)
+  private goToFramerPhase(): void {
     const framer = this.agentManager.getAliveFramer();
     if (framer) {
       this.emitPhaseChange('FRAMER_CHOICE');
       this.appendNarration('**Framer, choose your target to frame.**', VisibilityFilter.framerPrivate(framer.id));
       return;
     }
-    this.skipFramerPhase();
+    this.goToConsiglierePhase();
   }
 
-  // Skip framer phase if dead - go to consigliere
-  private skipFramerPhase(): void {
+  // Go to Consigliere phase (after Framer)
+  private goToConsiglierePhase(): void {
     const consigliere = this.agentManager.getAliveConsigliere();
     if (consigliere) {
       this.emitPhaseChange('CONSIGLIERE_CHOICE');
       this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
       return;
     }
-    this.skipConsiglierePhase();
+    this.goToSheriffPhase();
   }
 
-  // Skip consigliere phase if dead - go to sheriff
-  private skipConsiglierePhase(): void {
+  // Go to Sheriff phase (after Consigliere)
+  private goToSheriffPhase(): void {
     const sheriff = this.agentManager.getAliveSheriff();
-    if (!sheriff) {
-      this.skipSheriffPhase();
+    if (sheriff) {
+      this.emitPhaseChange('SHERIFF_CHOICE');
+      this.appendNarration('**Sheriff, choose your target.**', VisibilityFilter.sheriffPrivate(sheriff.id));
       return;
     }
-    this.emitPhaseChange('SHERIFF_CHOICE');
-    this.appendNarration('**Sheriff, choose your target.**', VisibilityFilter.sheriffPrivate(sheriff.id));
+    this.goToDoctorPhase();
+  }
+
+  // Go to Doctor phase (after Sheriff)
+  private goToDoctorPhase(): void {
+    const doctor = this.agentManager.getAliveDoctor();
+    if (doctor) {
+      this.emitPhaseChange('DOCTOR_CHOICE');
+      this.appendNarration('**Doctor, choose your target.**', VisibilityFilter.doctorPrivate(doctor.id));
+      return;
+    }
+    this.goToVigilantePhase();
+  }
+
+  // Go to Vigilante phase (after Doctor)
+  private goToVigilantePhase(): void {
+    const vigilante = this.agentManager.getAliveVigilante();
+    // Skip if no vigilante, skipping due to guilt, or out of bullets
+    if (!vigilante || this.vigilanteSkipNextNight || this.vigilanteBulletsRemaining <= 0) {
+      this.skipVigilanteToLookout();
+      return;
+    }
+    this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
+    this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
+  }
+
+  // Skip Vigilante and go to Lookout (or resolve night)
+  private skipVigilanteToLookout(): void {
+    const vigilante = this.agentManager.getAliveVigilante();
+
+    if (this.vigilanteSkipNextNight && vigilante) {
+      this.appendNarration(
+        '**Guilt overwhelms you tonight. You cannot act.**',
+        VisibilityFilter.vigilantePrivate(vigilante.id)
+      );
+      this.vigilanteSkipNextNight = false;
+    } else if (this.vigilanteBulletsRemaining <= 0 && vigilante) {
+      this.appendNarration(
+        '**You have no bullets remaining.**',
+        VisibilityFilter.vigilantePrivate(vigilante.id)
+      );
+    }
+
+    this.pendingVigilanteKillTarget = undefined;
+    this.goToLookoutPhase();
+  }
+
+  // Go to Lookout phase (after Vigilante)
+  private goToLookoutPhase(): void {
+    const lookout = this.agentManager.getAliveLookout();
+    if (lookout) {
+      this.emitPhaseChange('LOOKOUT_CHOICE');
+      this.appendNarration(
+        '**Lookout, choose your target to watch.**',
+        VisibilityFilter.lookoutPrivate(lookout.id)
+      );
+      return;
+    }
+    // No lookout - resolve night immediately
+    this.resolveNight();
+  }
+
+  // Calculate effective defense for a target (includes Doctor protection)
+  private getEffectiveDefense(targetId: string): DefenseLevel {
+    const target = this.agentManager.getAgent(targetId);
+    if (!target) return 'NONE';
+
+    // Revealed Mayor cannot be healed
+    const isRevealedMayor = target.role === 'MAYOR' && target.hasRevealedMayor;
+
+    // Doctor protection grants POWERFUL defense (unless revealed Mayor)
+    if (!isRevealedMayor && this.pendingDoctorProtectTarget === targetId) {
+      return 'POWERFUL';
+    }
+
+    // Return base defense from role traits
+    return ROLE_TRAITS[target.role].defense;
+  }
+
+  // Notify attacker their target was immune
+  private notifyAttackerImmune(attackerSource: 'MAFIA' | 'VIGILANTE', targetId: string): void {
+    const target = this.agentManager.getAgent(targetId);
+    if (!target) return;
+
+    if (attackerSource === 'MAFIA') {
+      this.appendNarration(
+        `**Your target was immune to your attack.**`,
+        VisibilityFilter.mafia()
+      );
+    } else {
+      const vigilante = this.agentManager.getAliveVigilante();
+      if (vigilante) {
+        this.appendNarration(
+          `**Your target was immune to your attack.**`,
+          VisibilityFilter.vigilantePrivate(vigilante.id)
+        );
+      }
+    }
+  }
+
+  // Notify Doctor of successful save
+  private notifyDoctorSaved(targetId: string): void {
+    const doctor = this.agentManager.getAliveDoctor();
+    const target = this.agentManager.getAgent(targetId);
+    if (!doctor || !target) return;
+
+    this.appendNarration(
+      `**You successfully protected ${target.name} from an attack!**`,
+      VisibilityFilter.doctorPrivate(doctor.id)
+    );
+  }
+
+  // Notify target they were healed (shown in morning narration)
+  private notifyTargetHealed(targetId: string): void {
+    // This is handled via the morning narration message
+    // Target sees the public message about being saved
   }
 
   // Resolve night and start new day
@@ -456,27 +516,49 @@ export class GameEngine extends EventEmitter {
       const target = this.agentManager.getAgent(targetId);
       if (!target) continue;
 
-      const isRevealedMayor = target.role === 'MAYOR' && target.hasRevealedMayor;
-      const isProtected =
-        !isRevealedMayor && this.pendingDoctorProtectTarget === targetId;
+      // Get effective defense (includes Doctor protection)
+      const targetDefense = this.getEffectiveDefense(targetId);
+      const wasProtectedByDoctor = this.pendingDoctorProtectTarget === targetId;
 
-      if (isProtected) {
-        morningMessages.push(
-          `**${target.name} was attacked in the night, but was saved by the doctor!**`
-        );
-        continue;
+      // Check each attack source
+      let targetKilled = false;
+      for (const source of sources) {
+        // Get attack level based on source
+        let attackLevel: AttackLevel = 'BASIC';  // Both Mafia and Vigilante have BASIC attack
+
+        // Check if attack succeeds against defense
+        if (doesAttackSucceed(attackLevel, targetDefense)) {
+          // Attack succeeded
+          targetKilled = true;
+        } else {
+          // Attack was blocked
+          if (wasProtectedByDoctor) {
+            // Blocked by Doctor protection - notify both
+            this.notifyDoctorSaved(targetId);
+            morningMessages.push(
+              `**${target.name} was attacked in the night, but was saved by the doctor!**`
+            );
+          } else {
+            // Blocked by innate defense (Godfather) - notify attacker only
+            this.notifyAttackerImmune(source, targetId);
+          }
+        }
       }
 
-      const cause = sources.has('MAFIA') ? 'NIGHT_KILL' : 'VIGILANTE_KILL';
-      this.eliminateAgent(targetId, cause);
-      morningMessages.push(`**${target.name} was found dead in the morning.**`);
+      if (targetKilled) {
+        const cause = sources.has('MAFIA') ? 'NIGHT_KILL' : 'VIGILANTE_KILL';
+        this.eliminateAgent(targetId, cause);
+        morningMessages.push(`**${target.name} was found dead in the morning.**`);
 
-      if (sources.has('VIGILANTE') && target.faction === 'TOWN' && vigilanteActor) {
-        this.vigilanteSkipNextNight = true;
-        this.vigilanteGuiltyId = vigilanteActor.id;
+        // Check for Vigilante guilt
+        if (sources.has('VIGILANTE') && target.faction === 'TOWN' && vigilanteActor) {
+          this.vigilanteSkipNextNight = true;
+          this.vigilanteGuiltyId = vigilanteActor.id;
+        }
       }
     }
 
+    // Handle Vigilante guilt death (from previous night's Town kill)
     if (this.vigilanteGuiltyId && !this.vigilanteSkipNextNight) {
       const guiltyVigilante = this.agentManager.getAgent(this.vigilanteGuiltyId);
       if (guiltyVigilante && guiltyVigilante.alive) {
@@ -486,12 +568,12 @@ export class GameEngine extends EventEmitter {
       this.vigilanteGuiltyId = undefined;
     }
 
-    // Clear pending actions
+    // Clear pending actions (but NOT persistentFramedTargets - those persist!)
     this.pendingNightKillTarget = undefined;
     this.pendingVigilanteKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
-    this.pendingFramedTarget = undefined;
+    this.pendingFramedTarget = undefined;  // Deprecated, kept for compatibility
     this.nightVisits = [];
 
     // Check win condition
@@ -610,19 +692,57 @@ export class GameEngine extends EventEmitter {
     this.pendingDoctorProtectTarget = targetId;
   }
 
-  // Set pending framed target
+  // Set pending framed target (deprecated - use addFramedTarget instead)
   setPendingFramedTarget(targetId: string | undefined): void {
     this.pendingFramedTarget = targetId;
+    // Also add to persistent set
+    if (targetId) {
+      this.persistentFramedTargets.add(targetId);
+    }
   }
 
-  // Get pending framed target
+  // Get pending framed target (deprecated)
   getPendingFramedTarget(): string | undefined {
     return this.pendingFramedTarget;
   }
 
-  // Check if a target is currently framed
+  // Add a framed target (persists until investigated)
+  addFramedTarget(targetId: string): void {
+    this.persistentFramedTargets.add(targetId);
+    this.pendingFramedTarget = targetId;  // For compatibility
+  }
+
+  // Check if a target is currently framed (without consuming)
   isTargetFramed(targetId: string): boolean {
-    return this.pendingFramedTarget === targetId;
+    return this.persistentFramedTargets.has(targetId);
+  }
+
+  // Consume frame if exists (called when Sheriff investigates)
+  // Returns true if frame was consumed
+  consumeFrameIfExists(targetId: string): boolean {
+    if (this.persistentFramedTargets.has(targetId)) {
+      this.persistentFramedTargets.delete(targetId);
+      return true;
+    }
+    return false;
+  }
+
+  // Check if Vigilante can shoot (has bullets and not skipping)
+  canVigilanteShoot(): boolean {
+    return this.vigilanteBulletsRemaining > 0 && !this.vigilanteSkipNextNight;
+  }
+
+  // Use a Vigilante bullet
+  // Returns true if bullet was used, false if no bullets remaining
+  useVigilanteBullet(): boolean {
+    if (this.vigilanteBulletsRemaining <= 0) return false;
+    this.vigilanteBulletsRemaining--;
+    return true;
+  }
+
+  // Get remaining Vigilante bullets
+  getVigilanteBulletsRemaining(): number {
+    return this.vigilanteBulletsRemaining;
   }
 
   // Add sheriff intel to queue

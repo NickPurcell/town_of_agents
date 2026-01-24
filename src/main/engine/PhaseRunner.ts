@@ -9,6 +9,7 @@ import {
   VoteResponse,
   ChoiceResponse,
   GameSettings,
+  ROLE_TRAITS,
 } from '../../shared/types';
 import { GameEngine } from './GameEngine';
 import { VoteResolver } from './VoteResolver';
@@ -508,9 +509,11 @@ export class PhaseRunner extends EventEmitter {
         }
       }
     } else if (phase === 'NIGHT_VOTE') {
-      const result = VoteResolver.resolveMafiaVote(this.pendingVotes, allAgents);
+      // Get Godfather for final say logic
+      const godfather = agentManager.getAliveGodfather();
+      const result = VoteResolver.resolveMafiaVote(this.pendingVotes, allAgents, godfather);
       if (result.target) {
-        // Unanimous vote
+        // Godfather decided or unanimous vote
         this.mafiaVoteAttempts = 0;
         this.engine.setPendingNightKillTarget(result.target);
         // Track mafia visit for lookout (all alive mafia members visit the target)
@@ -518,9 +521,9 @@ export class PhaseRunner extends EventEmitter {
         for (const mafia of aliveMafia) {
           this.engine.addNightVisit(mafia.id, result.target);
         }
-        this.engine.nextPhase(); // Go to SHERIFF_CHOICE
+        this.engine.nextPhase();
       } else {
-        // Not unanimous
+        // No target decided (no Godfather vote and no unanimity)
         this.mafiaVoteAttempts++;
         if (this.mafiaVoteAttempts >= this.settings.mafiaVotingRetries) {
           // Give up - no kill tonight
@@ -534,7 +537,7 @@ export class PhaseRunner extends EventEmitter {
         } else {
           // Retry
           this.engine.appendNarration(
-            '**The mafia must reach unanimous agreement. Vote again.**',
+            '**The mafia must reach agreement. Vote again.**',
             VisibilityFilter.mafia()
           );
           this.pendingVotes.clear();
@@ -641,10 +644,15 @@ export class PhaseRunner extends EventEmitter {
       // Track sheriff visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
 
-      // Emit immediate investigation result (check for framing)
-      const isMafia = target.faction === 'MAFIA';
-      const isFramed = this.engine.isTargetFramed(target.id);
-      const isSuspicious = isMafia || isFramed;
+      // Emit immediate investigation result
+      // Check detection immunity (Godfather appears innocent)
+      const isDetectionImmune = ROLE_TRAITS[target.role].detection_immune;
+      // Check if framed (and consume the frame)
+      const wasFramed = this.engine.consumeFrameIfExists(target.id);
+      // Mafia appears suspicious unless detection immune
+      const isMafiaSuspicious = target.faction === 'MAFIA' && !isDetectionImmune;
+      const isSuspicious = isMafiaSuspicious || wasFramed;
+
       const resultMessage = isSuspicious
         ? `**Your investigation reveals that ${target.name} appears SUSPICIOUS!**`
         : `**Your investigation reveals that ${target.name} does NOT appear suspicious.**`;
@@ -668,9 +676,9 @@ export class PhaseRunner extends EventEmitter {
       // Set the framed target
       this.engine.setPendingFramedTarget(target.id);
 
-      // Immediate feedback
+      // Immediate feedback - frame persists until investigated
       this.engine.appendNarration(
-        `**You have framed ${target.name}. If the Sheriff investigates them tonight, they will appear suspicious.**`,
+        `**You have framed ${target.name}. They will appear suspicious until the Sheriff investigates them.**`,
         VisibilityFilter.framerPrivate(agent.id)
       );
     } else if (phase === 'CONSIGLIERE_CHOICE') {
@@ -732,6 +740,17 @@ export class PhaseRunner extends EventEmitter {
         VisibilityFilter.lookoutPrivate(agent.id)
       );
     } else if (phase === 'VIGILANTE_CHOICE') {
+      // Use a bullet
+      if (!this.engine.useVigilanteBullet()) {
+        // No bullets remaining - shouldn't happen, but handle gracefully
+        this.engine.appendNarration(
+          `**You have no bullets remaining.**`,
+          VisibilityFilter.vigilantePrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
       // Emit choice event for vigilante kill
       const choiceEvent: ChoiceEvent = {
         type: 'CHOICE',
@@ -749,6 +768,13 @@ export class PhaseRunner extends EventEmitter {
 
       // Record kill target
       this.engine.setPendingVigilanteKillTarget(target.id);
+
+      // Show remaining bullets
+      const bulletsRemaining = this.engine.getVigilanteBulletsRemaining();
+      this.engine.appendNarration(
+        `**You have ${bulletsRemaining} bullet${bulletsRemaining === 1 ? '' : 's'} remaining.**`,
+        VisibilityFilter.vigilantePrivate(agent.id)
+      );
     }
 
     this.engine.nextPhase();

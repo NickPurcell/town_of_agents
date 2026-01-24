@@ -63,10 +63,11 @@ export class VoteResolver {
     };
   }
 
-  // Resolve mafia vote (unanimity required)
+  // Resolve mafia vote (Godfather has final say if alive)
   static resolveMafiaVote(
     votes: Map<string, string | 'DEFER'>,
-    agents: GameAgent[]
+    agents: GameAgent[],
+    godfather?: GameAgent
   ): VoteResult {
     // Tally votes (excluding DEFERs)
     const tally = new Map<string, number>();
@@ -81,24 +82,32 @@ export class VoteResolver {
       }
     }
 
-    // Check for unanimity (all votes for same target, no defers)
-    const voteCount = votes.size;
-    const nonDeferVotes = voteCount - deferCount;
+    let finalTarget: string | null = null;
 
-    let unanimousTarget: string | null = null;
+    // If Godfather is alive and voted, their vote is the decision
+    if (godfather && godfather.alive) {
+      const gfVote = votes.get(godfather.id);
+      if (gfVote && gfVote !== 'DEFER') {
+        finalTarget = gfVote;
+      }
+    }
 
-    if (deferCount === 0 && tally.size === 1) {
-      // All voted for the same target
-      const [targetName, count] = Array.from(tally.entries())[0];
-      if (count === voteCount) {
-        unanimousTarget = targetName;
+    // Fallback: existing unanimous logic for games without Godfather
+    if (!finalTarget) {
+      const voteCount = votes.size;
+      if (deferCount === 0 && tally.size === 1) {
+        // All voted for the same target
+        const [targetName, count] = Array.from(tally.entries())[0];
+        if (count === voteCount) {
+          finalTarget = targetName;
+        }
       }
     }
 
     // Find agent ID if we have a target name
     let targetId: string | null = null;
-    if (unanimousTarget) {
-      const targetAgent = agents.find((a) => a.name === unanimousTarget);
+    if (finalTarget) {
+      const targetAgent = agents.find((a) => a.name === finalTarget);
       if (targetAgent) {
         targetId = targetAgent.id;
       }

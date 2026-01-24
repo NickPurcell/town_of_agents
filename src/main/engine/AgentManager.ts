@@ -97,6 +97,11 @@ export class AgentManager {
     return consiglieres.length > 0 ? consiglieres[0] : undefined;
   }
 
+  getAliveGodfather(): GameAgent | undefined {
+    const godfathers = this.getAliveAgentsByRole('GODFATHER');
+    return godfathers.length > 0 ? godfathers[0] : undefined;
+  }
+
   revealMayor(agentId: string): void {
     const agent = this.agents.get(agentId);
     if (agent && agent.role === 'MAYOR') {

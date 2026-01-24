@@ -37,7 +37,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - **GameEngine.ts**: EventEmitter-based state machine managing 17 gameplay phases, agents, events, kills, investigations, framing, and votes.
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
-- **VoteResolver.ts**: Town vote (majority) and Mafia vote (unanimity) resolution with tie-breaking.
+- **VoteResolver.ts**: Town vote (majority) and Mafia vote (Godfather final say, with unanimity fallback) resolution.
 - **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, host).
 
 ### Game Controller (`src/main/services/gameController.ts`)
@@ -163,6 +163,24 @@ Helper functions:
 ### Win Conditions
 - **Town wins**: All Mafia dead
 - **Mafia wins**: Mafia count >= Town count
+
+### Night Phase Order (per MECHANICS.md)
+1. **Mafia Discussion** - Mafia members discuss
+2. **Mafia Vote** - Godfather has final say; unanimity fallback
+3. **Framer Choice** - Frame target (persists until investigated)
+4. **Consigliere Choice** - Learn exact role
+5. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent)
+6. **Doctor Choice** - Protect target (grants POWERFUL defense)
+7. **Vigilante Choice** - Shoot target (3 bullets total)
+8. **Lookout Choice** - Watch target (sees all visitors)
+9. **Night Resolution** - Attacks resolve, notifications sent
+
+### Attack/Defense System
+- **Attack succeeds if**: attack_level > defense_level
+- **BASIC attack** (Mafia, Vigilante) beats NONE defense
+- **Doctor protection** grants POWERFUL defense (blocks BASIC and POWERFUL)
+- **Godfather** has BASIC innate defense (survives Vigilante)
+- **Attacker notified** when target is immune
 
 ## Prompt Templates
 Prompts live in `prompts/` organized by role folders. Template variables use `{{variableName}}`.

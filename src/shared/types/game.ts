@@ -1,6 +1,47 @@
 // Game role types
 export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE';
 
+// Attack and defense power levels
+export type AttackLevel = 'NONE' | 'BASIC' | 'POWERFUL' | 'UNSTOPPABLE';
+export type DefenseLevel = 'NONE' | 'BASIC' | 'POWERFUL';
+
+// Role traits interface
+export interface RoleTraits {
+  visits: boolean;
+  attack: AttackLevel;
+  defense: DefenseLevel;
+  detection_immune: boolean;
+  roleblock_immune: boolean;
+}
+
+// Centralized role configuration
+export const ROLE_TRAITS: Record<Role, RoleTraits> = {
+  CITIZEN:      { visits: false, attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  SHERIFF:      { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  DOCTOR:       { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  LOOKOUT:      { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  VIGILANTE:    { visits: true,  attack: 'BASIC', defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  MAYOR:        { visits: false, attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  MAFIA:        { visits: true,  attack: 'BASIC', defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  GODFATHER:    { visits: true,  attack: 'BASIC', defense: 'BASIC', detection_immune: true,  roleblock_immune: false },
+  FRAMER:       { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  CONSIGLIERE:  { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+  JESTER:       { visits: false, attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
+};
+
+// Helper function to get role traits
+export function getRoleTraits(role: Role): RoleTraits {
+  return ROLE_TRAITS[role];
+}
+
+// Helper function to compare attack vs defense
+// Returns true if attack succeeds (attack level > defense level)
+export function doesAttackSucceed(attack: AttackLevel, defense: DefenseLevel): boolean {
+  const attackOrder: AttackLevel[] = ['NONE', 'BASIC', 'POWERFUL', 'UNSTOPPABLE'];
+  const defenseOrder: DefenseLevel[] = ['NONE', 'BASIC', 'POWERFUL'];
+  return attackOrder.indexOf(attack) > defenseOrder.indexOf(defense);
+}
+
 // Narration categorization types
 export type NarrationCategory =
   | 'critical_death' | 'critical_win' | 'critical_saved' | 'critical_reveal'
@@ -152,9 +193,11 @@ export interface GameState {
   pendingVigilanteKillTarget?: string;
   pendingDoctorProtectTarget?: string;
   pendingFramedTarget?: string;
+  persistentFramedTargets: string[];  // Frames persist until investigated
   sheriffIntelQueue: Record<string, { targetId: string; role: Role }[]>;
   vigilanteSkipNextNight?: boolean;
   vigilanteGuiltyId?: string;
+  vigilanteBulletsRemaining: number;  // Track 3-bullet limit
   winner?: Faction;
 }
 
