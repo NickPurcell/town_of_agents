@@ -35,8 +35,14 @@ export function ThinkingIndicator({ agentName, compact, color, thinkingContent }
         ))}
       </div>
       {thinkingContent && (
-        <div className={styles.thinkingContent}>
-          {thinkingContent}
+        <div className={styles.reasoningBlock}>
+          <div className={styles.reasoningHeader}>
+            <span className={styles.reasoningIcon}>●</span>
+            <span className={styles.reasoningLabel}>Reasoning</span>
+          </div>
+          <div className={styles.thinkingContent}>
+            {thinkingContent}
+          </div>
         </div>
       )}
     </div>
