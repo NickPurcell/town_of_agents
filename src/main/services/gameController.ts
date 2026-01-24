@@ -179,6 +179,8 @@ export class GameController extends EventEmitter {
           console.log(`[GameController] Created rate-limited service for provider: ${agent.provider}`);
         }
         this.llmServices.set(agent.id, providerServices.get(agent.provider)!);
+      } else {
+        console.error(`[GameController] WARNING: No API key configured for provider "${agent.provider}" - agent "${agent.name}" will not be able to respond!`);
       }
     }
   }
