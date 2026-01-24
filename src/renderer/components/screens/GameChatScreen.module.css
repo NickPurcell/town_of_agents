@@ -46,38 +46,13 @@
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
 }
 
-.headerInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.gameName {
-  font-size: 18px;
+.phaseTitle {
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-display);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.phaseInfo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.dayNumber {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.phaseName {
-  font-size: 14px;
-  color: var(--accent-blood-bright);
-  font-weight: 500;
-  text-shadow: 0 0 12px var(--accent-blood-glow);
 }
 
 .headerActions {

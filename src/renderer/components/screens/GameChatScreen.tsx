@@ -92,13 +92,9 @@ export function GameChatScreen() {
   return (
     <div className={`${styles.container} ${isNightPhase ? styles.nightMode : ''}`}>
       <div className={styles.header}>
-        <div className={styles.headerInfo}>
-          <h2 className={styles.gameName}>Mafia Game</h2>
-          <div className={styles.phaseInfo}>
-            <span className={styles.dayNumber}>Day {gameState.dayNumber}</span>
-            <span className={styles.phaseName}>{PHASE_LABELS[gameState.phase]}</span>
-          </div>
-        </div>
+        <h2 className={styles.phaseTitle}>
+          Day {gameState.dayNumber} - {PHASE_LABELS[gameState.phase]}
+        </h2>
         <div className={styles.headerActions}>
           {gameState.winner ? (
             <span className={`${styles.winnerBadge} ${gameState.winner === 'TOWN' ? styles.townWin : styles.mafiaWin}`}>
