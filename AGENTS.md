@@ -112,12 +112,12 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **PlayersMenu.tsx**: Player list menu in sidebar
 - Chat components: `src/renderer/components/chat/*`
   - **StreamingSpeech.tsx**: Displays speech content progressively token-by-token during streaming
-  - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths)
+  - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths, transitions)
   - **NarrationIcons.tsx**: 9 inline SVG icons for narration categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
   - **MessageItem.tsx**: Individual message display component
   - **ThinkingIndicator.tsx**: Shows agent thinking state with streaming reasoning content
 - Utilities: `src/renderer/utils/*`
-  - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility
+  - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility. Day/night transitions use TransitionEvent instead.
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
 
 ### Shared Types
@@ -134,7 +134,8 @@ Key types in `src/shared/types/game.ts`:
 - **Phases**: 22 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 11 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private)
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL), INVESTIGATION_RESULT, DEATH
+- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL), INVESTIGATION_RESULT, DEATH, TRANSITION
+- **TransitionEvent**: Day/night cinematic banners with heading, subtitle, and transitionType (DAY/NIGHT)
 - **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)

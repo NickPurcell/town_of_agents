@@ -42,12 +42,7 @@ export function categorizeNarration(event: NarrationEvent): NarrationCategorizat
   }
 
   // Informational events
-  if (/start of Day|dawn breaks|day begins/i.test(text)) {
-    return { category: 'info_transition', icon: 'sun' };
-  }
-  if (/Night falls|night begins|darkness/i.test(text)) {
-    return { category: 'info_transition', icon: 'moon' };
-  }
+  // Note: Day/Night transitions now use TransitionEvent type, not Narration
   if (/No majority|could not agree|tie|no consensus/i.test(text)) {
     return { category: 'info_vote_outcome', icon: 'gavel' };
   }

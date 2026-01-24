@@ -279,6 +279,12 @@ export class GameController extends EventEmitter {
       return;
     }
 
+    // Wait for transition animation to complete for phases that follow day/night transitions
+    const phasesAfterTransition: Phase[] = ['DAY_ONE_DISCUSSION', 'DAY_DISCUSSION', 'NIGHT_DISCUSSION'];
+    if (phasesAfterTransition.includes(phase)) {
+      await sleep(1500); // Wait for 1.5s (animation is 1.2s + buffer)
+    }
+
     switch (phase) {
       case 'DAY_ONE_DISCUSSION':
       case 'DAY_DISCUSSION':

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, Phase } from '@shared/types';
+import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, TransitionEvent, Phase } from '@shared/types';
 import { ROLE_COLORS } from '@shared/types';
 import { categorizeNarration, getCategoryClassName } from '../../utils/narrationCategorizer';
 import { NarrationIconMap } from './NarrationIcons';
@@ -302,6 +302,20 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
           </span>
         </AgentEventRow>
       );
+
+    case 'TRANSITION': {
+      const transitionEvent = event as TransitionEvent;
+      const transitionClass = transitionEvent.transitionType === 'DAY'
+        ? styles.transitionDay
+        : styles.transitionNight;
+
+      return (
+        <div className={`${styles.transition} ${transitionClass}`}>
+          <h1 className={styles.transitionHeading}>{transitionEvent.heading}</h1>
+          <p className={styles.transitionSubtitle}>{transitionEvent.subtitle}</p>
+        </div>
+      );
+    }
 
     default:
       return null;

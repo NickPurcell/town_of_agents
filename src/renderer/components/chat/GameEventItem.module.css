@@ -471,3 +471,65 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Day/Night transition banners */
+.transition {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  margin: 24px 0;
+  animation: transition-slide-in 1.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes transition-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.transitionHeading {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.transitionSubtitle {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 12px 0 0 0;
+  letter-spacing: 0.12em;
+  font-style: italic;
+}
+
+/* Day transition - warm golden tint */
+.transitionDay .transitionHeading {
+  text-shadow: 0 4px 24px rgba(255, 200, 100, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.transitionDay .transitionSubtitle {
+  color: rgba(255, 220, 180, 0.7);
+}
+
+/* Night transition - cool blue tint */
+.transitionNight .transitionHeading {
+  text-shadow: 0 4px 24px rgba(100, 150, 255, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.transitionNight .transitionSubtitle {
+  color: rgba(180, 200, 255, 0.7);
+}

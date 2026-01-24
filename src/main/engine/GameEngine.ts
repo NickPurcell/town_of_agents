@@ -21,6 +21,16 @@ import { AgentManager } from './AgentManager';
 import { ConversationStore } from '../store/ConversationStore';
 import { VisibilityFilter } from './Visibility';
 
+// Convert number to ordinal word (First, Second, Third, etc.)
+function numberToOrdinal(n: number): string {
+  const ordinals = [
+    'First', 'Second', 'Third', 'Fourth', 'Fifth',
+    'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth',
+    'Eleventh', 'Twelfth', 'Thirteenth', 'Fourteenth', 'Fifteenth',
+  ];
+  return ordinals[n - 1] || `${n}th`;
+}
+
 // Phase order for state machine (night phases per MECHANICS.md)
 // Night order: Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Vigilante → Werewolf → Lookout
 const PHASE_ORDER: Phase[] = [
@@ -119,8 +129,8 @@ export class GameEngine extends EventEmitter {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    // Emit game start narration
-    this.appendNarration(`**The start of Day ${this.dayNumber}**`, VisibilityFilter.public());
+    // Emit game start transition
+    this.appendTransition('DAY', this.dayNumber);
     this.emitPhaseChange('DAY_ONE_DISCUSSION');
   }
 
@@ -201,6 +211,25 @@ export class GameEngine extends EventEmitter {
       type: 'NARRATION',
       textMarkdown: text,
       visibility,
+      ts: Date.now(),
+    };
+    this.conversationStore.appendEvent(event);
+    this.emit('event_appended', event);
+  }
+
+  // Append transition event (Day/Night cinematic banners)
+  appendTransition(type: 'DAY' | 'NIGHT', dayNumber: number): void {
+    const heading = type === 'DAY' ? 'Day Breaks' : 'Night Falls';
+    const subtitle = type === 'DAY'
+      ? `The Dawn of the ${numberToOrdinal(dayNumber)} Day`
+      : 'The Village Stirs';
+
+    const event: TransitionEvent = {
+      type: 'TRANSITION',
+      transitionType: type,
+      heading,
+      subtitle,
+      visibility: VisibilityFilter.public(),
       ts: Date.now(),
     };
     this.conversationStore.appendEvent(event);
@@ -378,7 +407,7 @@ export class GameEngine extends EventEmitter {
 
   // Start night phase
   private startNight(): void {
-    this.appendNarration('**Night falls.**', VisibilityFilter.public());
+    this.appendTransition('NIGHT', this.dayNumber);
 
     // Check if mafia is alive
     if (this.agentManager.getAliveMafiaCount() === 0) {
@@ -735,7 +764,7 @@ export class GameEngine extends EventEmitter {
     if (this.winner) return;
 
     // Start new day
-    this.appendNarration(`**The start of Day ${this.dayNumber}**`, VisibilityFilter.public());
+    this.appendTransition('DAY', this.dayNumber);
     if (morningMessages.length === 0) {
       this.appendNarration('**The night passed without incident.**', VisibilityFilter.public());
     } else {

@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE' | 'WEREWOLF';
+export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE' | 'WEREWOLF' | 'JAILOR';
 
 // Attack and defense power levels
 export type AttackLevel = 'NONE' | 'BASIC' | 'POWERFUL' | 'UNSTOPPABLE';
@@ -28,6 +28,7 @@ export const ROLE_TRAITS: Record<Role, RoleTraits> = {
   CONSIGLIERE:  { visits: true,  attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
   JESTER:       { visits: false, attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
   WEREWOLF:     { visits: true,  attack: 'POWERFUL', defense: 'BASIC', detection_immune: false, roleblock_immune: false },
+  JAILOR:       { visits: false, attack: 'UNSTOPPABLE', defense: 'NONE', detection_immune: false, roleblock_immune: true },
 };
 
 // Helper function to get role traits
@@ -79,7 +80,10 @@ export type Phase =
   | 'LOOKOUT_POST_SPEECH'
   | 'NIGHT_DISCUSSION'
   | 'NIGHT_VOTE'
-  | 'MAYOR_REVEAL_CHOICE';
+  | 'MAYOR_REVEAL_CHOICE'
+  | 'JAILOR_CHOICE'
+  | 'JAIL_CONVERSATION'
+  | 'JAILOR_EXECUTE_CHOICE';
 
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {
@@ -117,6 +121,8 @@ export type Visibility =
   | { kind: 'framer_private'; agentId: string }
   | { kind: 'consigliere_private'; agentId: string }
   | { kind: 'werewolf_private'; agentId: string }
+  | { kind: 'jailor_private'; agentId: string }
+  | { kind: 'jail_conversation'; jailorId: string; prisonerId: string }
   | { kind: 'host' };
 
 // Game event types
@@ -167,7 +173,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -185,7 +191,7 @@ export interface InvestigationResultEvent {
 export interface DeathEvent {
   type: 'DEATH';
   agentId: string;
-  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL';
+  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE';
   visibility: Visibility;
   ts: number;
 }
@@ -216,6 +222,10 @@ export interface GameState {
   vigilanteSkipNextNight?: boolean;
   vigilanteGuiltyId?: string;
   vigilanteBulletsRemaining: number;  // Track 3-bullet limit
+  pendingJailTarget?: string;
+  jailorExecutionsRemaining: number;  // Track 3-execution limit
+  jailorLostExecutionPower?: boolean;  // True if Jailor executed a Town member
+  jailedAgentIds: string[];  // Agents currently jailed this night
   winner?: Faction;
 }
 
@@ -288,6 +298,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   MAYOR: '#ff9800',    // Orange
   VIGILANTE: '#4caf50', // Green
   WEREWOLF: '#8B4513', // Saddle brown
+  JAILOR: '#607D8B',   // Blue-grey
 };
 
 // Helper to get visible events for an agent
