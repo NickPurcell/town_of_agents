@@ -80,14 +80,6 @@ export function GameChatScreen() {
 
   const visibleEvents = gameState.events;
   const thinkingAgentModel = thinkingAgent ? getAgentById(thinkingAgent.agentId) : null;
-  let lastReasoningIndex = -1;
-  for (let i = visibleEvents.length - 1; i >= 0; i--) {
-    const event = visibleEvents[i];
-    if ((event.type === 'SPEECH' || event.type === 'VOTE' || event.type === 'CHOICE') && (event as any).reasoning) {
-      lastReasoningIndex = i;
-      break;
-    }
-  }
 
   return (
     <div className={`${styles.container} ${isNightPhase ? styles.nightMode : ''}`}>
@@ -136,7 +128,6 @@ export function GameChatScreen() {
                 agent={event.type === 'SPEECH' || event.type === 'VOTE' || event.type === 'DEATH' || event.type === 'CHOICE'
                   ? getAgentById((event as any).agentId)
                   : undefined}
-                defaultReasoningExpanded={index === lastReasoningIndex}
               />
             ))}
             {thinkingAgent && thinkingAgentModel && (() => {

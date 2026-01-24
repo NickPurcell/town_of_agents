@@ -435,20 +435,12 @@
   padding-left: 10px;
 }
 
-.reasoningToggle {
+.reasoningHeader {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--text-muted);
   font-size: 11px;
-}
-
-.reasoningToggle:hover {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .reasoningIcon {

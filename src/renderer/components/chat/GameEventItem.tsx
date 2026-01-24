@@ -9,12 +9,10 @@ import styles from './GameEventItem.module.css';
 interface GameEventItemProps {
   event: GameEvent;
   agent?: GameAgent;
-  defaultReasoningExpanded?: boolean;
 }
 
 interface ReasoningBlockProps {
   reasoning: string;
-  defaultExpanded?: boolean;
 }
 
 const providerAvatarMap: Record<GameAgent['provider'], string> = {
@@ -91,29 +89,21 @@ function AgentEventRow({ agent, className, style, children }: AgentEventRowProps
   );
 }
 
-function ReasoningBlock({ reasoning, defaultExpanded = false }: ReasoningBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-
+function ReasoningBlock({ reasoning }: ReasoningBlockProps) {
   return (
     <div className={styles.reasoningBlock}>
-      <button
-        className={styles.reasoningToggle}
-        onClick={() => setIsExpanded(!isExpanded)}
-        aria-expanded={isExpanded}
-      >
-        <span className={styles.reasoningIcon}>{isExpanded ? '▼' : '▶'}</span>
+      <div className={styles.reasoningHeader}>
+        <span className={styles.reasoningIcon}>▼</span>
         <span className={styles.reasoningLabel}>Reasoning</span>
-      </button>
-      {isExpanded && (
-        <div className={styles.reasoningContent}>
-          {reasoning}
-        </div>
-      )}
+      </div>
+      <div className={styles.reasoningContent}>
+        {reasoning}
+      </div>
     </div>
   );
 }
 
-export function GameEventItem({ event, agent, defaultReasoningExpanded = false }: GameEventItemProps) {
+export function GameEventItem({ event, agent }: GameEventItemProps) {
   switch (event.type) {
     case 'NARRATION': {
       const narrationEvent = event as NarrationEvent;
@@ -169,7 +159,7 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
             </span>
           </div>
           {speechEvent.reasoning && (
-            <ReasoningBlock reasoning={speechEvent.reasoning} defaultExpanded={defaultReasoningExpanded} />
+            <ReasoningBlock reasoning={speechEvent.reasoning}  />
           )}
           <div className={styles.speechContent}>
             <ReactMarkdown>{event.messageMarkdown}</ReactMarkdown>
@@ -205,7 +195,7 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
             <span className={styles.voteAction}>{voteTarget}</span>
           </div>
           {voteEvent.reasoning && (
-            <ReasoningBlock reasoning={voteEvent.reasoning} defaultExpanded={defaultReasoningExpanded} />
+            <ReasoningBlock reasoning={voteEvent.reasoning}  />
           )}
         </AgentEventRow>
       );
@@ -261,7 +251,7 @@ export function GameEventItem({ event, agent, defaultReasoningExpanded = false }
             <span className={styles.choiceAction}>{actionText}</span>
           </div>
           {choiceEvent.reasoning && (
-            <ReasoningBlock reasoning={choiceEvent.reasoning} defaultExpanded={defaultReasoningExpanded} />
+            <ReasoningBlock reasoning={choiceEvent.reasoning}  />
           )}
         </AgentEventRow>
       );
