@@ -36,6 +36,10 @@ async function initialize() {
       splashWindow = null;
     }
     mainWindow?.show();
+    // Bring to front temporarily to ensure focus, then return to normal behavior
+    mainWindow?.setAlwaysOnTop(true);
+    mainWindow?.focus();
+    mainWindow?.setAlwaysOnTop(false);
   });
 }
 
