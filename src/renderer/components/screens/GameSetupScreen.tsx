@@ -19,11 +19,12 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'CITIZEN', label: 'Citizen' },
 ];
 
-// Default game configuration: 1 mayor, 1 citizen, 1 vigilante, 1 doctor, 1 sheriff, 1 lookout, 1 godfather, 1 framer, 1 consigliere - all Gemini 3 Flash
+// Default game configuration: 1 of each role - all Gemini 3 Flash
 const DEFAULT_AGENTS = [
   { name: 'Marcus', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'GODFATHER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Elena', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CONSIGLIERE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Riley', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'FRAMER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Jasper', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'JESTER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'James', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'SHERIFF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Sophie', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'DOCTOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Ava', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
