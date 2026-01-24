@@ -115,9 +115,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const hasMafia = pendingAgents.some(a => a.role === 'MAFIA' || a.role === 'GODFATHER');
     const hasSheriff = pendingAgents.some(a => a.role === 'SHERIFF');
     const hasDoctor = pendingAgents.some(a => a.role === 'DOCTOR');
-    const hasCitizen = pendingAgents.some(a => a.role === 'CITIZEN');
+    const hasJailor = pendingAgents.some(a => a.role === 'JAILOR');
 
-    return hasMafia && hasSheriff && hasDoctor && hasCitizen;
+    return hasMafia && hasSheriff && hasDoctor && hasJailor;
   },
 
   // Game actions

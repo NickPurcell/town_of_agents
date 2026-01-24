@@ -12,6 +12,7 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'CONSIGLIERE', label: 'Consigliere' },
   { value: 'JESTER', label: 'Jester' },
   { value: 'WEREWOLF', label: 'Werewolf' },
+  { value: 'JAILOR', label: 'Jailor' },
   { value: 'SHERIFF', label: 'Sheriff' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'VIGILANTE', label: 'Vigilante' },
@@ -32,7 +33,7 @@ const DEFAULT_AGENTS = [
   { name: 'Ava', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Oliver', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Mia', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Noah', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CITIZEN' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Noah', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'JAILOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
 ];
 
 export function GameSetupScreen() {
@@ -93,6 +94,7 @@ export function GameSetupScreen() {
     CONSIGLIERE: pendingAgents.filter(a => a.role === 'CONSIGLIERE'),
     JESTER: pendingAgents.filter(a => a.role === 'JESTER'),
     WEREWOLF: pendingAgents.filter(a => a.role === 'WEREWOLF'),
+    JAILOR: pendingAgents.filter(a => a.role === 'JAILOR'),
     SHERIFF: pendingAgents.filter(a => a.role === 'SHERIFF'),
     DOCTOR: pendingAgents.filter(a => a.role === 'DOCTOR'),
     VIGILANTE: pendingAgents.filter(a => a.role === 'VIGILANTE'),
@@ -105,7 +107,7 @@ export function GameSetupScreen() {
   const hasMafia = agentsByRole.MAFIA.length > 0 || agentsByRole.GODFATHER.length > 0;
   const hasSheriff = agentsByRole.SHERIFF.length > 0;
   const hasDoctor = agentsByRole.DOCTOR.length > 0;
-  const hasCitizen = agentsByRole.CITIZEN.length > 0;
+  const hasJailor = agentsByRole.JAILOR.length > 0;
 
   return (
     <div className={styles.container}>
@@ -204,7 +206,7 @@ export function GameSetupScreen() {
             <span className={hasMafia ? styles.met : styles.unmet}>Mafia: {agentsByRole.MAFIA.length}</span>
             <span className={hasSheriff ? styles.met : styles.unmet}>Sheriff: {agentsByRole.SHERIFF.length}</span>
             <span className={hasDoctor ? styles.met : styles.unmet}>Doctor: {agentsByRole.DOCTOR.length}</span>
-            <span className={hasCitizen ? styles.met : styles.unmet}>Citizen: {agentsByRole.CITIZEN.length}</span>
+            <span className={hasJailor ? styles.met : styles.unmet}>Jailor: {agentsByRole.JAILOR.length}</span>
           </div>
 
           <div className={styles.roleGroups}>
