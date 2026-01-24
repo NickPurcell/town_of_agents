@@ -34,6 +34,7 @@ const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   FRAMER_PRE_SPEECH: "Framer's Turn",
   DOCTOR_PRE_SPEECH: "Doctor's Turn",
   VIGILANTE_PRE_SPEECH: "Vigilante's Turn",
+  WEREWOLF_PRE_SPEECH: "Werewolf's Turn",
   SHERIFF_CHOICE: "Sheriff's Turn",
   LOOKOUT_CHOICE: "Lookout's Turn",
   NIGHT_DISCUSSION: "Mafia's Turn",

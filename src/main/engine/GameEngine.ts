@@ -479,7 +479,6 @@ export class GameEngine extends EventEmitter {
   private goToWerewolfPhase(): void {
     const werewolf = this.agentManager.getAliveWerewolf();
     if (werewolf && this.canWerewolfActTonight()) {
-      this.appendNarration('**The Werewolf stirs.**', VisibilityFilter.host());
       this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
       this.appendNarration('**Werewolf, gather your thoughts.**', VisibilityFilter.werewolfPrivate(werewolf.id));
       return;
