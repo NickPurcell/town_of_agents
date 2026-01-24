@@ -1596,12 +1596,6 @@ export class GameController extends EventEmitter {
     const speakers = [jailor, prisoner, jailor, prisoner, jailor, prisoner];
     const jailVisibility = VisibilityFilter.jailConversation(jailor.id, prisoner.id);
 
-    // Announce the jail conversation start
-    this.engine.appendNarration(
-      '**The Jailor interrogates their prisoner...**',
-      jailVisibility
-    );
-
     for (let i = 0; i < speakers.length; i++) {
       if (!this.isRunning) return;
 
