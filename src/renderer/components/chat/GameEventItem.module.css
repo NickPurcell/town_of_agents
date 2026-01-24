@@ -476,11 +476,9 @@
 .transition {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 48px 24px;
-  margin: 24px 0;
+  align-items: flex-start;
+  padding: 16px 0;
+  margin: 8px 0;
   animation: transition-slide-in 1.2s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
@@ -497,39 +495,39 @@
 
 .transitionHeading {
   font-family: var(--font-display);
-  font-size: 48px;
+  font-size: 32px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
 }
 
 .transitionSubtitle {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 12px 0 0 0;
-  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 4px 0 0 0;
+  letter-spacing: 0.08em;
   font-style: italic;
 }
 
 /* Day transition - warm golden tint */
 .transitionDay .transitionHeading {
-  text-shadow: 0 4px 24px rgba(255, 200, 100, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 16px rgba(255, 200, 100, 0.3), 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .transitionDay .transitionSubtitle {
-  color: rgba(255, 220, 180, 0.7);
+  color: rgba(255, 220, 180, 0.6);
 }
 
 /* Night transition - cool blue tint */
 .transitionNight .transitionHeading {
-  text-shadow: 0 4px 24px rgba(100, 150, 255, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 16px rgba(100, 150, 255, 0.3), 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .transitionNight .transitionSubtitle {
-  color: rgba(180, 200, 255, 0.7);
+  color: rgba(180, 200, 255, 0.6);
 }
