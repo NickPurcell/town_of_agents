@@ -18,17 +18,17 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'CITIZEN', label: 'Citizen' },
 ];
 
-// Default game configuration: 1 mayor, 1 citizen, 1 vigilante, 1 doctor, 1 sheriff, 1 lookout, 1 godfather, 1 framer, 1 consigliere - all GPT-5
+// Default game configuration: 1 mayor, 1 citizen, 1 vigilante, 1 doctor, 1 sheriff, 1 lookout, 1 godfather, 1 framer, 1 consigliere - all Gemini 3 Flash
 const DEFAULT_AGENTS = [
-  { name: 'Marcus', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'GODFATHER' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Elena', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CONSIGLIERE' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Riley', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'FRAMER' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'James', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'SHERIFF' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Sophie', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'DOCTOR' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Ava', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'LOOKOUT' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Oliver', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'MAYOR' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Mia', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'VIGILANTE' as Role, provider: 'openai' as const, model: 'gpt-5' },
-  { name: 'Noah', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CITIZEN' as Role, provider: 'openai' as const, model: 'gpt-5' },
+  { name: 'Marcus', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'GODFATHER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Elena', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CONSIGLIERE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Riley', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'FRAMER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'James', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'SHERIFF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Sophie', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'DOCTOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Ava', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Oliver', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Mia', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Noah', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CITIZEN' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
 ];
 
 export function GameSetupScreen() {
@@ -39,8 +39,8 @@ export function GameSetupScreen() {
   const [name, setName] = useState('');
   const [personality, setPersonality] = useState('');
   const [role, setRole] = useState<Role>('CITIZEN');
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('openai');
-  const [model, setModel] = useState('gpt-5');
+  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('google');
+  const [model, setModel] = useState('gemini-3-flash-preview');
 
   const handleAddAgent = () => {
     if (!name.trim() || !personality.trim()) return;

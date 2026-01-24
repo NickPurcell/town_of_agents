@@ -9,6 +9,17 @@ export class GeminiService implements LLMService {
     this.client = new GoogleGenAI({ apiKey });
   }
 
+  /**
+   * Determine thinking level based on model.
+   * Flash models use LOW for speed, Pro models use HIGH for deeper reasoning.
+   */
+  private getThinkingLevel(model: string): ThinkingLevel {
+    if (model.toLowerCase().includes('flash')) {
+      return ThinkingLevel.LOW;
+    }
+    return ThinkingLevel.HIGH;
+  }
+
   async generate(
     messages: LLMMessage[],
     systemPrompt: string,
@@ -35,7 +46,7 @@ export class GeminiService implements LLMService {
         systemInstruction: systemPrompt,
         thinkingConfig: {
           includeThoughts: true,
-          thinkingLevel: ThinkingLevel.HIGH
+          thinkingLevel: this.getThinkingLevel(model)
         }
       }
     });
@@ -110,7 +121,7 @@ export class GeminiService implements LLMService {
         systemInstruction: systemPrompt,
         thinkingConfig: {
           includeThoughts: true,
-          thinkingLevel: ThinkingLevel.HIGH
+          thinkingLevel: this.getThinkingLevel(model)
         }
       }
     });

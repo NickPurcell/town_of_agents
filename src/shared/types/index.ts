@@ -73,7 +73,8 @@ export const MODEL_OPTIONS: ModelOption[] = [
   { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai' },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai' },
   { id: 'claude-opus-4-5', name: 'Claude Opus 4.5', provider: 'anthropic' },
-  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google' }
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google' }
 ];
 
 // Color palette for agents
