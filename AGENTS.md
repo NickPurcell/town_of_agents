@@ -11,6 +11,9 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - Build: `npm run build`
 - Preview (renderer build only): `npm run preview`
 
+## Maintenance Notes
+- When updating game mechanics in the codebase, also update `MECHANICS.md` to reflect those changes. This file is the authoritative specification for attack/defense, visiting, night order, and role traits.
+
 ## Key Directories
 - `src/main`: Electron main process (windows, IPC, controllers, LLM services, storage, game engine).
 - `src/preload`: `contextBridge` API exposed to renderer.

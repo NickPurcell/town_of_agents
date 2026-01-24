@@ -11,6 +11,9 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - Build: `npm run build`
 - Preview (renderer build only): `npm run preview`
 
+## Maintenance Notes
+- When updating game mechanics in the codebase, also update `MECHANICS.md` to reflect those changes. This file is the authoritative specification for attack/defense, visiting, night order, and role traits.
+
 ## Key Directories
 - `src/main`: Electron main process (windows, IPC, controllers, LLM services, storage, game engine).
 - `src/preload`: `contextBridge` API exposed to renderer.
@@ -112,7 +115,7 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths)
   - **NarrationIcons.tsx**: 9 inline SVG icons for narration categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
   - **MessageItem.tsx**: Individual message display component
-  - **ThinkingIndicator.tsx**: Shows agent thinking state
+  - **ThinkingIndicator.tsx**: Shows agent thinking state with streaming reasoning content
 - Utilities: `src/renderer/utils/*`
   - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
