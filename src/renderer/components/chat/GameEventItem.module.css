@@ -441,11 +441,10 @@
   gap: 6px;
   background: none;
   border: none;
-  padding: 4px 0;
+  padding: 0;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 12px;
-  transition: color var(--transition-fast);
+  font-size: 11px;
 }
 
 .reasoningToggle:hover {
@@ -475,4 +474,8 @@
   font-style: italic;
   border: 1px solid rgba(196, 30, 58, 0.2);
   box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.35);
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
