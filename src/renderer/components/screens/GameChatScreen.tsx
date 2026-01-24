@@ -145,6 +145,7 @@ export function GameChatScreen() {
             ))}
             {thinkingAgent && thinkingAgentModel && (() => {
               const streamingData = streamingContent.get(thinkingAgent.agentId);
+              const thinkingData = streamingThinkingContent.get(thinkingAgent.agentId);
               const hasStreamingContent = streamingData && streamingData.content.length > 0;
 
               // Show StreamingSpeech when message content starts streaming
@@ -154,12 +155,12 @@ export function GameChatScreen() {
                     agent={thinkingAgentModel}
                     content={streamingData.content}
                     isComplete={streamingData.isComplete}
+                    reasoningContent={thinkingData?.content}
                   />
                 );
               }
 
               // Show ThinkingIndicator while waiting or reasoning is streaming
-              const thinkingData = streamingThinkingContent.get(thinkingAgent.agentId);
               return (
                 <ThinkingIndicator
                   agent={thinkingAgentModel}

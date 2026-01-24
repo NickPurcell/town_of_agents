@@ -9,6 +9,7 @@ interface StreamingSpeechProps {
   agent: GameAgent;
   content: string;
   isComplete: boolean;
+  reasoningContent?: string;
 }
 
 const providerAvatarMap: Record<GameAgent['provider'], string> = {
@@ -45,7 +46,7 @@ function AgentAvatar({ agent }: { agent: GameAgent }) {
   );
 }
 
-export function StreamingSpeech({ agent, content, isComplete }: StreamingSpeechProps) {
+export function StreamingSpeech({ agent, content, isComplete, reasoningContent }: StreamingSpeechProps) {
   return (
     <div className={styles.eventRow}>
       <AgentAvatar agent={agent} />
@@ -61,6 +62,17 @@ export function StreamingSpeech({ agent, content, isComplete }: StreamingSpeechP
             {agent.name}
           </span>
         </div>
+        {reasoningContent && (
+          <div className={streamStyles.reasoningBlock}>
+            <div className={streamStyles.reasoningHeader}>
+              <span className={streamStyles.reasoningIcon}>●</span>
+              <span className={streamStyles.reasoningLabel}>Reasoning</span>
+            </div>
+            <div className={streamStyles.reasoningContent}>
+              {reasoningContent}
+            </div>
+          </div>
+        )}
         <div className={styles.speechContent}>
           {content ? (
             <ReactMarkdown>{content}</ReactMarkdown>

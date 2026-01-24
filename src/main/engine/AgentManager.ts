@@ -102,6 +102,11 @@ export class AgentManager {
     return godfathers.length > 0 ? godfathers[0] : undefined;
   }
 
+  getAliveWerewolf(): GameAgent | undefined {
+    const werewolves = this.getAliveAgentsByRole('WEREWOLF');
+    return werewolves.length > 0 ? werewolves[0] : undefined;
+  }
+
   revealMayor(agentId: string): void {
     const agent = this.agents.get(agentId);
     if (agent && agent.role === 'MAYOR') {
@@ -185,6 +190,11 @@ export class AgentManager {
   // Get eligible targets for consigliere investigation (alive agents except self)
   getConsigliereTargets(consigliereId: string): GameAgent[] {
     return this.getAliveAgents().filter((a) => a.id !== consigliereId);
+  }
+
+  // Get eligible targets for werewolf rampage (all alive agents including self for stay-home)
+  getWerewolfTargets(): GameAgent[] {
+    return this.getAliveAgents();  // Can target self to stay home
   }
 
   // Reset all agents to alive for new game

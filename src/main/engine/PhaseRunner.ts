@@ -139,7 +139,8 @@ export class PhaseRunner extends EventEmitter {
         phase === 'LOOKOUT_CHOICE' ||
         phase === 'VIGILANTE_CHOICE' ||
         phase === 'FRAMER_CHOICE' ||
-        phase === 'CONSIGLIERE_CHOICE'
+        phase === 'CONSIGLIERE_CHOICE' ||
+        phase === 'WEREWOLF_CHOICE'
       ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
@@ -568,6 +569,8 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveFramer();
     } else if (phase === 'CONSIGLIERE_CHOICE') {
       choiceAgent = agentManager.getAliveConsigliere();
+    } else if (phase === 'WEREWOLF_CHOICE') {
+      choiceAgent = agentManager.getAliveWerewolf();
     }
 
     if (choiceAgent) {
@@ -620,6 +623,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getFramerTargets(agent.id);
     } else if (phase === 'CONSIGLIERE_CHOICE') {
       eligibleTargets = agentManager.getConsigliereTargets(agent.id);
+    } else if (phase === 'WEREWOLF_CHOICE') {
+      eligibleTargets = agentManager.getWerewolfTargets();
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -647,11 +652,15 @@ export class PhaseRunner extends EventEmitter {
       // Emit immediate investigation result
       // Check detection immunity (Godfather appears innocent)
       const isDetectionImmune = ROLE_TRAITS[target.role].detection_immune;
+      // Werewolf has conditional detection immunity (nights 1 and 3)
+      const isWerewolfImmune = target.role === 'WEREWOLF' && this.engine.isWerewolfDetectionImmuneTonight();
       // Check if framed (and consume the frame)
       const wasFramed = this.engine.consumeFrameIfExists(target.id);
       // Mafia appears suspicious unless detection immune
       const isMafiaSuspicious = target.faction === 'MAFIA' && !isDetectionImmune;
-      const isSuspicious = isMafiaSuspicious || wasFramed;
+      // Werewolf appears suspicious unless immune tonight
+      const isWerewolfSuspicious = target.role === 'WEREWOLF' && !isWerewolfImmune;
+      const isSuspicious = isMafiaSuspicious || isWerewolfSuspicious || wasFramed;
 
       const resultMessage = isSuspicious
         ? `**Your investigation reveals that ${target.name} appears SUSPICIOUS!**`

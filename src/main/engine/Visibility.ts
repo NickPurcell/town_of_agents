@@ -38,6 +38,9 @@ export class VisibilityFilter {
       case 'consigliere_private':
         return visibility.agentId === agent.id;
 
+      case 'werewolf_private':
+        return visibility.agentId === agent.id;
+
       case 'host':
         return false; // Only visible to host/UI
     }
@@ -88,6 +91,11 @@ export class VisibilityFilter {
     return { kind: 'consigliere_private', agentId };
   }
 
+  // Create visibility for werewolf private events
+  static werewolfPrivate(agentId: string): Visibility {
+    return { kind: 'werewolf_private', agentId };
+  }
+
   // Create visibility for host-only events
   static host(): Visibility {
     return { kind: 'host' };
@@ -130,6 +138,10 @@ export class VisibilityFilter {
       case 'CONSIGLIERE_PRE_SPEECH':
       case 'CONSIGLIERE_CHOICE':
         return agent ? this.consiglierePrivate(agent.id) : this.host();
+
+      case 'WEREWOLF_PRE_SPEECH':
+      case 'WEREWOLF_CHOICE':
+        return agent ? this.werewolfPrivate(agent.id) : this.host();
 
       case 'MAYOR_REVEAL_CHOICE':
         return agent ? this.mayorPrivate(agent.id) : this.host();

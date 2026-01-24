@@ -588,6 +588,7 @@ export class GameEngine extends EventEmitter {
 
     const morningMessages: string[] = [];
     const killTargets = new Map<string, Set<'MAFIA' | 'VIGILANTE'>>();
+    const werewolfKills = new Set<string>();  // Track werewolf rampage victims
 
     if (this.pendingNightKillTarget) {
       const sources = killTargets.get(this.pendingNightKillTarget)
@@ -603,8 +604,40 @@ export class GameEngine extends EventEmitter {
       killTargets.set(this.pendingVigilanteKillTarget, sources);
     }
 
+    // Process werewolf rampage (POWERFUL attack)
+    const werewolf = this.agentManager.getAliveWerewolf();
+    if (this.pendingWerewolfKillTarget && werewolf) {
+      const isStayingHome = this.pendingWerewolfKillTarget === werewolf.id;
+
+      if (isStayingHome) {
+        // Werewolf stays home - kill anyone who visits them
+        const visitorsToWerewolf = this.nightVisits
+          .filter((visit) => visit.targetId === werewolf.id)
+          .map((visit) => visit.visitorId);
+        for (const visitorId of visitorsToWerewolf) {
+          werewolfKills.add(visitorId);
+        }
+      } else {
+        // Werewolf attacks target + all visitors to that target
+        werewolfKills.add(this.pendingWerewolfKillTarget);
+
+        // Get all visitors to the werewolf's target
+        const visitorsToTarget = this.nightVisits
+          .filter((visit) => visit.targetId === this.pendingWerewolfKillTarget)
+          .map((visit) => visit.visitorId);
+
+        for (const visitorId of visitorsToTarget) {
+          // Don't add the werewolf itself as a victim
+          if (visitorId !== werewolf.id) {
+            werewolfKills.add(visitorId);
+          }
+        }
+      }
+    }
+
     const vigilanteActor = this.agentManager.getAliveVigilante();
 
+    // Process Mafia/Vigilante kills
     for (const [targetId, sources] of killTargets.entries()) {
       const target = this.agentManager.getAgent(targetId);
       if (!target) continue;
@@ -651,6 +684,33 @@ export class GameEngine extends EventEmitter {
       }
     }
 
+    // Process werewolf rampage kills (POWERFUL attack)
+    for (const victimId of werewolfKills) {
+      const victim = this.agentManager.getAgent(victimId);
+      if (!victim || !victim.alive) continue;  // Skip if already dead from other attacks
+
+      const victimDefense = this.getEffectiveDefense(victimId);
+      const wasProtectedByDoctor = this.pendingDoctorProtectTarget === victimId;
+      const attackLevel: AttackLevel = 'POWERFUL';  // Werewolf has POWERFUL attack
+
+      if (doesAttackSucceed(attackLevel, victimDefense)) {
+        // Werewolf attack succeeded
+        this.eliminateAgent(victimId, 'WEREWOLF_KILL');
+        morningMessages.push(`**${victim.name} was mauled by a werewolf.**`);
+      } else {
+        // Attack was blocked (only by Doctor's POWERFUL protection)
+        if (wasProtectedByDoctor) {
+          this.notifyDoctorSaved(victimId);
+          morningMessages.push(
+            `**${victim.name} was attacked in the night, but was saved by the doctor!**`
+          );
+        } else {
+          // Shouldn't happen (no innate defense blocks POWERFUL), but handle gracefully
+          this.notifyAttackerImmune('WEREWOLF', victimId);
+        }
+      }
+    }
+
     // Handle Vigilante guilt death (from previous night's Town kill)
     if (this.vigilanteGuiltyId && !this.vigilanteSkipNextNight) {
       const guiltyVigilante = this.agentManager.getAgent(this.vigilanteGuiltyId);
@@ -664,6 +724,7 @@ export class GameEngine extends EventEmitter {
     // Clear pending actions (but NOT persistentFramedTargets - those persist!)
     this.pendingNightKillTarget = undefined;
     this.pendingVigilanteKillTarget = undefined;
+    this.pendingWerewolfKillTarget = undefined;
     this.pendingDoctorProtectTarget = undefined;
     this.pendingLookoutWatchTarget = undefined;
     this.pendingFramedTarget = undefined;  // Deprecated, kept for compatibility
@@ -780,6 +841,16 @@ export class GameEngine extends EventEmitter {
     return this.pendingVigilanteKillTarget;
   }
 
+  // Set pending werewolf kill target
+  setPendingWerewolfKillTarget(targetId: string | undefined): void {
+    this.pendingWerewolfKillTarget = targetId;
+  }
+
+  // Get pending werewolf kill target
+  getPendingWerewolfKillTarget(): string | undefined {
+    return this.pendingWerewolfKillTarget;
+  }
+
   // Set pending doctor protect target
   setPendingDoctorProtectTarget(targetId: string | undefined): void {
     this.pendingDoctorProtectTarget = targetId;
@@ -849,7 +920,7 @@ export class GameEngine extends EventEmitter {
   // Eliminate an agent
   eliminateAgent(
     agentId: string,
-    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT'
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL'
   ): void {
     const agent = this.agentManager.getAgent(agentId);
     if (!agent || !agent.alive) return;
@@ -881,7 +952,29 @@ export class GameEngine extends EventEmitter {
   checkWinCondition(): Faction | undefined {
     const aliveMafia = this.agentManager.getAliveMafiaCount();
     const aliveTown = this.agentManager.getAliveTownCount();
+    const aliveWerewolf = this.agentManager.getAliveWerewolf();
+    const aliveTotal = this.agentManager.getAliveCount();
 
+    // Werewolf wins if they are the ONLY survivor
+    if (aliveWerewolf && aliveTotal === 1) {
+      this.endGame('NEUTRAL');
+      return 'NEUTRAL';
+    }
+
+    // If werewolf is alive, game continues (blocks normal Town/Mafia win)
+    // unless they're the only one left (handled above)
+    if (aliveWerewolf) {
+      // Check if it's just werewolf vs one other faction
+      if (aliveMafia === 0 && aliveTown === 0) {
+        // Werewolf is alone - they win (should be caught above, but safety check)
+        this.endGame('NEUTRAL');
+        return 'NEUTRAL';
+      }
+      // Game continues - werewolf still needs to eliminate everyone
+      return undefined;
+    }
+
+    // Standard win conditions (no werewolf alive)
     if (aliveMafia === 0) {
       this.endGame('TOWN');
       return 'TOWN';
@@ -900,10 +993,14 @@ export class GameEngine extends EventEmitter {
     this.winner = winner;
     this.isRunning = false;
 
-    const message =
-      winner === 'TOWN'
-        ? '**The Town wins! All mafia members have been eliminated.**'
-        : '**The Mafia wins! They have achieved parity with the town.**';
+    let message: string;
+    if (winner === 'TOWN') {
+      message = '**The Town wins! All mafia members have been eliminated.**';
+    } else if (winner === 'MAFIA') {
+      message = '**The Mafia wins! They have achieved parity with the town.**';
+    } else {
+      message = '**The Werewolf wins! They are the last one standing.**';
+    }
 
     this.appendNarration(message, VisibilityFilter.public());
     this.emit('game_over', winner);
