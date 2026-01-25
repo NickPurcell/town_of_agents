@@ -982,8 +982,24 @@ export class PhaseRunner extends EventEmitter {
       };
       this.engine.appendEvent(choiceEvent);
 
+      // Check if target is jailed - they're not home to watch
+      if (this.engine.isAgentJailed(target.id)) {
+        this.engine.appendNarration(
+          `**Your target was not home tonight.**`,
+          VisibilityFilter.lookoutPrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
       // Record watch target
       this.engine.setPendingLookoutWatchTarget(target.id);
+
+      // Confirmation message
+      this.engine.appendNarration(
+        `**You are now watching ${target.name}. You will see anyone who visits them tonight.**`,
+        VisibilityFilter.lookoutPrivate(agent.id)
+      );
     } else if (phase === 'VIGILANTE_CHOICE') {
       // Emit choice event for vigilante kill first (before using bullet)
       const choiceEvent: ChoiceEvent = {

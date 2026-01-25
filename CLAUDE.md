@@ -223,6 +223,10 @@ Helper functions:
 - Must use "SELF" keyword to self-heal (using own name as target will fail)
 - Cannot heal revealed Mayor
 
+**Lookout Notes:**
+- Cannot watch jailed targets (receives "Your target was not home tonight.")
+- Jailor does NOT visit, so Lookout won't see Jailor visiting the jailed player
+
 **Immediate Kills:**
 - **Jailor Execution**: Kills target immediately when decision is made (UNSTOPPABLE - bypasses all defense)
 - **Mafia Kill**: Kills target immediately after vote resolves (checks full defense including Doctor protection)
