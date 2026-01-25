@@ -140,6 +140,8 @@ export class GameController extends EventEmitter {
         this.engine.transitionToNightVote();
       } else if (phase === 'POST_EXECUTION_DISCUSSION') {
         this.engine.nextPhase();
+      } else if (phase === 'POST_GAME_DISCUSSION') {
+        this.engine.nextPhase();
       }
     });
   }
@@ -292,6 +294,7 @@ export class GameController extends EventEmitter {
       case 'DAY_DISCUSSION':
       case 'NIGHT_DISCUSSION':
       case 'POST_EXECUTION_DISCUSSION':
+      case 'POST_GAME_DISCUSSION':
         await this.phaseRunner.startDiscussionPhase();
         break;
 

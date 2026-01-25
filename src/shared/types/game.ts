@@ -83,7 +83,8 @@ export type Phase =
   | 'MAYOR_REVEAL_CHOICE'
   | 'JAILOR_CHOICE'
   | 'JAIL_CONVERSATION'
-  | 'JAILOR_EXECUTE_CHOICE';
+  | 'JAILOR_EXECUTE_CHOICE'
+  | 'POST_GAME_DISCUSSION';
 
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {

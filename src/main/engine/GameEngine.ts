@@ -441,6 +441,11 @@ export class GameEngine extends EventEmitter {
         this.resolveNight();
         return;
 
+      // Post-game discussion → Finalize game
+      case 'POST_GAME_DISCUSSION':
+        this.finalizeGame();
+        return;
+
       default:
         // Should not reach here during normal gameplay
         console.warn(`Unexpected phase transition from ${this.phase}`);
@@ -1176,10 +1181,9 @@ export class GameEngine extends EventEmitter {
     return undefined;
   }
 
-  // End the game
+  // End the game - transitions to post-game discussion
   private endGame(winner: Faction): void {
     this.winner = winner;
-    this.isRunning = false;
 
     let message: string;
     if (winner === 'TOWN') {
@@ -1191,7 +1195,14 @@ export class GameEngine extends EventEmitter {
     }
 
     this.appendNarration(message, VisibilityFilter.public());
-    this.emit('game_over', winner);
+    this.emitPhaseChange('POST_GAME_DISCUSSION');
+  }
+
+  // Finalize the game after post-game discussion
+  finalizeGame(): void {
+    if (!this.winner) return;
+    this.isRunning = false;
+    this.emit('game_over', this.winner);
   }
 
   // Transition to day vote

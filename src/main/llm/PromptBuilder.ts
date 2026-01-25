@@ -36,6 +36,7 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   JAILOR_CHOICE: 'jailor/choice.md',
   JAIL_CONVERSATION: 'jailor/conversation.md',
   JAILOR_EXECUTE_CHOICE: 'jailor/execute_choice.md',
+  POST_GAME_DISCUSSION: 'discuss_post_game.md',
 };
 
 // Role-specific prompt overrides
@@ -147,6 +148,7 @@ export class PromptBuilder {
         : 'Day',
       dayNumber: String(state.dayNumber),
       jailorExecutionsRemaining: String(state.jailorExecutionsRemaining ?? 3),
+      winner: state.winner || '',
     };
   }
 

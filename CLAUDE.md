@@ -131,7 +131,7 @@ Key types in `src/shared/types/game.ts`:
 - **DefenseLevel**: NONE, BASIC, POWERFUL
 - **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
 - **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
-- **Phases**: 25 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE)
+- **Phases**: 26 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, POST_GAME_DISCUSSION)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 13 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jail_conversation)
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE), INVESTIGATION_RESULT, DEATH, TRANSITION
@@ -197,6 +197,12 @@ Helper functions:
 - If Jailor jails Werewolf on a full moon night (2, 4, 6...), Werewolf kills Jailor + visitors
 - Executing a Town member causes Jailor to permanently lose execution ability
 
+### Post-Game Discussion
+After a win condition is met, the game enters POST_GAME_DISCUSSION phase:
+- All agents (dead AND alive) participate
+- 2 rounds of casual discussion (GGs, strategy reveals, etc.)
+- game_over event fires only after discussion completes
+
 ### Attack/Defense System
 - **Attack succeeds if**: attack_level > defense_level
 - **BASIC attack** (Mafia, Vigilante) beats NONE defense
@@ -215,6 +221,7 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `user_message.md`: Template for user-side chat requests
 - `last_words.md`: Condemned agent's final words
 - `discuss_day_post.md`: Post-execution discussion
+- `discuss_post_game.md`: Post-game discussion (all agents, dead and alive)
 
 **Generic Day Prompts** (root):
 - `discuss_day_one.md`: First day discussion (generic townsfolk)

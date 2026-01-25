@@ -176,10 +176,12 @@ export class PhaseRunner extends EventEmitter {
     if (this.deferIfPaused(() => this.promptNextDiscussionAgent())) return;
 
     const phase = this.engine.getCurrentPhase();
-    // Post-execution and first day only get 1 round
-    const totalRounds = (phase === 'POST_EXECUTION_DISCUSSION' || phase === 'DAY_ONE_DISCUSSION')
-      ? 1
-      : this.settings.roundsPerDiscussion;
+    // Post-execution and first day get 1 round, post-game gets 2 rounds
+    const totalRounds = (phase === 'POST_GAME_DISCUSSION')
+      ? 2
+      : (phase === 'POST_EXECUTION_DISCUSSION' || phase === 'DAY_ONE_DISCUSSION')
+        ? 1
+        : this.settings.roundsPerDiscussion;
     const totalAgents = this.roundRobinOrder.length;
 
     // Check if we've completed all rounds
@@ -196,8 +198,8 @@ export class PhaseRunner extends EventEmitter {
 
     const currentAgent = this.roundRobinOrder[this.currentAgentIndex];
 
-    // Skip dead agents
-    if (!currentAgent.alive) {
+    // Skip dead agents (except in post-game discussion where everyone speaks)
+    if (!currentAgent.alive && phase !== 'POST_GAME_DISCUSSION') {
       this.advanceToNextDiscussionAgent();
       return;
     }
@@ -247,6 +249,9 @@ export class PhaseRunner extends EventEmitter {
       case 'NIGHT_DISCUSSION':
         // Exclude jailed Mafia from discussion
         return agentManager.getAliveMafia().filter(a => !this.engine.isAgentJailed(a.id));
+      case 'POST_GAME_DISCUSSION':
+        // All agents participate (dead and alive)
+        return agentManager.getAllAgents();
       default:
         return [];
     }
