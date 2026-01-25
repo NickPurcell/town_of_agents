@@ -685,7 +685,9 @@ export class PhaseRunner extends EventEmitter {
 
   // Handle choice response
   handleChoiceResponse(agent: GameAgent, response: ChoiceResponse, reasoning?: string): void {
+    console.log(`[PhaseRunner] handleChoiceResponse called: agent=${agent.name}, target=${response.target}, currentTurnAgentId=${this.currentTurnAgentId}`);
     if (this.currentTurnAgentId && agent.id !== this.currentTurnAgentId) {
+      console.log(`[PhaseRunner] handleChoiceResponse: ignored - wrong agent`);
       return;
     }
     this.clearTurnTimeout();

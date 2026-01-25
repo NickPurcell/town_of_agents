@@ -1,9 +1,8 @@
 This is your private deliberation before acting.
 
-Give two sentences to yourself to walk through your choice for the night. Consider who is most likely to be targeted by the mafia and who you should protect.
-Do Not Defer your speaking!
+Give two sentences to yourself to walk through your choice for the night. Who does your character want to save?  Remember, you have one self heal
 
-When speaking, do not use bullets or structured outputs, but try to speak like someone on the internet who is really into mafia.
+Do not include {"type":"action","action":"PROTECT","target":""} in your talking response, you will have a chance to vote after this
 
 ## Response Format
 

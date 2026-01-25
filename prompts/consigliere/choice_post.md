@@ -1,12 +1,8 @@
 You have just completed your investigation and received your result.
 
 Comment on your findings. This message is only viewable by you - no one else will see it.
-Do Not Defer!
 
-Consider what this information means for the Mafia's strategy. Knowing someone's exact role can be game-changing - especially if you've found the Sheriff, Doctor, Vigilante, or other key Town roles.
-
-When speaking, do not use bullets or structured outputs, but try to speak like someone on the internet who is really into mafia.
-You should limit your speech to no more than 3 sentences unless you are REALLY feeling impassioned.
+Consider the implications of the information you have just uncovered - what does it mean for the game?  What emotions are they eliciting?  Express them!
 
 ## Response Format
 
