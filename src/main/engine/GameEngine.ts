@@ -771,7 +771,7 @@ export class GameEngine extends EventEmitter {
       werewolfKilledJailor = true;
       // Werewolf kills Jailor
       this.eliminateAgent(jailor.id, 'WEREWOLF_KILL');
-      morningMessages.push(`**${jailor.name} was mauled by their prisoner!**`);
+      morningMessages.push(`**${jailor.name} was mauled by their prisoner! Their role was ${jailor.role}.**`);
 
       // Kill anyone who visited the Jailor
       const visitorsToJailor = this.nightVisits
@@ -781,7 +781,7 @@ export class GameEngine extends EventEmitter {
         const visitor = this.agentManager.getAgent(visitorId);
         if (visitor && visitor.alive) {
           this.eliminateAgent(visitorId, 'WEREWOLF_KILL');
-          morningMessages.push(`**${visitor.name} was mauled by a werewolf.**`);
+          morningMessages.push(`**${visitor.name} was mauled by a werewolf. Their role was ${visitor.role}.**`);
         }
       }
 
@@ -797,11 +797,11 @@ export class GameEngine extends EventEmitter {
         // Check if already killed immediately during the phase
         if (this.wasKilledImmediately(prisoner.id) && this.getImmediateKillCause(prisoner.id) === 'JAILOR_EXECUTE') {
           // Already executed - just add morning message
-          morningMessages.push(`**${prisoner.name} was executed by the Jailor.**`);
+          morningMessages.push(`**${prisoner.name} was executed by the Jailor. Their role was ${prisoner.role}.**`);
         } else if (prisoner.alive) {
           // Not yet executed - execute now
           this.eliminateAgent(prisoner.id, 'JAILOR_EXECUTE');
-          morningMessages.push(`**${prisoner.name} was executed by the Jailor.**`);
+          morningMessages.push(`**${prisoner.name} was executed by the Jailor. Their role was ${prisoner.role}.**`);
         }
       }
     }
@@ -863,7 +863,7 @@ export class GameEngine extends EventEmitter {
       if (sources.has('MAFIA') && this.mafiaAttackProcessed) {
         if (this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'MAFIA') {
           // Mafia killed target immediately - add morning message
-          morningMessages.push(`**${target.name} was found dead in the morning.**`);
+          morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${target.role}.**`);
         } else if (wasProtectedByDoctor) {
           // Mafia attack was blocked by Doctor - add morning message (Doctor already notified)
           morningMessages.push(
@@ -909,7 +909,7 @@ export class GameEngine extends EventEmitter {
       if (targetKilled) {
         const cause = sources.has('MAFIA') ? 'NIGHT_KILL' : 'VIGILANTE_KILL';
         this.eliminateAgent(targetId, cause);
-        morningMessages.push(`**${target.name} was found dead in the morning.**`);
+        morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${target.role}.**`);
 
         // Check for Vigilante guilt
         if (sources.has('VIGILANTE') && target.faction === 'TOWN' && vigilanteActor) {
@@ -931,7 +931,7 @@ export class GameEngine extends EventEmitter {
       if (doesAttackSucceed(attackLevel, victimDefense)) {
         // Werewolf attack succeeded
         this.eliminateAgent(victimId, 'WEREWOLF_KILL');
-        morningMessages.push(`**${victim.name} was mauled by a werewolf.**`);
+        morningMessages.push(`**${victim.name} was mauled by a werewolf. Their role was ${victim.role}.**`);
       } else {
         // Attack was blocked (only by Doctor's POWERFUL protection)
         if (wasProtectedByDoctor) {
@@ -951,7 +951,7 @@ export class GameEngine extends EventEmitter {
       const guiltyVigilante = this.agentManager.getAgent(this.vigilanteGuiltyId);
       if (guiltyVigilante && guiltyVigilante.alive) {
         this.eliminateAgent(guiltyVigilante.id, 'VIGILANTE_GUILT');
-        morningMessages.push(`**${guiltyVigilante.name} was found dead from guilt.**`);
+        morningMessages.push(`**${guiltyVigilante.name} was found dead from guilt. Their role was ${guiltyVigilante.role}.**`);
       }
       this.vigilanteGuiltyId = undefined;
     }
@@ -1228,6 +1228,7 @@ export class GameEngine extends EventEmitter {
     const event: DeathEvent = {
       type: 'DEATH',
       agentId,
+      role: agent.role,
       cause,
       visibility: VisibilityFilter.public(),
       ts: Date.now(),
@@ -1237,7 +1238,7 @@ export class GameEngine extends EventEmitter {
     this.emit('agent_died', agentId, cause);
 
     if (cause === 'DAY_ELIMINATION') {
-      this.appendNarration(`**${agent.name} has been eliminated.**`, VisibilityFilter.public());
+      this.appendNarration(`**${agent.name} has been eliminated. Their role was ${agent.role}.**`, VisibilityFilter.public());
     }
 
     // Check win condition

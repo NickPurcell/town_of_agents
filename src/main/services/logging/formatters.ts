@@ -145,6 +145,7 @@ function formatDeathEvent(
 ): string {
   const agent = agentLookup.get(event.agentId);
   const name = agent?.name ?? 'Unknown';
-  const role = agent?.role ?? 'UNKNOWN';
+  // Use role from event (now always present) with fallback to agent lookup
+  const role = event.role ?? agent?.role ?? 'UNKNOWN';
   return `[DEATH] ${name}[${role}] was killed - cause: ${event.cause} (visibility: ${vis})`;
 }

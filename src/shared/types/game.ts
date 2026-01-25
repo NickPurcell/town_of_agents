@@ -192,6 +192,7 @@ export interface InvestigationResultEvent {
 export interface DeathEvent {
   type: 'DEATH';
   agentId: string;
+  role: Role;
   cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE';
   visibility: Visibility;
   ts: number;
