@@ -330,6 +330,23 @@ export class PhaseRunner extends EventEmitter {
     // Use the same order from discussion (already shuffled)
     // If roundRobinOrder is empty (e.g., voting started without prior discussion), shuffle voters
     const voters = this.getVoters();
+
+    // Check if there are any eligible voters - if not, skip voting entirely
+    if (voters.length === 0) {
+      console.log(`[PhaseRunner] startVotingPhase: No eligible voters for ${phase}, skipping vote`);
+      this.isVotingActive = false;
+      if (phase === 'NIGHT_VOTE') {
+        // No Mafia can vote (all jailed/dead) - skip with no kill
+        this.engine.setPendingNightKillTarget(undefined);
+        this.engine.appendNarration(
+          '**The mafia could not act tonight.**',
+          VisibilityFilter.mafia()
+        );
+      }
+      this.engine.nextPhase();
+      return;
+    }
+
     if (this.roundRobinOrder.length === 0 || !this.ordersMatch(this.roundRobinOrder, voters)) {
       this.roundRobinOrder = this.shuffleArray(voters);
     }
