@@ -287,9 +287,15 @@ export class GameController extends EventEmitter {
   }
 
   private async handlePhaseChange(phase: Phase): Promise<void> {
-    if (!this.isRunning) return;
+    console.log(`[GameController] handlePhaseChange: phase=${phase}, isRunning=${this.isRunning}, isPaused=${this.isPaused}`);
+
+    if (!this.isRunning) {
+      console.log(`[GameController] handlePhaseChange: skipped - game not running`);
+      return;
+    }
     if (this.isPaused) {
       this.pendingPhase = phase;
+      console.log(`[GameController] handlePhaseChange: deferred - game paused`);
       return;
     }
 
@@ -744,10 +750,22 @@ export class GameController extends EventEmitter {
   }
 
   private async handleAgentChoiceRequest(agent: GameAgent, phase: Phase, turnId: number): Promise<void> {
-    if (!this.isRunning || !agent.alive) return;
+    console.log(`[GameController] handleAgentChoiceRequest: phase=${phase}, agent=${agent.name}, alive=${agent.alive}, turnId=${turnId}`);
+
+    if (!this.isRunning) {
+      console.log(`[GameController] handleAgentChoiceRequest: skipped - game not running`);
+      return;
+    }
+    if (!agent.alive) {
+      console.log(`[GameController] handleAgentChoiceRequest: skipped - agent ${agent.name} is dead`);
+      return;
+    }
 
     const service = this.llmServices.get(agent.id);
-    if (!service) return;
+    if (!service) {
+      console.log(`[GameController] handleAgentChoiceRequest: skipped - no LLM service for agent ${agent.name}`);
+      return;
+    }
 
     const state = this.engine.getState();
     const systemPrompt = PromptBuilder.buildSystemPrompt(agent, phase, state);

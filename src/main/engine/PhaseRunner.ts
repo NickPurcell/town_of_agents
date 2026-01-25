@@ -96,7 +96,11 @@ export class PhaseRunner extends EventEmitter {
   }
 
   isTurnActive(turnId: number): boolean {
-    return this.currentTurnId === turnId;
+    const isActive = this.currentTurnId === turnId;
+    if (!isActive) {
+      console.log(`[PhaseRunner] isTurnActive: FALSE - turnId=${turnId}, currentTurnId=${this.currentTurnId}`);
+    }
+    return isActive;
   }
 
   notifyResponseStarted(turnId: number): void {
@@ -592,8 +596,13 @@ export class PhaseRunner extends EventEmitter {
     const phase = this.engine.getCurrentPhase();
     const agentManager = this.engine.getAgentManager();
 
+    console.log(`[PhaseRunner] startChoicePhase: phase=${phase}`);
+
     let choiceAgent: GameAgent | undefined;
-    if (this.deferIfPaused(() => this.startChoicePhase())) return;
+    if (this.deferIfPaused(() => this.startChoicePhase())) {
+      console.log(`[PhaseRunner] startChoicePhase: deferred - game paused`);
+      return;
+    }
 
     if (phase === 'SHERIFF_CHOICE') {
       choiceAgent = agentManager.getAliveSheriff();
@@ -615,10 +624,13 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = this.engine.getLynchingJester();
     }
 
+    console.log(`[PhaseRunner] startChoicePhase: choiceAgent=${choiceAgent?.name ?? 'none'} (${choiceAgent?.id ?? 'N/A'})`);
+
     if (choiceAgent) {
       // Check if agent is jailed (role blocked) - except Jailor who can't be jailed, and Jester haunt phase
       if (phase !== 'JAILOR_CHOICE' && phase !== 'JAILOR_EXECUTE_CHOICE' && phase !== 'JESTER_HAUNT_CHOICE' && this.engine.isAgentJailed(choiceAgent.id)) {
         // Host-only notification - jailed agents see nothing (treated like dead)
+        console.log(`[PhaseRunner] startChoicePhase: skipped - ${choiceAgent.name} is jailed`);
         this.engine.appendNarration(
           `**${choiceAgent.name} is jailed.**`,
           VisibilityFilter.host()
@@ -630,6 +642,7 @@ export class PhaseRunner extends EventEmitter {
       // Check if agent is haunted by Jester (role blocked) - except Jester haunt phase itself
       if (phase !== 'JESTER_HAUNT_CHOICE' && this.engine.isAgentHauntedByJester(choiceAgent.id)) {
         // Host-only notification - haunted agents cannot act
+        console.log(`[PhaseRunner] startChoicePhase: skipped - ${choiceAgent.name} is haunted by Jester`);
         this.engine.appendNarration(
           `**${choiceAgent.name} is haunted and cannot act.**`,
           VisibilityFilter.host()
@@ -641,9 +654,11 @@ export class PhaseRunner extends EventEmitter {
       this.currentTurnAgentId = choiceAgent.id;
       this.currentTurnId = this.nextTurnId++;
       this.startTurnTimeout();
+      console.log(`[PhaseRunner] startChoicePhase: emitting agent_choice_request for ${choiceAgent.name}, turnId=${this.currentTurnId}`);
       this.emit('agent_choice_request', choiceAgent, phase, this.currentTurnId);
     } else {
-      // Skip if no one to make choice
+      // Skip if no one to make choice - this happens when the role is dead
+      console.log(`[PhaseRunner] startChoicePhase: skipped - no choice agent found for phase ${phase}. This may indicate the role died earlier in the night.`);
       this.engine.nextPhase();
     }
   }
