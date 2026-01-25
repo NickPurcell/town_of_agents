@@ -1,3 +1,8 @@
+/* Compact mode wrapper for MessageItem/AgentChatScreen */
+.compactThinking {
+  padding: 4px 0;
+}
+
 /* Animated "Thinking..." text */
 .thinkingText {
   display: inline-flex;

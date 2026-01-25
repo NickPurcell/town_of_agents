@@ -5,8 +5,13 @@ import styles from './GameEventItem.module.css';
 import thinkingStyles from './ThinkingIndicator.module.css';
 
 interface Props {
-  agent: GameAgent;
+  // Full mode (from GameChatScreen)
+  agent?: GameAgent;
   thinkingContent?: string;
+  // Compact mode (from MessageItem/AgentChatScreen)
+  agentName?: string;
+  color?: string;
+  compact?: boolean;
 }
 
 const providerAvatarMap: Record<GameAgent['provider'], string> = {
@@ -43,9 +48,29 @@ function AgentAvatar({ agent }: { agent: GameAgent }) {
   );
 }
 
-export function ThinkingIndicator({ agent, thinkingContent }: Props) {
+export function ThinkingIndicator({ agent, thinkingContent, agentName, color, compact }: Props) {
   const thinkingText = 'Thinking...';
 
+  // Compact mode: simplified inline thinking indicator for MessageItem/AgentChatScreen
+  if (compact || !agent) {
+    return (
+      <div className={thinkingStyles.compactThinking}>
+        <div className={thinkingStyles.thinkingText}>
+          {thinkingText.split('').map((char, index) => (
+            <span
+              key={index}
+              className={thinkingStyles.letter}
+              style={{ animationDelay: `${index * 0.08}s` }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Full mode: complete thinking indicator with avatar for GameChatScreen
   return (
     <div className={styles.eventRow}>
       <AgentAvatar agent={agent} />
