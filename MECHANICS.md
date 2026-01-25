@@ -35,6 +35,7 @@ Each role has the following traits:
 - Attack succeeds if `attack_level > defense_level`
 - When attack fails: **attacker is notified** target was immune
 - Doctor protection grants **Powerful defense** for the night
+- Jailed agents have **Powerful defense** (protected while in jail)
 
 ---
 
@@ -132,6 +133,7 @@ A role **visits** when their night ability requires them to go to the target's l
 - **Night Order:** Goes FIRST (before Mafia discussion)
 - **Jail Effect:**
   - Target cannot use their night ability (role blocked)
+  - Jailed agents have **POWERFUL defense** (protected while in jail)
   - Jailed Mafia cannot participate in Mafia discussion OR vote
   - Private 3-round interrogation (Jailor and prisoner only)
 - **Execution:**

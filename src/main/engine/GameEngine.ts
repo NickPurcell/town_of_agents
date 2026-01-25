@@ -611,10 +611,15 @@ export class GameEngine extends EventEmitter {
     this.resolveNight();
   }
 
-  // Calculate effective defense for a target (includes Doctor protection)
+  // Calculate effective defense for a target (includes Doctor protection and jail)
   private getEffectiveDefense(targetId: string): DefenseLevel {
     const target = this.agentManager.getAgent(targetId);
     if (!target) return 'NONE';
+
+    // Jailed agents have POWERFUL defense (protected by the Jailor)
+    if (this.jailedThisNight.has(targetId)) {
+      return 'POWERFUL';
+    }
 
     // Revealed Mayor cannot be healed
     const isRevealedMayor = target.role === 'MAYOR' && target.hasRevealedMayor;
