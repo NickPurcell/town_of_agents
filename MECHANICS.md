@@ -106,7 +106,7 @@ A role **visits** when their night ability requires them to go to the target's l
   - Sees visitors even if watched target dies
   - Does NOT see themselves in visitor list
   - Lookout phase resolves AFTER attacks (sees the killer)
-  - **Cannot watch jailed targets** - receives "Your target was not home tonight."
+  - **Cannot watch jailed targets** - receives "Your target was in jail."
 
 #### Vigilante
 - **Faction:** Town
@@ -233,7 +233,7 @@ Night actions resolve in this specific order:
 - Multiple attacks on same target: target dies once, **both attackers credited**
 - Werewolf rampage kills all visitors to target (Doctor, Sheriff, Lookout, etc.)
 - **Jailed targets cannot be visited** - visitors receive "target is in jail" notification and their action fails
-- **Lookout cannot watch jailed targets** - receives "Your target was not home tonight."
+- **Lookout cannot watch jailed targets** - receives "Your target was in jail."
 
 ---
 

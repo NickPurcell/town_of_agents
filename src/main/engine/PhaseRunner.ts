@@ -987,7 +987,7 @@ export class PhaseRunner extends EventEmitter {
       // Check if target is jailed - they're not home to watch
       if (this.engine.isAgentJailed(target.id)) {
         this.engine.appendNarration(
-          `**Your target was not home tonight.**`,
+          `**Your target was in jail.**`,
           VisibilityFilter.lookoutPrivate(agent.id)
         );
         this.engine.nextPhase();

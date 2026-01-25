@@ -224,7 +224,7 @@ Helper functions:
 - Cannot heal revealed Mayor
 
 **Lookout Notes:**
-- Cannot watch jailed targets (receives "Your target was not home tonight.")
+- Cannot watch jailed targets (receives "Your target was in jail.")
 - Jailor does NOT visit, so Lookout won't see Jailor visiting the jailed player
 
 **Immediate Kills:**
