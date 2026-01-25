@@ -229,6 +229,7 @@ export interface GameState {
   jailorLostExecutionPower?: boolean;  // True if Jailor executed a Town member
   jailedAgentIds: string[];  // Agents currently jailed this night
   doctorSelfHealUsed: boolean;  // Track 1 self-heal limit
+  pendingNightDeaths: string[];  // Agent IDs killed this night, not yet revealed
   winner?: Faction;
 }
 

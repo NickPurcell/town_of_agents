@@ -114,8 +114,10 @@ export class PromptBuilder {
     agent: GameAgent,
     state: GameState
   ): Record<string, string> {
-    const aliveAgents = state.agents.filter((a) => a.alive);
-    const deadAgents = state.agents.filter((a) => !a.alive);
+    // Pending night deaths appear alive until morning (other agents don't know they died yet)
+    const pendingDeaths = new Set(state.pendingNightDeaths || []);
+    const visibleAlive = state.agents.filter((a) => a.alive || pendingDeaths.has(a.id));
+    const visibleDead = state.agents.filter((a) => !a.alive && !pendingDeaths.has(a.id));
 
     // Get unique roles in the game
     const activeRoles = [...new Set(state.agents.map((a) => a.role))];
@@ -133,9 +135,9 @@ export class PromptBuilder {
       personality: agent.personality,
       rolesList: activeRoles.join(', '),
       roleCounts,
-      livingPlayers: aliveAgents.map((a) => a.name).join(', '),
-      deadPlayers: deadAgents.length > 0
-        ? deadAgents.map((a) => `${a.name} (${a.role})`).join(', ')
+      livingPlayers: visibleAlive.map((a) => a.name).join(', '),
+      deadPlayers: visibleDead.length > 0
+        ? visibleDead.map((a) => `${a.name} (${a.role})`).join(', ')
         : 'None',
       timeOfDay: state.phase.includes('NIGHT') ||
         state.phase.includes('SHERIFF') ||

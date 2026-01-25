@@ -109,6 +109,8 @@ export class GameEngine extends EventEmitter {
   private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE'> = new Map();
   // Track if Mafia attack was processed (killed or blocked by Doctor)
   private mafiaAttackProcessed: boolean = false;
+  // Track night deaths for delayed visibility (hidden from prompts until morning)
+  private pendingNightDeaths: Set<string> = new Set();
 
   constructor(settings: GameSettings = DEFAULT_GAME_SETTINGS) {
     super();
@@ -138,6 +140,7 @@ export class GameEngine extends EventEmitter {
     this.nightVisits = [];
     this.immediateNightKills.clear();
     this.mafiaAttackProcessed = false;
+    this.pendingNightDeaths.clear();
     this.winner = undefined;
     this.lastWordsAgentId = undefined;
     this.isRunning = false;
@@ -188,6 +191,7 @@ export class GameEngine extends EventEmitter {
       jailorLostExecutionPower: this.jailorLostExecutionPower,
       jailedAgentIds: Array.from(this.jailedThisNight),
       doctorSelfHealUsed: this.doctorSelfHealUsed,
+      pendingNightDeaths: Array.from(this.pendingNightDeaths),
       winner: this.winner,
     };
   }
@@ -466,6 +470,9 @@ export class GameEngine extends EventEmitter {
 
   // Start night phase
   private startNight(): void {
+    // Clear pending night deaths from previous night (if any)
+    this.pendingNightDeaths.clear();
+
     this.appendTransition('NIGHT', this.dayNumber);
 
     // Check if mafia is alive
@@ -589,11 +596,15 @@ export class GameEngine extends EventEmitter {
   private skipVigilanteToLookout(): void {
     const vigilante = this.agentManager.getAliveVigilante();
 
-    if (this.vigilanteSkipNextNight && vigilante) {
+    // Check if Vigilante dies from guilt (from previous night's Town kill)
+    if (this.vigilanteGuiltyId && vigilante && vigilante.id === this.vigilanteGuiltyId) {
+      // Vigilante verbalizes guilt then dies immediately
       this.appendNarration(
-        '**Guilt overwhelms you tonight. You cannot act.**',
+        '**Guilt overwhelms you. You cannot go on.**',
         VisibilityFilter.vigilantePrivate(vigilante.id)
       );
+      this.eliminateAgent(vigilante.id, 'VIGILANTE_GUILT');
+      this.vigilanteGuiltyId = undefined;
       this.vigilanteSkipNextNight = false;
     } else if (this.vigilanteBulletsRemaining <= 0 && vigilante) {
       this.appendNarration(
@@ -802,6 +813,9 @@ export class GameEngine extends EventEmitter {
 
   // Resolve night and start new day
   private resolveNight(): void {
+    // Reveal all night deaths - clear pending so morning prompts show them as dead
+    this.pendingNightDeaths.clear();
+
     // Save night number BEFORE incrementing (used for Werewolf full moon check)
     const nightNumber = this.dayNumber;
     const wasFullMoon = nightNumber % 2 === 0;  // Even nights: 2, 4, 6, 8...
@@ -993,16 +1007,6 @@ export class GameEngine extends EventEmitter {
           this.notifyAttackerImmune('WEREWOLF', victimId);
         }
       }
-    }
-
-    // Handle Vigilante guilt death (from previous night's Town kill)
-    if (this.vigilanteGuiltyId && !this.vigilanteSkipNextNight) {
-      const guiltyVigilante = this.agentManager.getAgent(this.vigilanteGuiltyId);
-      if (guiltyVigilante && guiltyVigilante.alive) {
-        this.eliminateAgent(guiltyVigilante.id, 'VIGILANTE_GUILT');
-        morningMessages.push(`**${guiltyVigilante.name} was found dead from guilt. Their role was ${guiltyVigilante.role}.**`);
-      }
-      this.vigilanteGuiltyId = undefined;
     }
 
     // Clear pending actions (but NOT persistentFramedTargets - those persist!)
@@ -1283,6 +1287,12 @@ export class GameEngine extends EventEmitter {
     if (!agent || !agent.alive) return;
 
     this.agentManager.markAgentDead(agentId);
+
+    // Track all night deaths for delayed visibility - revealed in morning
+    const NIGHT_DEATH_CAUSES = ['NIGHT_KILL', 'VIGILANTE_KILL', 'WEREWOLF_KILL', 'JAILOR_EXECUTE', 'VIGILANTE_GUILT'];
+    if (NIGHT_DEATH_CAUSES.includes(cause)) {
+      this.pendingNightDeaths.add(agentId);
+    }
 
     const event: DeathEvent = {
       type: 'DEATH',
