@@ -524,18 +524,29 @@ export class PhaseRunner extends EventEmitter {
       const godfather = agentManager.getAliveGodfather();
       const result = VoteResolver.resolveMafiaVote(this.pendingVotes, allAgents, godfather);
       if (result.target) {
-        // Godfather decided or unanimous vote
-        this.mafiaVoteAttempts = 0;
-        this.engine.setPendingNightKillTarget(result.target);
-        // Track mafia visit for lookout (all alive mafia members visit the target)
-        const aliveMafia = agentManager.getAliveMafia();
-        for (const mafia of aliveMafia) {
-          this.engine.addNightVisit(mafia.id, result.target);
+        // Check if target is jailed (cannot be visited)
+        if (this.engine.isAgentJailed(result.target)) {
+          this.mafiaVoteAttempts = 0;
+          this.engine.setPendingNightKillTarget(undefined);
+          this.engine.appendNarration(
+            '**Your target is in jail. Your visit failed.**',
+            VisibilityFilter.mafia()
+          );
+          this.engine.nextPhase();
+        } else {
+          // Godfather decided or unanimous vote
+          this.mafiaVoteAttempts = 0;
+          this.engine.setPendingNightKillTarget(result.target);
+          // Track mafia visit for lookout (all alive mafia members visit the target)
+          const aliveMafia = agentManager.getAliveMafia();
+          for (const mafia of aliveMafia) {
+            this.engine.addNightVisit(mafia.id, result.target);
+          }
+          // Execute immediate Mafia kill (target cannot perform night actions if killed)
+          // Note: Only checks innate defense (jail, role traits) - Doctor hasn't chosen yet
+          this.engine.executeImmediateMafiaKill(result.target);
+          this.engine.nextPhase();
         }
-        // Execute immediate Mafia kill (target cannot perform night actions if killed)
-        // Note: Only checks innate defense (jail, role traits) - Doctor hasn't chosen yet
-        this.engine.executeImmediateMafiaKill(result.target);
-        this.engine.nextPhase();
       } else {
         // No target decided (no Godfather vote and no unanimity)
         this.mafiaVoteAttempts++;
@@ -710,6 +721,19 @@ export class PhaseRunner extends EventEmitter {
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
       // Invalid target, skip action
+      this.engine.nextPhase();
+      return;
+    }
+
+    // Check if target is jailed (cannot be visited) - exceptions: JAILOR_CHOICE, LOOKOUT_CHOICE (watches, doesn't visit)
+    // Werewolf staying home is also not a visit to someone else
+    const isWerewolfStayingHome = phase === 'WEREWOLF_CHOICE' && target.id === agent.id;
+    if (phase !== 'JAILOR_CHOICE' && phase !== 'LOOKOUT_CHOICE' && !isWerewolfStayingHome && this.engine.isAgentJailed(target.id)) {
+      const roleVisibility = this.getPrivateVisibilityForPhase(phase, agent.id);
+      this.engine.appendNarration(
+        `**Your target is in jail. Your visit failed.**`,
+        roleVisibility
+      );
       this.engine.nextPhase();
       return;
     }

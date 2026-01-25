@@ -134,6 +134,7 @@ A role **visits** when their night ability requires them to go to the target's l
 - **Jail Effect:**
   - Target cannot use their night ability (role blocked)
   - Jailed agents have **POWERFUL defense** (protected while in jail)
+  - Jailed agents **cannot be visited** by other roles (visits fail with notification)
   - Jailed Mafia cannot participate in Mafia discussion OR vote
   - Private 3-round interrogation (Jailor and prisoner only)
 - **Execution:**
@@ -227,6 +228,8 @@ Night actions resolve in this specific order:
 - Lookout goes LAST so they see everyone who visited, including killers
 - Multiple attacks on same target: target dies once, **both attackers credited**
 - Werewolf rampage kills all visitors to target (Doctor, Sheriff, Lookout, etc.)
+- **Jailed targets cannot be visited** - visitors receive "target is in jail" notification and their action fails
+- Lookout can watch a jailed target (watching is not visiting) but will see no visitors
 
 ---
 
@@ -251,6 +254,11 @@ Night actions resolve in this specific order:
 |----------|-----------------|-----------------|
 | Heal + no attack | No | No |
 | Heal + attack blocked | Yes ("you saved someone") | Yes ("you were attacked but healed") |
+
+### Visit Failure Notifications
+| Scenario | Visitor Notified |
+|----------|------------------|
+| Target is in jail | Yes ("target is in jail, visit failed") |
 
 ### Death Notifications
 When a player dies, their **role is publicly revealed** to all players. This applies to all causes of death:
