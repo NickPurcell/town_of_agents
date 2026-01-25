@@ -1237,10 +1237,6 @@ export class GameEngine extends EventEmitter {
     this.emit('event_appended', event);
     this.emit('agent_died', agentId, cause);
 
-    if (cause === 'DAY_ELIMINATION') {
-      this.appendNarration(`**${agent.name} has been eliminated. Their role was ${agent.role}.**`, VisibilityFilter.public());
-    }
-
     // Check win condition
     if (!this.winner) {
       this.checkWinCondition();

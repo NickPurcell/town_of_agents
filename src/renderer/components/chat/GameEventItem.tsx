@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, TransitionEvent, Phase } from '@shared/types';
+import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, TransitionEvent, DeathEvent, Phase } from '@shared/types';
 import { ROLE_COLORS } from '@shared/types';
 import { categorizeNarration, getCategoryClassName } from '../../utils/narrationCategorizer';
 import { NarrationIconMap } from './NarrationIcons';
 import styles from './GameEventItem.module.css';
+
+// Death cause text mapping for cinematic banner
+const DEATH_CAUSE_TEXT: Record<DeathEvent['cause'], string> = {
+  DAY_ELIMINATION: 'executed by the town',
+  NIGHT_KILL: 'murdered by the Mafia',
+  VIGILANTE_KILL: 'slain by the Vigilante',
+  VIGILANTE_GUILT: 'consumed by guilt',
+  WEREWOLF_KILL: 'mauled by the Werewolf',
+  JAILOR_EXECUTE: 'executed by the Jailor',
+};
 
 interface GameEventItemProps {
   event: GameEvent;
@@ -277,40 +287,28 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
         </div>
       );
 
-    case 'DEATH':
+    case 'DEATH': {
       if (!agent) return null;
-      // DAY_ELIMINATION already has a narration, skip rendering the DEATH event
-      if (event.cause === 'DAY_ELIMINATION') return null;
-      let causeText = 'died';
-      switch (event.cause) {
-        case 'NIGHT_KILL':
-          causeText = 'was killed by the Mafia';
-          break;
-        case 'VIGILANTE_KILL':
-          causeText = 'was killed by the vigilante';
-          break;
-        case 'VIGILANTE_GUILT':
-          causeText = 'died from guilt';
-          break;
-      }
+      const causeText = DEATH_CAUSE_TEXT[event.cause];
+      const roleColor = ROLE_COLORS[agent.role];
+
       return (
-        <AgentEventRow
-          agent={agent}
-          className={styles.death}
-          style={{ ['--agent-color' as any]: ROLE_COLORS[agent.role] } as React.CSSProperties}
-        >
-          <span
-            className={styles.deadAgentName}
-            style={{ color: ROLE_COLORS[agent.role] }}
-          >
-            {agent.name}
-          </span>
-          <span className={styles.deathCause}>{causeText}</span>
-          <span className={styles.roleReveal}>
-            Role: <span style={{ color: ROLE_COLORS[agent.role] }}>{agent.role}</span>
-          </span>
-        </AgentEventRow>
+        <div className={styles.deathBanner}>
+          <div className={styles.deathNameRow}>
+            <span
+              className={styles.deathName}
+              style={{ '--role-color': roleColor, '--role-glow': `${roleColor}80` } as React.CSSProperties}
+            >
+              {agent.name}
+            </span>
+            <span className={styles.eliminatedLabel}>ELIMINATED</span>
+          </div>
+          <p className={styles.deathSubtitle}>
+            {agent.name} was {causeText}
+          </p>
+        </div>
       );
+    }
 
     case 'TRANSITION': {
       const transitionEvent = event as TransitionEvent;

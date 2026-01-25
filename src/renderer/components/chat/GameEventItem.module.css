@@ -531,3 +531,94 @@
 .transitionNight .transitionSubtitle {
   color: rgba(180, 200, 255, 0.6);
 }
+
+/* =====================================================
+   Death Banner - Cinematic elimination display
+   ===================================================== */
+
+/* Name slides in from LEFT */
+@keyframes death-name-slide-in {
+  0% { opacity: 0; transform: translateX(-48px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* Strikethrough grows across name */
+@keyframes death-strike-grow {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+/* ELIMINATED fades in white→red */
+@keyframes eliminated-fade-in {
+  0% { opacity: 0; color: #ffffff; transform: translateX(-8px); }
+  50% { opacity: 1; color: #ffffff; }
+  100% { opacity: 1; color: #e53935; }
+}
+
+/* Subtitle fades in */
+@keyframes death-subtitle-fade {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.deathBanner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 0;
+  margin: 8px 0;
+}
+
+.deathNameRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deathName {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--role-color);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px var(--role-glow), 0 0 40px var(--role-glow), 0 2px 16px rgba(0, 0, 0, 0.5);
+  animation: death-name-slide-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  position: relative;
+}
+
+/* Strikethrough via ::after pseudo-element */
+.deathName::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--role-color), #e53935);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: death-strike-grow 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.6s forwards;
+  box-shadow: 0 0 8px var(--role-glow);
+}
+
+.eliminatedLabel {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+  animation: eliminated-fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.8s both;
+}
+
+.deathSubtitle {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.08em;
+  font-style: italic;
+  margin: 4px 0 0 0;
+  animation: death-subtitle-fade 0.5s cubic-bezier(0.4, 0, 0.2, 1) 1.2s both;
+}
