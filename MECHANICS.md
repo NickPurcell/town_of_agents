@@ -202,20 +202,28 @@ Night actions resolve in this specific order:
 |----------|-------|-------------|
 | 1 | **Jailor Choice** | Jailor selects who to jail |
 | 2 | Jail Conversation | Private 3-round interrogation |
-| 3 | Jailor Execute | Jailor decides whether to execute prisoner |
+| 3 | **Jailor Execute** | Jailor decides whether to execute prisoner **(kills immediately)** |
 | 4 | Mafia Discussion | Mafia members discuss (jailed Mafia excluded) |
-| 5 | Framer | Framer applies frame to target |
-| 6 | Consigliere | Consigliere investigates target, learns exact role |
-| 7 | Sheriff | Sheriff investigates target (frame already applied) |
-| 8 | Doctor | Doctor applies Powerful protection to target |
-| 9 | Vigilante | Vigilante shoots target |
-| 10 | Werewolf | Werewolf rampages (only on even nights) |
-| 11 | Lookout | Lookout sees all visitors (including attackers) |
-| 12 | Night Resolution | All attacks resolve, notifications sent |
+| 5 | **Mafia Vote** | Mafia votes on kill target **(kills immediately)** |
+| 6 | Framer | Framer applies frame to target |
+| 7 | Consigliere | Consigliere investigates target, learns exact role |
+| 8 | Sheriff | Sheriff investigates target (frame already applied) |
+| 9 | Doctor | Doctor applies Powerful protection to target |
+| 10 | Vigilante | Vigilante shoots target |
+| 11 | Werewolf | Werewolf rampages (only on even nights) |
+| 12 | Lookout | Lookout sees all visitors (including attackers) |
+| 13 | Night Resolution | Remaining attacks resolve, notifications sent |
+
+### Immediate Kills
+- **Jailor Execution**: Kills immediately when decision is made (UNSTOPPABLE - bypasses all defense)
+- **Mafia Kill**: Kills immediately after vote resolves (checks innate defense only - Doctor hasn't chosen yet)
+- Victims of immediate kills **cannot perform their night action**
+- Morning announcements still appear at dawn for public visibility
 
 ### Resolution Notes
 - Framer goes before Sheriff so frames are active during investigation
-- Doctor goes before attacks so protection is in place
+- Doctor goes before Vigilante/Werewolf attacks so protection is in place
+- Doctor **cannot** protect against Mafia kills (Mafia kills immediately before Doctor chooses)
 - Werewolf rampages after Vigilante so they can catch the Vigilante visiting
 - Lookout goes LAST so they see everyone who visited, including killers
 - Multiple attacks on same target: target dies once, **both attackers credited**

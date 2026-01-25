@@ -532,6 +532,9 @@ export class PhaseRunner extends EventEmitter {
         for (const mafia of aliveMafia) {
           this.engine.addNightVisit(mafia.id, result.target);
         }
+        // Execute immediate Mafia kill (target cannot perform night actions if killed)
+        // Note: Only checks innate defense (jail, role traits) - Doctor hasn't chosen yet
+        this.engine.executeImmediateMafiaKill(result.target);
         this.engine.nextPhase();
       } else {
         // No target decided (no Godfather vote and no unanimity)

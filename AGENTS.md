@@ -191,9 +191,9 @@ Helper functions:
 ### Night Phase Order (per MECHANICS.md)
 1. **Jailor Choice** - Jailor selects who to jail (FIRST action)
 2. **Jail Conversation** - Private 3-round interrogation between Jailor and prisoner
-3. **Jailor Execute Choice** - Jailor decides whether to execute (UNSTOPPABLE attack)
+3. **Jailor Execute Choice** - Jailor decides whether to execute (UNSTOPPABLE attack, **kills immediately**)
 4. **Mafia Discussion** - Mafia members discuss (jailed Mafia excluded)
-5. **Mafia Vote** - Godfather has final say; unanimity fallback (jailed Mafia excluded)
+5. **Mafia Vote** - Godfather has final say; unanimity fallback (jailed Mafia excluded, **kills immediately**)
 6. **Framer Pre-Speech** - Framer deliberates (private)
 7. **Framer Choice** - Frame target (persists until investigated)
 8. **Consigliere Choice** - Learn exact role
@@ -216,6 +216,12 @@ Helper functions:
 - Jailed agents have POWERFUL defense (protected while in jail)
 - If Jailor jails Werewolf on a full moon night (2, 4, 6...), Werewolf kills Jailor + visitors
 - Executing a Town member causes Jailor to permanently lose execution ability
+
+**Immediate Kills:**
+- **Jailor Execution**: Kills target immediately when decision is made (UNSTOPPABLE - bypasses all defense)
+- **Mafia Kill**: Kills target immediately after vote resolves (checks innate defense only - Doctor hasn't chosen yet)
+- Immediate kills prevent the victim from performing their night action
+- Morning announcements still appear at dawn for public visibility
 
 ### Post-Game Discussion
 After a win condition is met, the game enters POST_GAME_DISCUSSION phase:

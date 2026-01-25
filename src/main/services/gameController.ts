@@ -1803,6 +1803,9 @@ export class GameController extends EventEmitter {
         };
         this.engine.appendEvent(choiceEvent);
 
+        // Execute immediately (UNSTOPPABLE attack - prisoner cannot perform night actions)
+        this.engine.executeImmediateJailorKill(prisoner.id);
+
         // Check if prisoner is Town - lose execution power
         if (prisoner.faction === 'TOWN') {
           this.engine.setJailorLostExecutionPower();

@@ -102,6 +102,8 @@ export class GameEngine extends EventEmitter {
   private jailorLostExecutionPower: boolean = false;
   private jailedThisNight: Set<string> = new Set();
   private pendingJailorExecution?: string;
+  // Track immediate kills (processed before night resolution)
+  private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE'> = new Map();
 
   constructor(settings: GameSettings = DEFAULT_GAME_SETTINGS) {
     super();
@@ -129,6 +131,7 @@ export class GameEngine extends EventEmitter {
     this.sheriffIntelQueue = {};
     this.lookoutIntelQueue = {};
     this.nightVisits = [];
+    this.immediateNightKills.clear();
     this.winner = undefined;
     this.lastWordsAgentId = undefined;
     this.isRunning = false;
@@ -680,6 +683,59 @@ export class GameEngine extends EventEmitter {
     // Target sees the public message about being saved
   }
 
+  // Get innate defense for a target (excludes Doctor protection, used for immediate kills)
+  getInnateDefense(targetId: string): DefenseLevel {
+    const target = this.agentManager.getAgent(targetId);
+    if (!target) return 'NONE';
+
+    // Jailed agents have POWERFUL defense (protected by the Jailor)
+    if (this.jailedThisNight.has(targetId)) {
+      return 'POWERFUL';
+    }
+
+    // Return base defense from role traits
+    return ROLE_TRAITS[target.role].defense;
+  }
+
+  // Execute immediate Jailor kill (UNSTOPPABLE - always succeeds)
+  executeImmediateJailorKill(targetId: string): void {
+    const target = this.agentManager.getAgent(targetId);
+    if (!target || !target.alive) return;
+
+    this.eliminateAgent(targetId, 'JAILOR_EXECUTE');
+    this.immediateNightKills.set(targetId, 'JAILOR_EXECUTE');
+  }
+
+  // Execute immediate Mafia kill (BASIC attack - checks innate defense)
+  // Returns true if kill succeeded, false if target was immune
+  executeImmediateMafiaKill(targetId: string): boolean {
+    const target = this.agentManager.getAgent(targetId);
+    if (!target || !target.alive) return false;
+
+    const defense = this.getInnateDefense(targetId);
+    const attack: AttackLevel = 'BASIC';
+
+    if (doesAttackSucceed(attack, defense)) {
+      this.eliminateAgent(targetId, 'NIGHT_KILL');
+      this.immediateNightKills.set(targetId, 'MAFIA');
+      return true;
+    } else {
+      // Target was immune - notify Mafia
+      this.notifyAttackerImmune('MAFIA', targetId);
+      return false;
+    }
+  }
+
+  // Check if an agent was killed immediately this night
+  wasKilledImmediately(agentId: string): boolean {
+    return this.immediateNightKills.has(agentId);
+  }
+
+  // Get the cause of immediate kill
+  getImmediateKillCause(agentId: string): 'MAFIA' | 'JAILOR_EXECUTE' | undefined {
+    return this.immediateNightKills.get(agentId);
+  }
+
   // Resolve night and start new day
   private resolveNight(): void {
     // Save night number BEFORE incrementing (used for Werewolf full moon check)
@@ -722,9 +778,16 @@ export class GameEngine extends EventEmitter {
     // Only if Werewolf didn't kill the Jailor
     if (!werewolfKilledJailor && this.pendingJailorExecution) {
       const prisoner = this.agentManager.getAgent(this.pendingJailorExecution);
-      if (prisoner && prisoner.alive) {
-        this.eliminateAgent(prisoner.id, 'JAILOR_EXECUTE');
-        morningMessages.push(`**${prisoner.name} was executed by the Jailor.**`);
+      if (prisoner) {
+        // Check if already killed immediately during the phase
+        if (this.wasKilledImmediately(prisoner.id) && this.getImmediateKillCause(prisoner.id) === 'JAILOR_EXECUTE') {
+          // Already executed - just add morning message
+          morningMessages.push(`**${prisoner.name} was executed by the Jailor.**`);
+        } else if (prisoner.alive) {
+          // Not yet executed - execute now
+          this.eliminateAgent(prisoner.id, 'JAILOR_EXECUTE');
+          morningMessages.push(`**${prisoner.name} was executed by the Jailor.**`);
+        }
       }
     }
 
@@ -778,6 +841,14 @@ export class GameEngine extends EventEmitter {
     for (const [targetId, sources] of killTargets.entries()) {
       const target = this.agentManager.getAgent(targetId);
       if (!target) continue;
+
+      // Check if target was already killed immediately by Mafia
+      if (sources.has('MAFIA') && this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'MAFIA') {
+        // Already killed immediately - just add morning message
+        morningMessages.push(`**${target.name} was found dead in the morning.**`);
+        // Note: Vigilante might also target the same agent, but they're already dead
+        continue;
+      }
 
       // Get effective defense (includes Doctor protection)
       const targetDefense = this.getEffectiveDefense(targetId);
@@ -866,6 +937,7 @@ export class GameEngine extends EventEmitter {
     this.pendingLookoutWatchTarget = undefined;
     this.pendingFramedTarget = undefined;  // Deprecated, kept for compatibility
     this.nightVisits = [];
+    this.immediateNightKills.clear();  // Clear immediate kills tracking
     // Clear Jailor state for next night
     this.pendingJailTarget = undefined;
     this.pendingJailorExecution = undefined;
