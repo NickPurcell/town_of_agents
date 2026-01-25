@@ -32,7 +32,7 @@ function numberToOrdinal(n: number): string {
 }
 
 // Phase order for state machine (night phases per MECHANICS.md)
-// Night order: Jailor → Execute → Doctor → Mafia discuss/vote → Framer → Consigliere → Sheriff → Vigilante → Werewolf → Lookout
+// Night order: Jailor → Doctor → Mafia discuss/vote → Framer → Consigliere → Sheriff → Vigilante → Werewolf → Lookout
 const PHASE_ORDER: Phase[] = [
   'DAY_ONE_DISCUSSION',
   'DAY_DISCUSSION',
@@ -49,10 +49,12 @@ const PHASE_ORDER: Phase[] = [
   // Then Mafia
   'NIGHT_DISCUSSION',
   'NIGHT_VOTE',
+  // Mafia support roles
   'FRAMER_PRE_SPEECH',
   'FRAMER_CHOICE',
   'CONSIGLIERE_CHOICE',
   'CONSIGLIERE_POST_SPEECH',
+  // Town investigative/killing roles
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
   'VIGILANTE_PRE_SPEECH',
@@ -336,8 +338,8 @@ export class GameEngine extends EventEmitter {
           this.emitPhaseChange('JAIL_CONVERSATION');
           return;
         }
-        // No target jailed, skip to Mafia
-        this.goToMafiaDiscussion();
+        // No target jailed, skip to Doctor
+        this.goToDoctorPhase();
         return;
 
       case 'JAIL_CONVERSATION':
@@ -346,22 +348,22 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'JAILOR_EXECUTE_CHOICE':
-        // After execution decision, go to Mafia discussion
-        this.goToMafiaDiscussion();
+        // After execution decision, go to Doctor
+        this.goToDoctorPhase();
         return;
 
       // Night phases per MECHANICS.md order:
-      // 1. Mafia Discussion → Mafia Vote
+      // Mafia Discussion → Mafia Vote
       case 'NIGHT_DISCUSSION':
         this.transitionToNightVote();
         return;
 
-      // 2. Mafia Vote → Framer (or skip to Consigliere/Sheriff)
+      // Mafia Vote → Framer (or skip to Consigliere/Sheriff)
       case 'NIGHT_VOTE':
         this.goToFramerPhase();
         return;
 
-      // 3a. Framer Pre-Speech → Framer Choice
+      // Framer Pre-Speech → Framer Choice
       case 'FRAMER_PRE_SPEECH':
         const activeFramer = this.agentManager.getAliveFramer();
         if (activeFramer) {
@@ -372,32 +374,32 @@ export class GameEngine extends EventEmitter {
         this.goToConsiglierePhase();
         return;
 
-      // 3b. Framer Choice → Consigliere (or skip to Sheriff)
+      // Framer Choice → Consigliere (or skip to Sheriff)
       case 'FRAMER_CHOICE':
         this.goToConsiglierePhase();
         return;
 
-      // 4. Consigliere Choice → Consigliere Post-Speech
+      // Consigliere Choice → Consigliere Post-Speech
       case 'CONSIGLIERE_CHOICE':
         this.emitPhaseChange('CONSIGLIERE_POST_SPEECH');
         return;
 
-      // 5. Consigliere Post-Speech → Sheriff (or skip to Doctor)
+      // Consigliere Post-Speech → Sheriff (or skip to Vigilante)
       case 'CONSIGLIERE_POST_SPEECH':
         this.goToSheriffPhase();
         return;
 
-      // 5. Sheriff → Sheriff Post-Speech
+      // Sheriff → Sheriff Post-Speech
       case 'SHERIFF_CHOICE':
         this.emitPhaseChange('SHERIFF_POST_SPEECH');
         return;
 
-      // 6. Sheriff Post-Speech → Doctor (or skip to Vigilante)
+      // Sheriff Post-Speech → Vigilante (or skip to Werewolf/Lookout)
       case 'SHERIFF_POST_SPEECH':
-        this.goToDoctorPhase();
+        this.goToVigilantePhase();
         return;
 
-      // 7a. Doctor Pre-Speech → Doctor Choice
+      // Doctor Pre-Speech → Doctor Choice
       case 'DOCTOR_PRE_SPEECH':
         const activeDoctor = this.agentManager.getAliveDoctor();
         if (activeDoctor) {
@@ -405,15 +407,15 @@ export class GameEngine extends EventEmitter {
           this.appendNarration('**Doctor, choose your target to protect.**', VisibilityFilter.doctorPrivate(activeDoctor.id));
           return;
         }
-        this.goToVigilantePhase();
+        this.goToMafiaDiscussion();
         return;
 
-      // 7b. Doctor Choice → Vigilante (or skip to Lookout)
+      // Doctor Choice → Mafia Discussion
       case 'DOCTOR_CHOICE':
-        this.goToVigilantePhase();
+        this.goToMafiaDiscussion();
         return;
 
-      // 8. Vigilante Pre-Speech → Vigilante Choice
+      // Vigilante Pre-Speech → Vigilante Choice
       case 'VIGILANTE_PRE_SPEECH':
         const activeVigilante = this.agentManager.getAliveVigilante();
         if (!activeVigilante || this.vigilanteSkipNextNight) {
@@ -424,12 +426,12 @@ export class GameEngine extends EventEmitter {
         this.appendNarration('**Vigilante, choose your target.**', VisibilityFilter.vigilantePrivate(activeVigilante.id));
         return;
 
-      // 9. Vigilante Choice → Werewolf (or skip to Lookout)
+      // Vigilante Choice → Werewolf (or skip to Lookout)
       case 'VIGILANTE_CHOICE':
         this.goToWerewolfPhase();
         return;
 
-      // 10a. Werewolf Pre-Speech → Werewolf Choice
+      // Werewolf Pre-Speech → Werewolf Choice
       case 'WEREWOLF_PRE_SPEECH':
         const activeWerewolf = this.agentManager.getAliveWerewolf();
         if (activeWerewolf && this.canWerewolfActTonight()) {
@@ -440,19 +442,19 @@ export class GameEngine extends EventEmitter {
         this.goToLookoutPhase();
         return;
 
-      // 10b. Werewolf Choice → Lookout (or resolve night)
+      // Werewolf Choice → Lookout (or resolve night)
       case 'WEREWOLF_CHOICE':
         this.goToLookoutPhase();
         return;
 
-      // 10. Lookout Choice → Lookout Post-Speech
+      // Lookout Choice → Lookout Post-Speech
       case 'LOOKOUT_CHOICE':
         this.processLookoutIntel();
         this.deliverLookoutIntel();
         this.emitPhaseChange('LOOKOUT_POST_SPEECH');
         return;
 
-      // 11. Lookout Post-Speech → Resolve Night
+      // Lookout Post-Speech → Resolve Night
       case 'LOOKOUT_POST_SPEECH':
         this.resolveNight();
         return;
@@ -481,7 +483,7 @@ export class GameEngine extends EventEmitter {
       return;
     }
 
-    // Night starts with Jailor (if alive), then Mafia
+    // Night starts with Jailor (if alive), then Doctor, then Mafia
     const jailor = this.agentManager.getAliveJailor();
     if (jailor) {
       this.emitPhaseChange('JAILOR_CHOICE');
@@ -489,7 +491,7 @@ export class GameEngine extends EventEmitter {
       return;
     }
 
-    this.goToMafiaDiscussion();
+    this.goToDoctorPhase();
   }
 
   // Go to Mafia discussion phase
@@ -549,30 +551,30 @@ export class GameEngine extends EventEmitter {
     if (sheriff) {
       if (this.jailedThisNight.has(sheriff.id)) {
         this.appendNarration(`**${sheriff.name} is jailed.**`, VisibilityFilter.host());
-        this.goToDoctorPhase();
+        this.goToVigilantePhase();
         return;
       }
       this.emitPhaseChange('SHERIFF_CHOICE');
       this.appendNarration('**Sheriff, choose your target.**', VisibilityFilter.sheriffPrivate(sheriff.id));
       return;
     }
-    this.goToDoctorPhase();
+    this.goToVigilantePhase();
   }
 
-  // Go to Doctor phase (after Sheriff)
+  // Go to Doctor phase (after Jailor, before Mafia)
   private goToDoctorPhase(): void {
     const doctor = this.agentManager.getAliveDoctor();
     if (doctor) {
       if (this.jailedThisNight.has(doctor.id)) {
         this.appendNarration(`**${doctor.name} is jailed.**`, VisibilityFilter.host());
-        this.goToVigilantePhase();
+        this.goToMafiaDiscussion();
         return;
       }
       this.emitPhaseChange('DOCTOR_PRE_SPEECH');
       this.appendNarration('**Doctor, gather your thoughts.**', VisibilityFilter.doctorPrivate(doctor.id));
       return;
     }
-    this.goToVigilantePhase();
+    this.goToMafiaDiscussion();
   }
 
   // Go to Vigilante phase (after Doctor)
