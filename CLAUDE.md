@@ -88,6 +88,25 @@ Your message here
 - **geminiService.ts**: Google Gemini support (streams thinking via onThinkingChunk).
 - **rateLimiter.ts**: Rate limiting wrapper for both generate and generateStream.
 
+### Game Logging (`src/main/services/logging/`)
+Writes human-readable log files for each game session to `.logs/` directory.
+
+- **index.ts**: `LoggingService` singleton class
+  - `startLogging(agents)`: Create log file on game start
+  - `logEvent(event)`: Append formatted event to log (async, non-blocking)
+  - `stopLogging(winner)`: Write footer and close log
+- **formatters.ts**: Event formatting utilities
+  - `formatVisibility(visibility)`: Convert visibility to readable string (e.g., `sheriff_private:agent-id`)
+  - `formatGameEvent(event, agentLookup)`: Format each event type to human-readable text
+
+**Log file location:**
+- Development: `.logs/` in project root
+- Production: `{userData}/.logs/`
+
+**Log file format:** `TOS_log_YYYY-MM-DD_HH-MM-SS.txt`
+
+**Important:** Reasoning content is never logged - only `messageMarkdown` from SPEECH events.
+
 ### Preload Bridge
 `src/preload/index.ts` defines `window.api` methods and events.
 Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC changes.

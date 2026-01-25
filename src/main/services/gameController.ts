@@ -27,6 +27,7 @@ import { PromptBuilder } from '../llm/PromptBuilder';
 import { ResponseParser } from '../llm/ResponseParser';
 import { createLLMService, LLMService } from './llm';
 import { createRateLimitedService, RateLimitedLLMService } from './llm/rateLimiter';
+import { getLoggingService } from './logging';
 
 interface PendingAgent {
   name: string;
@@ -98,6 +99,8 @@ export class GameController extends EventEmitter {
     this.engine.on('event_appended', (event: GameEvent) => {
       this.emit('event_appended', event);
       this.emitStateUpdate();
+      // Log event to file (async, non-blocking)
+      getLoggingService().logEvent(event);
     });
 
     this.engine.on('phase_changed', (phase: Phase, dayNumber: number) => {
@@ -110,6 +113,8 @@ export class GameController extends EventEmitter {
       this.isPaused = false;
       this.pendingPhase = null;
       this.emit('game_over', winner);
+      // Finalize log with winner (async, non-blocking)
+      getLoggingService().stopLogging(winner);
     });
 
     this.engine.on('agent_died', (agentId: string, cause: string) => {
@@ -167,6 +172,9 @@ export class GameController extends EventEmitter {
     const providerServices = new Map<string, LLMService>();
 
     const agents = this.engine.getAgentManager().getAllAgents();
+
+    // Start logging for this game session
+    getLoggingService().startLogging(agents);
     for (const agent of agents) {
       const apiKey = this.getApiKeyForProvider(agent.provider);
       if (apiKey) {
@@ -207,6 +215,8 @@ export class GameController extends EventEmitter {
     this.pendingPhase = null;
     this.engine.stopGame();
     this.phaseRunner.reset();
+    // Finalize log with "Game Stopped" (async, non-blocking)
+    getLoggingService().stopLogging('Game Stopped');
   }
 
   getState(): GameState {
