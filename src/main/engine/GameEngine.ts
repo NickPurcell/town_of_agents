@@ -679,15 +679,19 @@ export class GameEngine extends EventEmitter {
       return;
     }
 
-    // Check if jailed before emitting phase change
+    // Always emit phase change to show "Werewolf's Turn" banner
+    this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
+
+    // Check if jailed - notify Werewolf and skip
     if (this.jailedThisNight.has(werewolf.id)) {
       this.appendNarration(`**${werewolf.name} is jailed.**`, VisibilityFilter.host());
+      this.appendNarration(
+        '**You are in jail tonight. You cannot act.**',
+        VisibilityFilter.werewolfPrivate(werewolf.id)
+      );
       this.goToLookoutPhase();
       return;
     }
-
-    // Always emit phase change to show "Werewolf's Turn" banner
-    this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
 
     if (this.canWerewolfActTonight()) {
       this.appendNarration('**Werewolf, gather your thoughts.**', VisibilityFilter.werewolfPrivate(werewolf.id));
