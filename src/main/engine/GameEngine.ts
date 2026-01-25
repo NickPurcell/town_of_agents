@@ -624,8 +624,8 @@ export class GameEngine extends EventEmitter {
   // Go to Vigilante phase (after Doctor)
   private goToVigilantePhase(): void {
     const vigilante = this.agentManager.getAliveVigilante();
-    // Skip if no vigilante, skipping due to guilt, or out of bullets
-    if (!vigilante || this.vigilanteSkipNextNight || this.vigilanteBulletsRemaining <= 0) {
+    // Skip if no vigilante, skipping due to guilt, out of bullets, or Night 1
+    if (!vigilante || this.vigilanteSkipNextNight || this.vigilanteBulletsRemaining <= 0 || this.dayNumber < 2) {
       this.skipVigilanteToLookout();
       return;
     }
@@ -655,6 +655,11 @@ export class GameEngine extends EventEmitter {
     } else if (this.vigilanteBulletsRemaining <= 0 && vigilante) {
       this.appendNarration(
         '**You have no bullets remaining.**',
+        VisibilityFilter.vigilantePrivate(vigilante.id)
+      );
+    } else if (this.dayNumber < 2 && vigilante) {
+      this.appendNarration(
+        '**It is too early to act. You may shoot starting Night 2.**',
         VisibilityFilter.vigilantePrivate(vigilante.id)
       );
     }

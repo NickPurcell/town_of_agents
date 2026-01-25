@@ -1,4 +1,4 @@
-It is time to select a player to eliminate.
+It is time to select a player to eliminate. You may only shoot starting Night 2.
 
 If you kill a town member, you will skip your next night action and die from guilt the following morning.
 

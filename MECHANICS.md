@@ -113,7 +113,7 @@ A role **visits** when their night ability requires them to go to the target's l
 - **Attack:** Basic | **Defense:** None
 - **Visits:** Yes
 - **Bullets:** 3 total
-- **Can shoot:** Night 1 onwards
+- **Can shoot:** Night 2 onwards
 - **Guilt:** If Vigilante kills a Town member, they die of guilt at the **end of the following night**
 - **Notes:** Killing a revealed Mayor still triggers guilt
 

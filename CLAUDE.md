@@ -203,8 +203,8 @@ Helper functions:
 11. **Consigliere Post-Speech** - Consigliere reacts to findings (private)
 12. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
 13. **Sheriff Post-Speech** - Sheriff reacts to result
-14. **Vigilante Pre-Speech** - Vigilante deliberates (private)
-15. **Vigilante Choice** - Shoot target (3 bullets total)
+14. **Vigilante Pre-Speech** - Vigilante deliberates (private, Night 2+ only)
+15. **Vigilante Choice** - Shoot target (3 bullets total, Night 2+ only)
 16. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
 17. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
 18. **Lookout Choice** - Watch target (sees all visitors)
