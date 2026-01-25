@@ -18,10 +18,8 @@ class LoggingService {
       // Production: use userData directory
       return path.join(app.getPath('userData'), '.logs');
     } else {
-      // Development: use project root
-      const appPath = app.getAppPath();
-      // Navigate up from out/main to project root
-      return path.join(appPath, '..', '..', '.logs');
+      // Development: app.getAppPath() returns project root
+      return path.join(app.getAppPath(), '.logs');
     }
   }
 
