@@ -466,7 +466,7 @@ export class GameEngine extends EventEmitter {
       case 'VIGILANTE_PRE_SPEECH':
         const activeVigilante = this.agentManager.getAliveVigilante();
         if (!activeVigilante || this.vigilanteSkipNextNight) {
-          this.skipVigilanteToLookout();
+          this.skipVigilanteToWerewolf();
           return;
         }
         this.emitPhaseChange('VIGILANTE_CHOICE');
@@ -627,22 +627,51 @@ export class GameEngine extends EventEmitter {
   // Go to Vigilante phase (after Doctor)
   private goToVigilantePhase(): void {
     const vigilante = this.agentManager.getAliveVigilante();
-    // Skip if no vigilante, skipping due to guilt, out of bullets, or Night 1
-    if (!vigilante || this.vigilanteSkipNextNight || this.vigilanteBulletsRemaining <= 0 || this.dayNumber < 2) {
-      this.skipVigilanteToLookout();
+    // Skip if no vigilante or skipping due to guilt
+    if (!vigilante || this.vigilanteSkipNextNight) {
+      this.skipVigilanteToWerewolf();
       return;
     }
+
+    // Always emit phase change to show "Vigilante's Turn" banner
+    this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
+
+    // Check if jailed
     if (this.jailedThisNight.has(vigilante.id)) {
       this.appendNarration(`**${vigilante.name} is jailed.**`, VisibilityFilter.host());
+      this.appendNarration(
+        '**You are in jail tonight. You cannot act.**',
+        VisibilityFilter.vigilantePrivate(vigilante.id)
+      );
       this.goToWerewolfPhase();
       return;
     }
-    this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
+
+    // Check if Night 1 (can't shoot yet)
+    if (this.dayNumber < 2) {
+      this.appendNarration(
+        '**It is too early to act. You may shoot starting Night 2.**',
+        VisibilityFilter.vigilantePrivate(vigilante.id)
+      );
+      this.goToWerewolfPhase();
+      return;
+    }
+
+    // Check if out of bullets
+    if (this.vigilanteBulletsRemaining <= 0) {
+      this.appendNarration(
+        '**You have no bullets remaining.**',
+        VisibilityFilter.vigilantePrivate(vigilante.id)
+      );
+      this.goToWerewolfPhase();
+      return;
+    }
+
     this.appendNarration('**Vigilante, gather your thoughts.**', VisibilityFilter.vigilantePrivate(vigilante.id));
   }
 
-  // Skip Vigilante and go to Lookout (or resolve night)
-  private skipVigilanteToLookout(): void {
+  // Skip Vigilante phase entirely (guilt death scenario)
+  private skipVigilanteToWerewolf(): void {
     const vigilante = this.agentManager.getAliveVigilante();
 
     // Check if Vigilante dies from guilt (from previous night's Town kill)
@@ -655,16 +684,6 @@ export class GameEngine extends EventEmitter {
       this.eliminateAgent(vigilante.id, 'VIGILANTE_GUILT');
       this.vigilanteGuiltyId = undefined;
       this.vigilanteSkipNextNight = false;
-    } else if (this.vigilanteBulletsRemaining <= 0 && vigilante) {
-      this.appendNarration(
-        '**You have no bullets remaining.**',
-        VisibilityFilter.vigilantePrivate(vigilante.id)
-      );
-    } else if (this.dayNumber < 2 && vigilante) {
-      this.appendNarration(
-        '**It is too early to act. You may shoot starting Night 2.**',
-        VisibilityFilter.vigilantePrivate(vigilante.id)
-      );
     }
 
     this.pendingVigilanteKillTarget = undefined;
