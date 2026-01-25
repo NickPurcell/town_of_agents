@@ -279,13 +279,12 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
 
     case 'DEATH':
       if (!agent) return null;
+      // DAY_ELIMINATION already has a narration, skip rendering the DEATH event
+      if (event.cause === 'DAY_ELIMINATION') return null;
       let causeText = 'died';
       switch (event.cause) {
-        case 'DAY_ELIMINATION':
-          causeText = 'was eliminated by the town';
-          break;
         case 'NIGHT_KILL':
-          causeText = 'was killed by the mafia';
+          causeText = 'was killed by the Mafia';
           break;
         case 'VIGILANTE_KILL':
           causeText = 'was killed by the vigilante';
