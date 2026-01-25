@@ -537,10 +537,10 @@ export class PhaseRunner extends EventEmitter {
           // Godfather decided or unanimous vote
           this.mafiaVoteAttempts = 0;
           this.engine.setPendingNightKillTarget(result.target);
-          // Track mafia visit for lookout (all alive mafia members visit the target)
-          const aliveMafia = agentManager.getAliveMafia();
-          for (const mafia of aliveMafia) {
-            this.engine.addNightVisit(mafia.id, result.target);
+          // Track mafia visit for lookout (only actual killers visit, not Framer/Consigliere or jailed)
+          const mafiaKillers = agentManager.getNightVoters().filter(a => !this.engine.isAgentJailed(a.id));
+          for (const killer of mafiaKillers) {
+            this.engine.addNightVisit(killer.id, result.target);
           }
           // Execute immediate Mafia kill (target cannot perform night actions if killed)
           // Note: Only checks innate defense (jail, role traits) - Doctor hasn't chosen yet
