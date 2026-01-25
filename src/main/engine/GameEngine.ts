@@ -782,7 +782,7 @@ export class GameEngine extends EventEmitter {
     if (!doctor || !target) return;
 
     this.appendNarration(
-      `**You successfully protected ${target.name} from an attack!**`,
+      `**The doctor saved ${target.name} from an attack!**`,
       VisibilityFilter.doctorPrivate(doctor.id)
     );
   }
