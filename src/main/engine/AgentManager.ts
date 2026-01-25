@@ -207,6 +207,11 @@ export class AgentManager {
     return this.getAliveAgents();  // Can target self to stay home
   }
 
+  // Get eligible targets for Jester haunt (voters who voted guilty or abstained)
+  getJesterHauntTargets(eligibleVoterIds: string[]): GameAgent[] {
+    return this.getAliveAgents().filter(a => eligibleVoterIds.includes(a.id));
+  }
+
   // Reset all agents to alive for new game
   resetForNewGame(): void {
     for (const agent of this.agents.values()) {

@@ -63,6 +63,8 @@ export type Phase =
   | 'DAY_DISCUSSION'
   | 'DAY_VOTE'
   | 'LAST_WORDS'
+  | 'JESTER_HAUNT_PRE_SPEECH'
+  | 'JESTER_HAUNT_CHOICE'
   | 'POST_EXECUTION_DISCUSSION'
   | 'FRAMER_PRE_SPEECH'
   | 'FRAMER_CHOICE'
@@ -123,6 +125,7 @@ export type Visibility =
   | { kind: 'consigliere_private'; agentId: string }
   | { kind: 'werewolf_private'; agentId: string }
   | { kind: 'jailor_private'; agentId: string }
+  | { kind: 'jester_private'; agentId: string }
   | { kind: 'jail_conversation'; jailorId: string; prisonerId: string }
   | { kind: 'host' };
 
@@ -174,7 +177,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE' | 'JAILOR_ABSTAIN';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE' | 'JAILOR_ABSTAIN' | 'JESTER_HAUNT';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -193,7 +196,7 @@ export interface DeathEvent {
   type: 'DEATH';
   agentId: string;
   role: Role;
-  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE';
+  cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE' | 'JESTER_HAUNT';
   visibility: Visibility;
   ts: number;
 }
@@ -230,6 +233,9 @@ export interface GameState {
   jailedAgentIds: string[];  // Agents currently jailed this night
   doctorSelfHealUsed: boolean;  // Track 1 self-heal limit
   pendingNightDeaths: string[];  // Agent IDs killed this night, not yet revealed
+  pendingJesterHauntTarget?: string;  // Agent ID haunted by Jester, dies at dawn
+  jesterWhoHaunted?: string;  // Jester agent ID who won and is haunting (for death message)
+  jesterLynchVotes?: { agentId: string; vote: string }[];  // Votes cast when Jester was lynched
   winner?: Faction;
 }
 
@@ -338,6 +344,8 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'werewolf_private':
       return visibility.agentId === agent.id;
     case 'jailor_private':
+      return visibility.agentId === agent.id;
+    case 'jester_private':
       return visibility.agentId === agent.id;
     case 'jail_conversation':
       return agent.id === visibility.jailorId || agent.id === visibility.prisonerId;

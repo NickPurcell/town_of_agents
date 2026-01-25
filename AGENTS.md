@@ -41,7 +41,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
 - **VoteResolver.ts**: Town vote (majority) and Mafia vote (Godfather final say, with unanimity fallback) resolution.
-- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, werewolf_private, host).
+- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, werewolf_private, jester_private, jailor_private, jail_conversation, host).
 
 ### Game Controller (`src/main/services/gameController.ts`)
 - Main orchestrator wiring engine, phase runner, and LLM services.
@@ -150,12 +150,12 @@ Key types in `src/shared/types/game.ts`:
 - **DefenseLevel**: NONE, BASIC, POWERFUL
 - **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
 - **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
-- **Phases**: 26 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, POST_GAME_DISCUSSION)
+- **Phases**: 28 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, JESTER_HAUNT_PRE_SPEECH, JESTER_HAUNT_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, POST_GAME_DISCUSSION)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
-- **Visibility**: 13 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jail_conversation)
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN), INVESTIGATION_RESULT, DEATH, TRANSITION
+- **Visibility**: 14 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jester_private, jail_conversation)
+- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN, JESTER_HAUNT), INVESTIGATION_RESULT, DEATH, TRANSITION
 - **TransitionEvent**: Day/night cinematic banners with heading, subtitle, and transitionType (DAY/NIGHT)
-- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds, doctorSelfHealUsed)
+- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds, doctorSelfHealUsed, pendingJesterHauntTarget, jesterWhoHaunted, jesterLynchVotes)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
@@ -187,6 +187,7 @@ Helper functions:
 - **Town wins**: All Mafia dead (and no Werewolf alive)
 - **Mafia wins**: Mafia count >= Town count (and no Werewolf alive)
 - **Werewolf wins**: Werewolf is the ONLY player alive
+- **Jester wins**: Gets lynched by town (game continues after Jester win)
 
 ### Night Phase Order (per MECHANICS.md)
 1. **Jailor Choice** - Jailor selects who to jail (FIRST action)
@@ -227,6 +228,13 @@ Helper functions:
 - **Mafia Kill**: Kills target immediately after vote resolves (checks full defense including Doctor protection)
 - Immediate kills prevent the victim from performing their night action
 - Morning announcements still appear at dawn for public visibility
+
+**Jester Haunt:**
+- When Jester is lynched, they win (but game continues)
+- Jester chooses one voter who voted GUILTY or ABSTAINED to haunt
+- Haunted player cannot act at night (role blocked)
+- Haunted player dies at dawn (UNSTOPPABLE - bypasses all defense)
+- Death message: "**[Name]** was haunted by **[Jester Name]**. Their role was **[Role]**."
 
 ### Post-Game Discussion
 After a win condition is met, the game enters POST_GAME_DISCUSSION phase:
@@ -277,6 +285,8 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `jailor/choice.md`: Jail target selection (goes FIRST at night)
 - `jailor/conversation.md`: Private jail interrogation (3 rounds)
 - `jailor/execute_choice.md`: Execution decision (UNSTOPPABLE attack, 3 total)
+- `jester/haunt_pre.md`: Deliberation before haunting (shows eligible voters)
+- `jester/haunt_choice.md`: Haunt target selection (only voters who voted GUILTY or ABSTAINED)
 - `mafia/discuss.md`: Mafia night discussion (Framer and Consigliere participate but cannot vote)
 - `mafia/vote.md`: Mafia night kill voting (Framer and Consigliere excluded from voting)
 - `mayor/reveal_choice.md`: Pre-speech reveal decision

@@ -71,7 +71,7 @@ export interface GameEngineEvents {
   'game_over': (winner: Faction) => void;
   'agent_died': (
     agentId: string,
-    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE'
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE' | 'JESTER_HAUNT'
   ) => void;
 }
 
@@ -113,6 +113,11 @@ export class GameEngine extends EventEmitter {
   private mafiaAttackProcessed: boolean = false;
   // Track night deaths for delayed visibility (hidden from prompts until morning)
   private pendingNightDeaths: Set<string> = new Set();
+  // Jester haunt state
+  private jesterLynchVotes: { agentId: string; vote: string }[] = [];
+  private lynchingJesterId?: string;
+  private pendingJesterHauntTarget?: string;
+  private jesterWhoHaunted?: string;  // Track which Jester haunted (for morning message)
 
   constructor(settings: GameSettings = DEFAULT_GAME_SETTINGS) {
     super();
@@ -154,6 +159,11 @@ export class GameEngine extends EventEmitter {
     this.pendingJailorExecution = undefined;
     // Reset Doctor self-heal
     this.doctorSelfHealUsed = false;
+    // Reset Jester state
+    this.jesterLynchVotes = [];
+    this.lynchingJesterId = undefined;
+    this.pendingJesterHauntTarget = undefined;
+    this.jesterWhoHaunted = undefined;
   }
 
   // Start the game
@@ -194,6 +204,9 @@ export class GameEngine extends EventEmitter {
       jailedAgentIds: Array.from(this.jailedThisNight),
       doctorSelfHealUsed: this.doctorSelfHealUsed,
       pendingNightDeaths: Array.from(this.pendingNightDeaths),
+      pendingJesterHauntTarget: this.pendingJesterHauntTarget,
+      jesterWhoHaunted: this.jesterWhoHaunted,
+      jesterLynchVotes: this.jesterLynchVotes.length > 0 ? this.jesterLynchVotes : undefined,
       winner: this.winner,
     };
   }
@@ -315,12 +328,43 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'LAST_WORDS':
-        // Eliminate the agent and check win
+        // Check if the condemned agent is a Jester
         if (this.lastWordsAgentId) {
+          const condemned = this.agentManager.getAgent(this.lastWordsAgentId);
+          if (condemned && condemned.role === 'JESTER') {
+            // Jester wins! (but game continues)
+            this.lynchingJesterId = this.lastWordsAgentId;
+            this.jesterWhoHaunted = this.lastWordsAgentId;
+            this.lastWordsAgentId = undefined;
+            this.appendNarration(`**${condemned.name} was the Jester! The Jester wins!**`, VisibilityFilter.public());
+            this.emitPhaseChange('JESTER_HAUNT_PRE_SPEECH');
+            return;
+          }
+          // Not a Jester - eliminate normally
           this.eliminateAgent(this.lastWordsAgentId, 'DAY_ELIMINATION');
           this.lastWordsAgentId = undefined;
         }
         if (this.winner) return; // Game over
+        // Go to post-execution discussion
+        this.emitPhaseChange('POST_EXECUTION_DISCUSSION');
+        return;
+
+      case 'JESTER_HAUNT_PRE_SPEECH':
+        // After pre-speech, go to choice
+        this.emitPhaseChange('JESTER_HAUNT_CHOICE');
+        return;
+
+      case 'JESTER_HAUNT_CHOICE':
+        // After choice, eliminate the Jester
+        if (this.lynchingJesterId) {
+          this.eliminateAgent(this.lynchingJesterId, 'DAY_ELIMINATION');
+          this.lynchingJesterId = undefined;
+        }
+        // The haunt target is marked for death (handled in resolveNight)
+        // Clear lastWordsAgentId if still set
+        this.lastWordsAgentId = undefined;
+        // Check win condition before continuing
+        if (this.winner) return;
         // Go to post-execution discussion
         this.emitPhaseChange('POST_EXECUTION_DISCUSSION');
         return;
@@ -824,6 +868,20 @@ export class GameEngine extends EventEmitter {
     this.dayNumber++;
 
     const morningMessages: string[] = [];
+
+    // Process Jester haunt death FIRST (happens at dawn)
+    if (this.pendingJesterHauntTarget && this.jesterWhoHaunted) {
+      const hauntedAgent = this.agentManager.getAgent(this.pendingJesterHauntTarget);
+      const jester = this.agentManager.getAgent(this.jesterWhoHaunted);
+      if (hauntedAgent && jester) {
+        // Kill the haunted target
+        this.eliminateAgent(this.pendingJesterHauntTarget, 'JESTER_HAUNT');
+        morningMessages.push(`**${hauntedAgent.name} was haunted by ${jester.name}. Their role was ${hauntedAgent.role}.**`);
+      }
+      // Clear Jester haunt state
+      this.pendingJesterHauntTarget = undefined;
+      this.jesterWhoHaunted = undefined;
+    }
     const killTargets = new Map<string, Set<'MAFIA' | 'VIGILANTE'>>();
     const werewolfKills = new Set<string>();  // Track werewolf rampage victims
     const jailor = this.agentManager.getAliveJailor();
@@ -1272,6 +1330,58 @@ export class GameEngine extends EventEmitter {
     return this.pendingJailorExecution;
   }
 
+  // =====================================================
+  // Jester Methods
+  // =====================================================
+
+  // Set the lynch votes for Jester haunt eligibility
+  setJesterLynchVotes(votes: { agentId: string; vote: string }[]): void {
+    this.jesterLynchVotes = votes;
+  }
+
+  // Get the lynch votes
+  getJesterLynchVotes(): { agentId: string; vote: string }[] {
+    return this.jesterLynchVotes;
+  }
+
+  // Get agents eligible to be haunted (voted GUILTY or ABSTAINED, excluding the Jester)
+  getJesterHauntEligibleTargets(): GameAgent[] {
+    const eligibleVoterIds = this.jesterLynchVotes
+      .filter(v => v.vote !== 'DEFER' || v.vote === 'DEFER')  // All non-INNOCENT votes
+      .filter(v => {
+        // Find the actual vote - GUILTY means they voted for the Jester, DEFER means abstain
+        const jester = this.lynchingJesterId ? this.agentManager.getAgent(this.lynchingJesterId) : null;
+        if (!jester) return false;
+        // If vote matches Jester's name, they voted GUILTY
+        // If vote is DEFER, they abstained
+        return v.vote === jester.name || v.vote === 'DEFER';
+      })
+      .map(v => v.agentId);
+
+    return this.agentManager.getAliveAgents()
+      .filter(a => eligibleVoterIds.includes(a.id) && a.id !== this.lynchingJesterId);
+  }
+
+  // Set the pending Jester haunt target
+  setPendingJesterHauntTarget(targetId: string): void {
+    this.pendingJesterHauntTarget = targetId;
+  }
+
+  // Get the pending Jester haunt target
+  getPendingJesterHauntTarget(): string | undefined {
+    return this.pendingJesterHauntTarget;
+  }
+
+  // Get the Jester being lynched
+  getLynchingJester(): GameAgent | undefined {
+    return this.lynchingJesterId ? this.agentManager.getAgent(this.lynchingJesterId) : undefined;
+  }
+
+  // Check if an agent is haunted by the Jester (cannot act at night)
+  isAgentHauntedByJester(agentId: string): boolean {
+    return this.pendingJesterHauntTarget === agentId;
+  }
+
   // Add sheriff intel to queue
   addSheriffIntel(sheriffId: string, targetId: string, role: Role): void {
     if (!this.sheriffIntelQueue[sheriffId]) {
@@ -1283,7 +1393,7 @@ export class GameEngine extends EventEmitter {
   // Eliminate an agent
   eliminateAgent(
     agentId: string,
-    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE'
+    cause: 'DAY_ELIMINATION' | 'NIGHT_KILL' | 'VIGILANTE_KILL' | 'VIGILANTE_GUILT' | 'WEREWOLF_KILL' | 'JAILOR_EXECUTE' | 'JESTER_HAUNT'
   ): void {
     const agent = this.agentManager.getAgent(agentId);
     if (!agent || !agent.alive) return;
@@ -1291,7 +1401,7 @@ export class GameEngine extends EventEmitter {
     this.agentManager.markAgentDead(agentId);
 
     // Track all night deaths for delayed visibility - revealed in morning
-    const NIGHT_DEATH_CAUSES = ['NIGHT_KILL', 'VIGILANTE_KILL', 'WEREWOLF_KILL', 'JAILOR_EXECUTE', 'VIGILANTE_GUILT'];
+    const NIGHT_DEATH_CAUSES = ['NIGHT_KILL', 'VIGILANTE_KILL', 'WEREWOLF_KILL', 'JAILOR_EXECUTE', 'VIGILANTE_GUILT', 'JESTER_HAUNT'];
     if (NIGHT_DEATH_CAUSES.includes(cause)) {
       this.pendingNightDeaths.add(agentId);
     }

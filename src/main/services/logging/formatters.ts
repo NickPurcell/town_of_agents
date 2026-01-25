@@ -41,6 +41,8 @@ export function formatVisibility(visibility: Visibility): string {
       return `werewolf_private:${visibility.agentId}`;
     case 'jailor_private':
       return `jailor_private:${visibility.agentId}`;
+    case 'jester_private':
+      return `jester_private:${visibility.agentId}`;
     case 'jail_conversation':
       return `jail_conversation:${visibility.jailorId},${visibility.prisonerId}`;
     default:

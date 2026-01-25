@@ -26,10 +26,17 @@ export function categorizeNarration(event: NarrationEvent): NarrationCategorizat
   if (visibility.kind === 'doctor_private') {
     return { category: 'private_doctor', icon: 'shield' };
   }
+  if (visibility.kind === 'jester_private') {
+    // Jester private messages (during haunt) - use skull icon for thematic consistency
+    return { category: 'critical_death', icon: 'skull' };
+  }
 
   // Critical events - check text patterns
   if (/wins!/i.test(text)) {
     return { category: 'critical_win', icon: 'trophy' };
+  }
+  if (/was haunted by/i.test(text)) {
+    return { category: 'critical_death', icon: 'skull' };
   }
   if (/was found dead|eliminated|died from guilt|was killed/i.test(text)) {
     return { category: 'critical_death', icon: 'skull' };

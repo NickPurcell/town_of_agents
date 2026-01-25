@@ -44,6 +44,9 @@ export class VisibilityFilter {
       case 'jailor_private':
         return visibility.agentId === agent.id;
 
+      case 'jester_private':
+        return visibility.agentId === agent.id;
+
       case 'jail_conversation':
         return agent.id === visibility.jailorId || agent.id === visibility.prisonerId;
 
@@ -107,6 +110,11 @@ export class VisibilityFilter {
     return { kind: 'jailor_private', agentId };
   }
 
+  // Create visibility for jester private events
+  static jesterPrivate(agentId: string): Visibility {
+    return { kind: 'jester_private', agentId };
+  }
+
   // Create visibility for jail conversation (visible to both jailor and prisoner)
   static jailConversation(jailorId: string, prisonerId: string): Visibility {
     return { kind: 'jail_conversation', jailorId, prisonerId };
@@ -165,6 +173,10 @@ export class VisibilityFilter {
       case 'JAILOR_CHOICE':
       case 'JAILOR_EXECUTE_CHOICE':
         return agent ? this.jailorPrivate(agent.id) : this.host();
+
+      case 'JESTER_HAUNT_PRE_SPEECH':
+      case 'JESTER_HAUNT_CHOICE':
+        return agent ? this.jesterPrivate(agent.id) : this.host();
 
       case 'JAIL_CONVERSATION':
         // This requires both jailor and prisoner, handled specially in GameController

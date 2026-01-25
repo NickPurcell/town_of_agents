@@ -16,6 +16,8 @@ const PHASE_PROMPT_MAP: Record<Phase, string> = {
   DAY_DISCUSSION: 'discuss_day.md',
   DAY_VOTE: 'vote_day.md',
   LAST_WORDS: 'last_words.md',
+  JESTER_HAUNT_PRE_SPEECH: 'jester/haunt_pre.md',
+  JESTER_HAUNT_CHOICE: 'jester/haunt_choice.md',
   POST_EXECUTION_DISCUSSION: 'discuss_day_post.md',
   FRAMER_PRE_SPEECH: 'framer/choice_pre.md',
   FRAMER_CHOICE: 'framer/choice.md',
@@ -154,7 +156,46 @@ export class PromptBuilder {
         ? '**Your self-heal has been used.** You can only heal other players.'
         : 'Your self-heal is **available**.',
       winner: state.winner || '',
+      jesterHauntEligibleVoters: this.buildJesterHauntEligibleVoters(state),
     };
+  }
+
+  // Build a formatted list of eligible voters for Jester haunt
+  private static buildJesterHauntEligibleVoters(state: GameState): string {
+    if (!state.jesterLynchVotes || state.jesterLynchVotes.length === 0) {
+      return 'No eligible targets';
+    }
+
+    // Find the Jester's name from agents
+    const jester = state.jesterWhoHaunted
+      ? state.agents.find(a => a.id === state.jesterWhoHaunted)
+      : null;
+
+    if (!jester) {
+      return 'No eligible targets';
+    }
+
+    const eligibleVoters = state.jesterLynchVotes
+      .filter(v => {
+        // Include voters who voted for the Jester (GUILTY) or abstained (DEFER)
+        return v.vote === jester.name || v.vote === 'DEFER';
+      })
+      .filter(v => {
+        // Only include alive agents who are not the Jester
+        const voter = state.agents.find(a => a.id === v.agentId);
+        return voter && voter.alive && voter.id !== jester.id;
+      })
+      .map(v => {
+        const voter = state.agents.find(a => a.id === v.agentId);
+        if (!voter) return null;
+        const voteType = v.vote === jester.name ? 'GUILTY' : 'ABSTAINED';
+        return `- **${voter.name}** (voted ${voteType})`;
+      })
+      .filter(Boolean);
+
+    return eligibleVoters.length > 0
+      ? eligibleVoters.join('\n')
+      : 'No eligible targets';
   }
 
   // Convert game events to LLM messages for an agent

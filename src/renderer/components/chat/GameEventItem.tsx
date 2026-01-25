@@ -14,6 +14,7 @@ const DEATH_CAUSE_TEXT: Record<DeathEvent['cause'], string> = {
   VIGILANTE_GUILT: 'consumed by guilt',
   WEREWOLF_KILL: 'mauled by the Werewolf',
   JAILOR_EXECUTE: 'executed by the Jailor',
+  JESTER_HAUNT: 'haunted by the Jester',
 };
 
 interface GameEventItemProps {
@@ -38,6 +39,7 @@ const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   DAY_DISCUSSION: 'Day Discussion',
   DAY_VOTE: 'Day Vote',
   LAST_WORDS: 'Last Words',
+  JESTER_HAUNT_PRE_SPEECH: "Jester's Revenge",
   POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
   JAILOR_CHOICE: "Jailor's Turn",
   FRAMER_PRE_SPEECH: "Framer's Turn",
@@ -252,6 +254,9 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
             break;
           case 'JAILOR_ABSTAIN':
             actionText = `chose not to execute ${choiceEvent.targetName}`;
+            break;
+          case 'JESTER_HAUNT':
+            actionText = `is haunting ${choiceEvent.targetName}`;
             break;
         }
       }

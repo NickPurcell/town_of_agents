@@ -143,7 +143,8 @@ export class PhaseRunner extends EventEmitter {
         phase === 'CONSIGLIERE_CHOICE' ||
         phase === 'WEREWOLF_CHOICE' ||
         phase === 'JAILOR_CHOICE' ||
-        phase === 'JAILOR_EXECUTE_CHOICE'
+        phase === 'JAILOR_EXECUTE_CHOICE' ||
+        phase === 'JESTER_HAUNT_CHOICE'
       ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
@@ -493,6 +494,19 @@ export class PhaseRunner extends EventEmitter {
     if (phase === 'DAY_VOTE') {
       const result = VoteResolver.resolveTownVote(this.pendingVotes, allAgents);
       if (result.target) {
+        // Check if the target is a Jester - snapshot votes for haunt eligibility
+        const targetAgent = agentManager.getAgent(result.target);
+        if (targetAgent && targetAgent.role === 'JESTER') {
+          // Snapshot votes for Jester haunt eligibility
+          const lynchVotes: { agentId: string; vote: string }[] = [];
+          for (const [voterId, vote] of this.pendingVotes.entries()) {
+            // Skip mayor multi-vote entries (they have _vote_N suffix)
+            if (!voterId.includes('_vote_')) {
+              lynchVotes.push({ agentId: voterId, vote: vote as string });
+            }
+          }
+          this.engine.setJesterLynchVotes(lynchVotes);
+        }
         // Someone is eliminated
         this.voteRetryAttempts = 0;
         this.engine.setEliminationTarget(result.target);
@@ -597,14 +611,27 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveWerewolf();
     } else if (phase === 'JAILOR_CHOICE' || phase === 'JAILOR_EXECUTE_CHOICE') {
       choiceAgent = agentManager.getAliveJailor();
+    } else if (phase === 'JESTER_HAUNT_CHOICE') {
+      choiceAgent = this.engine.getLynchingJester();
     }
 
     if (choiceAgent) {
-      // Check if agent is jailed (role blocked) - except Jailor who can't be jailed
-      if (phase !== 'JAILOR_CHOICE' && phase !== 'JAILOR_EXECUTE_CHOICE' && this.engine.isAgentJailed(choiceAgent.id)) {
+      // Check if agent is jailed (role blocked) - except Jailor who can't be jailed, and Jester haunt phase
+      if (phase !== 'JAILOR_CHOICE' && phase !== 'JAILOR_EXECUTE_CHOICE' && phase !== 'JESTER_HAUNT_CHOICE' && this.engine.isAgentJailed(choiceAgent.id)) {
         // Host-only notification - jailed agents see nothing (treated like dead)
         this.engine.appendNarration(
           `**${choiceAgent.name} is jailed.**`,
+          VisibilityFilter.host()
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      // Check if agent is haunted by Jester (role blocked) - except Jester haunt phase itself
+      if (phase !== 'JESTER_HAUNT_CHOICE' && this.engine.isAgentHauntedByJester(choiceAgent.id)) {
+        // Host-only notification - haunted agents cannot act
+        this.engine.appendNarration(
+          `**${choiceAgent.name} is haunted and cannot act.**`,
           VisibilityFilter.host()
         );
         this.engine.nextPhase();
@@ -680,6 +707,9 @@ export class PhaseRunner extends EventEmitter {
       } else if (phase === 'WEREWOLF_CHOICE') {
         choiceType = 'WEREWOLF_KILL';
         visibility = VisibilityFilter.werewolfPrivate(agent.id);
+      } else if (phase === 'JESTER_HAUNT_CHOICE') {
+        choiceType = 'JESTER_HAUNT';
+        visibility = VisibilityFilter.jesterPrivate(agent.id);
       }
 
       if (choiceType && visibility) {
@@ -769,6 +799,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getWerewolfTargets();
     } else if (phase === 'JAILOR_CHOICE') {
       eligibleTargets = agentManager.getJailorTargets(agent.id);
+    } else if (phase === 'JESTER_HAUNT_CHOICE') {
+      eligibleTargets = this.engine.getJesterHauntEligibleTargets();
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -1048,6 +1080,27 @@ export class PhaseRunner extends EventEmitter {
       this.engine.appendNarration(
         `**You have chosen to jail ${target.name}. You will interrogate them privately.**`,
         VisibilityFilter.jailorPrivate(agent.id)
+      );
+    } else if (phase === 'JESTER_HAUNT_CHOICE') {
+      // Emit choice event for jester haunt
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'JESTER_HAUNT',
+        visibility: VisibilityFilter.jesterPrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Set pending haunt target
+      this.engine.setPendingJesterHauntTarget(target.id);
+
+      // Feedback
+      this.engine.appendNarration(
+        `**You will haunt ${target.name}. They will meet their doom at dawn.**`,
+        VisibilityFilter.jesterPrivate(agent.id)
       );
     }
 

@@ -269,6 +269,7 @@ When a player dies, their **role is publicly revealed** to all players. This app
 - Werewolf mauling
 - Jailor execution
 - Vigilante guilt
+- Jester haunt (dies at dawn)
 
 ---
 
@@ -280,6 +281,23 @@ When a player dies, their **role is publicly revealed** to all players. This app
 ---
 
 ### Neutral Roles
+
+#### Jester
+- **Faction:** Neutral (wins alone)
+- **Ability:** Win by being lynched during the day, then haunt one voter
+- **Attack:** Unstoppable (haunt) | **Defense:** None
+- **Visits:** No
+- **Detection:** Appears **Not Suspicious** to Sheriff
+- **Win Condition:** Get lynched by the town during the day vote
+- **Haunt Mechanic:**
+  - Upon being lynched, Jester immediately wins (but the game continues)
+  - Jester chooses one player who voted GUILTY or ABSTAINED to haunt
+  - The haunted player dies at dawn (cannot act at night)
+  - Haunt is an **UNSTOPPABLE** attack (bypasses all defense)
+- **Notes:**
+  - Jester win does not end the game - Town/Mafia/Werewolf can still win
+  - Haunted player's night action is blocked
+  - Death announcement: "**[Name]** was haunted by **[Jester Name]**. Their role was **[Role]**."
 
 #### Werewolf
 - **Faction:** Neutral (wins alone)
@@ -333,8 +351,9 @@ When a player dies, their **role is publicly revealed** to all players. This app
 | Godfather | Mafia | Basic | Basic | Yes | Not Suspicious |
 | Framer | Mafia | None | None | Yes | Suspicious |
 | Consigliere | Mafia | None | None | Yes | Suspicious |
+| Jester | Neutral | Unstoppable* | None | No | Not Suspicious |
 | Werewolf | Neutral | Powerful | Basic | Yes** | Conditional*** |
 
-\* Jailor's attack is Unstoppable but only when executing (3 executions total)
+\* Jailor's attack is Unstoppable but only when executing (3 executions total); Jester's haunt attack is also Unstoppable
 \** Werewolf visits when attacking, not when staying home
 \*** Werewolf appears Not Suspicious on nights 1 and 3, Suspicious on nights 2, 4+

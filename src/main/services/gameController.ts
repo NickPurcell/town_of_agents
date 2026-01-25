@@ -321,7 +321,12 @@ export class GameController extends EventEmitter {
       case 'CONSIGLIERE_CHOICE':
       case 'WEREWOLF_CHOICE':
       case 'JAILOR_CHOICE':
+      case 'JESTER_HAUNT_CHOICE':
         await this.phaseRunner.startChoicePhase();
+        break;
+
+      case 'JESTER_HAUNT_PRE_SPEECH':
+        await this.handleJesterHauntPreSpeech();
         break;
 
       case 'JAIL_CONVERSATION':
@@ -1701,6 +1706,92 @@ export class GameController extends EventEmitter {
     }
 
     this.engine.nextPhase();
+  }
+
+  private async handleJesterHauntPreSpeech(): Promise<void> {
+    const jester = this.engine.getLynchingJester();
+    if (!jester) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const service = this.llmServices.get(jester.id);
+    if (!service) {
+      this.engine.nextPhase();
+      return;
+    }
+
+    const state = this.engine.getState();
+    const systemPrompt = PromptBuilder.buildSystemPrompt(jester, 'JESTER_HAUNT_PRE_SPEECH', state);
+    const messages = PromptBuilder.buildMessagesForAgent(
+      jester,
+      state.events,
+      state.agents
+    );
+
+    this.emitAgentThinking(jester);
+
+    let content = '';
+    let thinkingContent = '';
+    let lastError: unknown = null;
+
+    try {
+      for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
+        content = '';
+        thinkingContent = '';
+
+        try {
+          const response = await service.generate(messages, systemPrompt, jester.model);
+
+          content = response.content;
+          thinkingContent = response.thinkingContent || '';
+          this.emit('streaming_message', jester.id, content);
+
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          console.error(`\n[${jester.name}] LLM error on jester haunt pre speech attempt ${attempt}/${MAX_LLM_RETRIES}:`, error);
+
+          if (isRetryableError(error) && attempt < MAX_LLM_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.log(`[${jester.name}] Retrying in ${delay}ms...`);
+            await sleep(delay);
+            continue;
+          }
+
+          break;
+        }
+      }
+
+      if (lastError) {
+        console.error(
+          `Error getting jester haunt pre speech from ${jester.name} (after ${MAX_LLM_RETRIES} attempts):`,
+          lastError
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      const result = ResponseParser.parseStreamingSpeakResponse(content);
+      if (result.success && result.data) {
+        const event: SpeechEvent = {
+          type: 'SPEECH',
+          agentId: jester.id,
+          messageMarkdown: result.data.action === 'SAY' && result.data.message_markdown?.trim()
+            ? result.data.message_markdown
+            : '*chose not to speak.*',
+          visibility: VisibilityFilter.jesterPrivate(jester.id),
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(event);
+      }
+
+      this.engine.nextPhase();
+    } finally {
+      this.emitAgentThinkingDone(jester);
+    }
   }
 
   private async handleJailorExecuteChoice(): Promise<void> {
