@@ -252,6 +252,14 @@ Night actions resolve in this specific order:
 | Heal + no attack | No | No |
 | Heal + attack blocked | Yes ("you saved someone") | Yes ("you were attacked but healed") |
 
+### Death Notifications
+When a player dies, their **role is publicly revealed** to all players. This applies to all causes of death:
+- Day elimination (lynching)
+- Night kills (Mafia, Vigilante)
+- Werewolf mauling
+- Jailor execution
+- Vigilante guilt
+
 ---
 
 ## Role Uniqueness
