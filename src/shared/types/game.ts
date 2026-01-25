@@ -174,7 +174,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE' | 'JAILOR_ABSTAIN';
   visibility: Visibility;
   ts: number;
   reasoning?: string;

@@ -240,6 +240,9 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
           case 'JAILOR_EXECUTE':
             actionText = `is executing ${choiceEvent.targetName}`;
             break;
+          case 'JAILOR_ABSTAIN':
+            actionText = `chose not to execute ${choiceEvent.targetName}`;
+            break;
         }
       }
       return (

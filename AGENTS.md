@@ -153,7 +153,7 @@ Key types in `src/shared/types/game.ts`:
 - **Phases**: 26 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, POST_GAME_DISCUSSION)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 13 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jail_conversation)
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE), INVESTIGATION_RESULT, DEATH, TRANSITION
+- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN), INVESTIGATION_RESULT, DEATH, TRANSITION
 - **TransitionEvent**: Day/night cinematic banners with heading, subtitle, and transitionType (DAY/NIGHT)
 - **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type

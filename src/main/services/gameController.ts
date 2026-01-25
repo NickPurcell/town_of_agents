@@ -1807,6 +1807,18 @@ export class GameController extends EventEmitter {
         if (prisoner.faction === 'TOWN') {
           this.engine.setJailorLostExecutionPower();
         }
+      } else {
+        // Jailor chose to abstain
+        const abstainEvent: ChoiceEvent = {
+          type: 'CHOICE',
+          agentId: jailor.id,
+          targetName: prisoner.name,
+          choiceType: 'JAILOR_ABSTAIN',
+          visibility: VisibilityFilter.jailorPrivate(jailor.id),
+          ts: Date.now(),
+          reasoning: thinkingContent,
+        };
+        this.engine.appendEvent(abstainEvent);
       }
 
       this.engine.nextPhase();
