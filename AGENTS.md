@@ -213,6 +213,7 @@ Helper functions:
 **Jailor Notes:**
 - Jailor does NOT visit (invisible to Lookout, immune to Werewolf rampage at target)
 - Jailed agents cannot perform their night actions (role blocked)
+- Jailed agents have POWERFUL defense (protected while in jail)
 - If Jailor jails Werewolf on a full moon night (2, 4, 6...), Werewolf kills Jailor + visitors
 - Executing a Town member causes Jailor to permanently lose execution ability
 
