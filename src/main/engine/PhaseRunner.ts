@@ -738,6 +738,13 @@ export class PhaseRunner extends EventEmitter {
         // Mark self-heal as used and set protection
         this.engine.useDoctorSelfHeal();
         this.engine.setPendingDoctorProtectTarget(agent.id);
+
+        // Confirmation message
+        this.engine.appendNarration(
+          `**You have chosen to heal yourself tonight.**`,
+          VisibilityFilter.doctorPrivate(agent.id)
+        );
+
         this.engine.nextPhase();
         return;
       }
@@ -909,6 +916,12 @@ export class PhaseRunner extends EventEmitter {
 
       // Record protection
       this.engine.setPendingDoctorProtectTarget(target.id);
+
+      // Confirmation message
+      this.engine.appendNarration(
+        `**You have chosen to protect ${target.name} tonight.**`,
+        VisibilityFilter.doctorPrivate(agent.id)
+      );
     } else if (phase === 'LOOKOUT_CHOICE') {
       // Emit choice event for lookout watching
       const choiceEvent: ChoiceEvent = {
