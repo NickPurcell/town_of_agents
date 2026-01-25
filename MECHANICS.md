@@ -212,7 +212,7 @@ Night actions resolve in this specific order:
 | 7 | Framer | Framer applies frame to target |
 | 8 | Consigliere | Consigliere investigates target, learns exact role |
 | 9 | Sheriff | Sheriff investigates target (frame already applied) |
-| 10 | Vigilante | Vigilante shoots target |
+| 10 | **Vigilante** | Vigilante shoots target **(kills immediately, checked against Doctor protection)** |
 | 11 | Werewolf | Werewolf rampages (only on even nights) |
 | 12 | Lookout | Lookout sees all visitors (including attackers) |
 | 13 | Night Resolution | Remaining attacks resolve, notifications sent |
@@ -220,11 +220,12 @@ Night actions resolve in this specific order:
 ### Immediate Kills
 - **Jailor Execution**: Kills immediately when decision is made (UNSTOPPABLE - bypasses all defense)
 - **Mafia Kill**: Kills immediately after vote resolves (checks full defense including Doctor protection)
+- **Vigilante Kill**: Kills immediately when target is chosen (checks full defense including Doctor protection)
 - Victims of immediate kills **cannot perform their night action**
 - Morning announcements still appear at dawn for public visibility
 
 ### Resolution Notes
-- Doctor goes BEFORE Mafia so protection applies to immediate Mafia kills
+- Doctor goes BEFORE Mafia and Vigilante so protection applies to immediate kills
 - Framer goes before Sheriff so frames are active during investigation
 - Werewolf rampages after Vigilante so they can catch the Vigilante visiting
 - Lookout goes LAST so they see everyone who visited, including killers

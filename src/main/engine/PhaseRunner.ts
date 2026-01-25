@@ -1006,8 +1006,11 @@ export class PhaseRunner extends EventEmitter {
       // Track vigilante visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
 
-      // Record kill target
+      // Record kill target (for morning message generation)
       this.engine.setPendingVigilanteKillTarget(target.id);
+
+      // Execute immediate Vigilante kill (target cannot perform night actions if killed)
+      this.engine.executeImmediateVigilanteKill(target.id);
 
       // Show remaining bullets
       const bulletsRemaining = this.engine.getVigilanteBulletsRemaining();

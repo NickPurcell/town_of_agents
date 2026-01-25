@@ -108,9 +108,11 @@ export class GameEngine extends EventEmitter {
   // Doctor self-heal limit
   private doctorSelfHealUsed: boolean = false;
   // Track immediate kills (processed before night resolution)
-  private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE'> = new Map();
+  private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE' | 'VIGILANTE_KILL'> = new Map();
   // Track if Mafia attack was processed (killed or blocked by Doctor)
   private mafiaAttackProcessed: boolean = false;
+  // Track if Vigilante attack was processed (killed or blocked by Doctor)
+  private vigilanteAttackProcessed: boolean = false;
   // Track night deaths for delayed visibility (hidden from prompts until morning)
   private pendingNightDeaths: Set<string> = new Set();
   // Jester haunt state
@@ -147,6 +149,7 @@ export class GameEngine extends EventEmitter {
     this.nightVisits = [];
     this.immediateNightKills.clear();
     this.mafiaAttackProcessed = false;
+    this.vigilanteAttackProcessed = false;
     this.pendingNightDeaths.clear();
     this.winner = undefined;
     this.lastWordsAgentId = undefined;
@@ -852,13 +855,52 @@ export class GameEngine extends EventEmitter {
     }
   }
 
+  // Execute immediate Vigilante kill (BASIC attack - checks defense including Doctor protection)
+  // Returns true if kill succeeded, false if target was immune or protected
+  executeImmediateVigilanteKill(targetId: string): boolean {
+    const target = this.agentManager.getAgent(targetId);
+    if (!target || !target.alive) return false;
+
+    this.vigilanteAttackProcessed = true;
+
+    // Doctor goes before Vigilante, so check effective defense (includes Doctor protection)
+    const defense = this.getEffectiveDefense(targetId);
+    const wasProtectedByDoctor = this.pendingDoctorProtectTarget === targetId;
+    const attack: AttackLevel = 'BASIC';
+
+    const vigilante = this.agentManager.getAliveVigilante();
+
+    if (doesAttackSucceed(attack, defense)) {
+      this.eliminateAgent(targetId, 'VIGILANTE_KILL');
+      this.immediateNightKills.set(targetId, 'VIGILANTE_KILL');
+
+      // Check for Vigilante guilt (killed a Town member)
+      if (target.faction === 'TOWN' && vigilante) {
+        this.vigilanteSkipNextNight = true;
+        this.vigilanteGuiltyId = vigilante.id;
+      }
+      return true;
+    } else {
+      // Target was protected or immune
+      if (wasProtectedByDoctor) {
+        // Blocked by Doctor protection - notify Doctor privately
+        this.notifyDoctorSaved(targetId);
+        // Public announcement will appear in morning via resolveNight
+      } else {
+        // Blocked by innate defense - notify Vigilante only
+        this.notifyAttackerImmune('VIGILANTE', targetId);
+      }
+      return false;
+    }
+  }
+
   // Check if an agent was killed immediately this night
   wasKilledImmediately(agentId: string): boolean {
     return this.immediateNightKills.has(agentId);
   }
 
   // Get the cause of immediate kill
-  getImmediateKillCause(agentId: string): 'MAFIA' | 'JAILOR_EXECUTE' | undefined {
+  getImmediateKillCause(agentId: string): 'MAFIA' | 'JAILOR_EXECUTE' | 'VIGILANTE_KILL' | undefined {
     return this.immediateNightKills.get(agentId);
   }
 
@@ -998,12 +1040,29 @@ export class GameEngine extends EventEmitter {
             `**${target.name} was attacked in the night, but was saved by the doctor!**`
           );
         }
-        // If only Mafia targeted this agent, skip to next target
-        if (!sources.has('VIGILANTE')) {
+        sources.delete('MAFIA');
+        // If no other sources, skip to next target
+        if (sources.size === 0) {
           continue;
         }
-        // Otherwise, still need to process Vigilante attack
-        sources.delete('MAFIA');
+      }
+
+      // Handle Vigilante attack that was already processed immediately
+      if (sources.has('VIGILANTE') && this.vigilanteAttackProcessed) {
+        if (this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'VIGILANTE_KILL') {
+          // Vigilante killed target immediately - add morning message
+          morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${target.role}.**`);
+        } else if (wasProtectedByDoctor) {
+          // Vigilante attack was blocked by Doctor - add morning message (Doctor already notified)
+          morningMessages.push(
+            `**${target.name} was attacked in the night, but was saved by the doctor!**`
+          );
+        }
+        sources.delete('VIGILANTE');
+        // If no other sources, skip to next target
+        if (sources.size === 0) {
+          continue;
+        }
       }
 
       // Get effective defense (includes Doctor protection)
@@ -1084,6 +1143,7 @@ export class GameEngine extends EventEmitter {
     this.nightVisits = [];
     this.immediateNightKills.clear();  // Clear immediate kills tracking
     this.mafiaAttackProcessed = false;  // Reset Mafia attack tracking
+    this.vigilanteAttackProcessed = false;  // Reset Vigilante attack tracking
     // Clear Jailor state for next night
     this.pendingJailTarget = undefined;
     this.pendingJailorExecution = undefined;
