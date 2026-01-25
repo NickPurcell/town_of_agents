@@ -312,8 +312,6 @@ export class GameEngine extends EventEmitter {
 
   // Transition to next phase
   nextPhase(): void {
-    console.log(`[GameEngine] nextPhase called from phase: ${this.phase}`);
-    console.log(`[GameEngine] nextPhase call stack:`, new Error().stack);
     // Handle special transitions based on current phase
     switch (this.phase) {
       case 'DAY_ONE_DISCUSSION':
