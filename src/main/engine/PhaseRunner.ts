@@ -937,12 +937,6 @@ export class PhaseRunner extends EventEmitter {
 
       // Record watch target
       this.engine.setPendingLookoutWatchTarget(target.id);
-
-      // Immediate feedback that the watch is set
-      this.engine.appendNarration(
-        `**You are now watching ${target.name}. You will see anyone who visits them tonight.**`,
-        VisibilityFilter.lookoutPrivate(agent.id)
-      );
     } else if (phase === 'VIGILANTE_CHOICE') {
       // Emit choice event for vigilante kill first (before using bullet)
       const choiceEvent: ChoiceEvent = {

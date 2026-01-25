@@ -1083,7 +1083,7 @@ export class GameEngine extends EventEmitter {
         if (watched) {
           if (item.visitors.length === 0) {
             this.appendNarration(
-              `**SYSTEM (private):** Last night you watched ${watched.name}. No one visited them.`,
+              `**${watched.name}** was not visited by anyone.`,
               VisibilityFilter.lookoutPrivate(lookoutId)
             );
           } else {
@@ -1092,7 +1092,7 @@ export class GameEngine extends EventEmitter {
               .filter((name) => name)
               .join(', ');
             this.appendNarration(
-              `**SYSTEM (private):** Last night you watched ${watched.name}. They were visited by: ${visitorNames}.`,
+              `**${watched.name}** was visited by ${visitorNames}.`,
               VisibilityFilter.lookoutPrivate(lookoutId)
             );
           }
