@@ -155,7 +155,7 @@ Key types in `src/shared/types/game.ts`:
 - **Visibility**: 13 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jail_conversation)
 - **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN), INVESTIGATION_RESULT, DEATH, TRANSITION
 - **TransitionEvent**: Day/night cinematic banners with heading, subtitle, and transitionType (DAY/NIGHT)
-- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds)
+- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds, doctorSelfHealUsed)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
@@ -216,6 +216,11 @@ Helper functions:
 - Jailed agents have POWERFUL defense (protected while in jail)
 - If Jailor jails Werewolf on a full moon night (2, 4, 6...), Werewolf kills Jailor + visitors
 - Executing a Town member causes Jailor to permanently lose execution ability
+
+**Doctor Notes:**
+- Doctor has **1 self-heal** for the entire game
+- Must use "SELF" keyword to self-heal (using own name as target will fail)
+- Cannot heal revealed Mayor
 
 **Immediate Kills:**
 - **Jailor Execution**: Kills target immediately when decision is made (UNSTOPPABLE - bypasses all defense)

@@ -699,12 +699,57 @@ export class PhaseRunner extends EventEmitter {
       return;
     }
 
+    // Special handling for Doctor self-heal
+    if (phase === 'DOCTOR_CHOICE') {
+      // Check if Doctor is trying to target themselves by name (not allowed - must use SELF)
+      if (normalizedTarget.toLowerCase() === agent.name.toLowerCase()) {
+        this.engine.appendNarration(
+          `**You cannot target yourself by name. Use "SELF" to heal yourself.**`,
+          VisibilityFilter.doctorPrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      // Handle SELF keyword for self-heal
+      if (normalizedTarget.toUpperCase() === 'SELF') {
+        // Check if self-heal already used
+        if (this.engine.hasDoctorUsedSelfHeal()) {
+          this.engine.appendNarration(
+            `**You have already used your one self-heal. You cannot heal yourself again.**`,
+            VisibilityFilter.doctorPrivate(agent.id)
+          );
+          this.engine.nextPhase();
+          return;
+        }
+
+        // Emit choice event for self-heal
+        const choiceEvent: ChoiceEvent = {
+          type: 'CHOICE',
+          agentId: agent.id,
+          targetName: 'SELF',
+          choiceType: 'DOCTOR_PROTECT',
+          visibility: VisibilityFilter.doctorPrivate(agent.id),
+          ts: Date.now(),
+          reasoning,
+        };
+        this.engine.appendEvent(choiceEvent);
+
+        // Mark self-heal as used and set protection
+        this.engine.useDoctorSelfHeal();
+        this.engine.setPendingDoctorProtectTarget(agent.id);
+        this.engine.nextPhase();
+        return;
+      }
+    }
+
     // Find eligible target by name (alive + valid for phase)
     let eligibleTargets: GameAgent[] = [];
     if (phase === 'SHERIFF_CHOICE') {
       eligibleTargets = agentManager.getSheriffTargets(agent.id);
     } else if (phase === 'DOCTOR_CHOICE') {
-      eligibleTargets = agentManager.getDoctorTargets();
+      // Exclude self from eligible targets (must use SELF keyword)
+      eligibleTargets = agentManager.getDoctorTargets().filter(a => a.id !== agent.id);
     } else if (phase === 'LOOKOUT_CHOICE') {
       eligibleTargets = agentManager.getLookoutTargets(agent.id);
     } else if (phase === 'VIGILANTE_CHOICE') {

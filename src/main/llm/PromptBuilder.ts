@@ -148,6 +148,9 @@ export class PromptBuilder {
         : 'Day',
       dayNumber: String(state.dayNumber),
       jailorExecutionsRemaining: String(state.jailorExecutionsRemaining ?? 3),
+      selfHealStatus: state.doctorSelfHealUsed
+        ? '**Your self-heal has been used.** You can only heal other players.'
+        : 'Your self-heal is **available**.',
       winner: state.winner || '',
     };
   }

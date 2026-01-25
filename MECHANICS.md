@@ -88,7 +88,9 @@ A role **visits** when their night ability requires them to go to the target's l
 - **Attack:** None | **Defense:** None
 - **Visits:** Yes
 - **Protection Level:** Powerful (blocks Basic and Powerful attacks)
-- **Self-Heal:** Can protect self, but cannot protect others on that night
+- **Self-Heal:** Can protect self **once per game** using the "SELF" keyword
+  - Must use "SELF" as target, not their own name
+  - Using own name as target will fail
 - **Notifications:**
   - If heal saves someone: **both** Doctor and target are notified
   - If target wasn't attacked: no notification to target

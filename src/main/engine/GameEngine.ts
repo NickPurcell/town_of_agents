@@ -103,6 +103,8 @@ export class GameEngine extends EventEmitter {
   private jailorLostExecutionPower: boolean = false;
   private jailedThisNight: Set<string> = new Set();
   private pendingJailorExecution?: string;
+  // Doctor self-heal limit
+  private doctorSelfHealUsed: boolean = false;
   // Track immediate kills (processed before night resolution)
   private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE'> = new Map();
   // Track if Mafia attack was processed (killed or blocked by Doctor)
@@ -145,6 +147,8 @@ export class GameEngine extends EventEmitter {
     this.jailorLostExecutionPower = false;
     this.jailedThisNight.clear();
     this.pendingJailorExecution = undefined;
+    // Reset Doctor self-heal
+    this.doctorSelfHealUsed = false;
   }
 
   // Start the game
@@ -183,6 +187,7 @@ export class GameEngine extends EventEmitter {
       jailorExecutionsRemaining: this.jailorExecutionsRemaining,
       jailorLostExecutionPower: this.jailorLostExecutionPower,
       jailedAgentIds: Array.from(this.jailedThisNight),
+      doctorSelfHealUsed: this.doctorSelfHealUsed,
       winner: this.winner,
     };
   }
@@ -1139,6 +1144,16 @@ export class GameEngine extends EventEmitter {
   // Set pending doctor protect target
   setPendingDoctorProtectTarget(targetId: string | undefined): void {
     this.pendingDoctorProtectTarget = targetId;
+  }
+
+  // Check if doctor has used their self-heal
+  hasDoctorUsedSelfHeal(): boolean {
+    return this.doctorSelfHealUsed;
+  }
+
+  // Mark doctor self-heal as used
+  useDoctorSelfHeal(): void {
+    this.doctorSelfHealUsed = true;
   }
 
   // Set pending framed target (deprecated - use addFramedTarget instead)
