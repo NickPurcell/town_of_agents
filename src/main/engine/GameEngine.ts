@@ -486,6 +486,13 @@ export class GameEngine extends EventEmitter {
       this.endGame('TOWN');
       return;
     }
+
+    // Notify host about jailed Mafia members (other Mafia don't see this)
+    const jailedMafia = this.agentManager.getAliveMafia().filter(m => this.jailedThisNight.has(m.id));
+    for (const mafia of jailedMafia) {
+      this.appendNarration(`**${mafia.name} is jailed.**`, VisibilityFilter.host());
+    }
+
     this.emitPhaseChange('NIGHT_DISCUSSION');
     this.appendNarration('**Mafia, discuss your plans.**', VisibilityFilter.mafia());
   }
@@ -496,6 +503,11 @@ export class GameEngine extends EventEmitter {
   private goToFramerPhase(): void {
     const framer = this.agentManager.getAliveFramer();
     if (framer) {
+      if (this.jailedThisNight.has(framer.id)) {
+        this.appendNarration(`**${framer.name} is jailed.**`, VisibilityFilter.host());
+        this.goToConsiglierePhase();
+        return;
+      }
       this.emitPhaseChange('FRAMER_PRE_SPEECH');
       this.appendNarration('**Framer, gather your thoughts.**', VisibilityFilter.framerPrivate(framer.id));
       return;
@@ -507,6 +519,11 @@ export class GameEngine extends EventEmitter {
   private goToConsiglierePhase(): void {
     const consigliere = this.agentManager.getAliveConsigliere();
     if (consigliere) {
+      if (this.jailedThisNight.has(consigliere.id)) {
+        this.appendNarration(`**${consigliere.name} is jailed.**`, VisibilityFilter.host());
+        this.goToSheriffPhase();
+        return;
+      }
       this.emitPhaseChange('CONSIGLIERE_CHOICE');
       this.appendNarration('**Consigliere, choose your target to investigate.**', VisibilityFilter.consiglierePrivate(consigliere.id));
       return;
@@ -518,6 +535,11 @@ export class GameEngine extends EventEmitter {
   private goToSheriffPhase(): void {
     const sheriff = this.agentManager.getAliveSheriff();
     if (sheriff) {
+      if (this.jailedThisNight.has(sheriff.id)) {
+        this.appendNarration(`**${sheriff.name} is jailed.**`, VisibilityFilter.host());
+        this.goToDoctorPhase();
+        return;
+      }
       this.emitPhaseChange('SHERIFF_CHOICE');
       this.appendNarration('**Sheriff, choose your target.**', VisibilityFilter.sheriffPrivate(sheriff.id));
       return;
@@ -529,6 +551,11 @@ export class GameEngine extends EventEmitter {
   private goToDoctorPhase(): void {
     const doctor = this.agentManager.getAliveDoctor();
     if (doctor) {
+      if (this.jailedThisNight.has(doctor.id)) {
+        this.appendNarration(`**${doctor.name} is jailed.**`, VisibilityFilter.host());
+        this.goToVigilantePhase();
+        return;
+      }
       this.emitPhaseChange('DOCTOR_PRE_SPEECH');
       this.appendNarration('**Doctor, gather your thoughts.**', VisibilityFilter.doctorPrivate(doctor.id));
       return;
@@ -542,6 +569,11 @@ export class GameEngine extends EventEmitter {
     // Skip if no vigilante, skipping due to guilt, or out of bullets
     if (!vigilante || this.vigilanteSkipNextNight || this.vigilanteBulletsRemaining <= 0) {
       this.skipVigilanteToLookout();
+      return;
+    }
+    if (this.jailedThisNight.has(vigilante.id)) {
+      this.appendNarration(`**${vigilante.name} is jailed.**`, VisibilityFilter.host());
+      this.goToWerewolfPhase();
       return;
     }
     this.emitPhaseChange('VIGILANTE_PRE_SPEECH');
@@ -577,6 +609,13 @@ export class GameEngine extends EventEmitter {
       return;
     }
 
+    // Check if jailed before emitting phase change
+    if (this.jailedThisNight.has(werewolf.id)) {
+      this.appendNarration(`**${werewolf.name} is jailed.**`, VisibilityFilter.host());
+      this.goToLookoutPhase();
+      return;
+    }
+
     // Always emit phase change to show "Werewolf's Turn" banner
     this.emitPhaseChange('WEREWOLF_PRE_SPEECH');
 
@@ -607,6 +646,11 @@ export class GameEngine extends EventEmitter {
   private goToLookoutPhase(): void {
     const lookout = this.agentManager.getAliveLookout();
     if (lookout) {
+      if (this.jailedThisNight.has(lookout.id)) {
+        this.appendNarration(`**${lookout.name} is jailed.**`, VisibilityFilter.host());
+        this.resolveNight();
+        return;
+      }
       this.emitPhaseChange('LOOKOUT_CHOICE');
       this.appendNarration(
         '**Lookout, choose your target to watch.**',

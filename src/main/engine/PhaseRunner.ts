@@ -591,11 +591,10 @@ export class PhaseRunner extends EventEmitter {
     if (choiceAgent) {
       // Check if agent is jailed (role blocked) - except Jailor who can't be jailed
       if (phase !== 'JAILOR_CHOICE' && phase !== 'JAILOR_EXECUTE_CHOICE' && this.engine.isAgentJailed(choiceAgent.id)) {
-        // Agent is jailed and cannot perform their night action
-        const roleVisibility = this.getPrivateVisibilityForPhase(phase, choiceAgent.id);
+        // Host-only notification - jailed agents see nothing (treated like dead)
         this.engine.appendNarration(
-          '**You were jailed and could not perform your night action.**',
-          roleVisibility
+          `**${choiceAgent.name} is jailed.**`,
+          VisibilityFilter.host()
         );
         this.engine.nextPhase();
         return;
