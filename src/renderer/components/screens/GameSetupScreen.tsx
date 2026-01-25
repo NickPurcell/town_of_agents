@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import type { Role } from '@shared/types';
-import { MODEL_OPTIONS, ROLE_COLORS } from '@shared/types';
+import { MODEL_OPTIONS, ROLE_COLORS, DEFAULT_PERSONALITY } from '@shared/types';
 import styles from './GameSetupScreen.module.css';
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
@@ -21,31 +22,42 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'CITIZEN', label: 'Citizen' },
 ];
 
-// Default game configuration: 1 of each role - all Gemini 3 Flash
-const DEFAULT_AGENTS = [
-  { name: 'Marcus', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'GODFATHER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Elena', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'CONSIGLIERE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Riley', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'FRAMER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Jasper', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'JESTER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Fenrir', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'WEREWOLF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'James', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'SHERIFF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Sophie', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'DOCTOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Ava', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Oliver', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Mia', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Noah', personality: 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.', role: 'JAILOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+// Default game agent names and roles - personality comes from settings
+const DEFAULT_AGENT_CONFIGS = [
+  { name: 'Marcus', role: 'GODFATHER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Elena', role: 'CONSIGLIERE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Riley', role: 'FRAMER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Jasper', role: 'JESTER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Fenrir', role: 'WEREWOLF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'James', role: 'SHERIFF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Sophie', role: 'DOCTOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Ava', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Oliver', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Mia', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Noah', role: 'JAILOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
 ];
 
 export function GameSetupScreen() {
   const { setScreen } = useUIStore();
   const { pendingAgents, addPendingAgent, removePendingAgent, clearPendingAgents, canStartGame, startGame } = useGameStore();
+  const { settings } = useSettingsStore();
+
+  const defaultPersonality = settings.defaultPersonality || DEFAULT_PERSONALITY;
 
   // Form state
   const [name, setName] = useState('');
-  const [personality, setPersonality] = useState('');
+  const [personality, setPersonality] = useState(defaultPersonality);
   const [role, setRole] = useState<Role>('CITIZEN');
   const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('google');
   const [model, setModel] = useState('gemini-3-flash-preview');
+
+  // Create default agents with current personality setting
+  const getDefaultAgents = () => {
+    return DEFAULT_AGENT_CONFIGS.map(config => ({
+      ...config,
+      personality: defaultPersonality
+    }));
+  };
 
   const handleAddAgent = () => {
     if (!name.trim() || !personality.trim()) return;
@@ -66,7 +78,7 @@ export function GameSetupScreen() {
 
     // Reset form
     setName('');
-    setPersonality('');
+    setPersonality(defaultPersonality);
     setRole('CITIZEN');
   };
 
@@ -79,7 +91,7 @@ export function GameSetupScreen() {
 
   const handleStartDefaultGame = async () => {
     clearPendingAgents();
-    DEFAULT_AGENTS.forEach(agent => addPendingAgent(agent));
+    getDefaultAgents().forEach(agent => addPendingAgent(agent));
     await startGame();
     setScreen('chat');
   };

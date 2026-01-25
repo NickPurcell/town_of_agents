@@ -157,3 +157,26 @@
   border-color: var(--accent);
   outline: none;
 }
+
+.personalityTextarea {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.personalityTextarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.personalityTextarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

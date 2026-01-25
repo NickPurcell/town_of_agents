@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Settings, GameSettings } from '@shared/types';
-import { DEFAULT_GAME_SETTINGS } from '@shared/types';
+import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
 
 interface SettingsState {
   settings: Settings;
@@ -11,6 +11,7 @@ interface SettingsState {
   saveSettings: (settings: Settings) => Promise<void>;
   updateApiKey: (provider: 'openai' | 'anthropic' | 'google', key: string) => void;
   updateGameSettings: (partial: Partial<GameSettings>) => void;
+  updateDefaultPersonality: (personality: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -20,7 +21,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       anthropic: '',
       google: ''
     },
-    gameSettings: DEFAULT_GAME_SETTINGS
+    gameSettings: DEFAULT_GAME_SETTINGS,
+    defaultPersonality: DEFAULT_PERSONALITY
   },
   isLoading: false,
   error: null,
@@ -32,6 +34,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Ensure game settings have defaults
       if (!settings.gameSettings) {
         settings.gameSettings = DEFAULT_GAME_SETTINGS;
+      }
+      // Ensure default personality has default
+      if (!settings.defaultPersonality) {
+        settings.defaultPersonality = DEFAULT_PERSONALITY;
       }
       set({ settings, isLoading: false });
     } catch (error) {
@@ -71,6 +77,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           ...currentGameSettings,
           ...partial
         }
+      }
+    });
+  },
+
+  updateDefaultPersonality: (personality: string) => {
+    const { settings } = get();
+    set({
+      settings: {
+        ...settings,
+        defaultPersonality: personality
       }
     });
   }

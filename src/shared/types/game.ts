@@ -290,6 +290,8 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   mafiaVotingRetries: 3,
 };
 
+export const DEFAULT_PERSONALITY = 'Play to win. Be strategic and smart about your moves. Speak naturally like a person in a chatroom. Use light, occasional slang when it fits, but do not overdo it. Keep it PG-13.';
+
 // Role colors for UI
 export const ROLE_COLORS: Record<Role, string> = {
   MAFIA: '#e53935',    // Red

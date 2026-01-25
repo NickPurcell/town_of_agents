@@ -37,6 +37,7 @@ export interface Settings {
     turnTimeoutSec: number;
     mafiaVotingRetries: number;
   };
+  defaultPersonality?: string;
 }
 
 // Raw response metadata from LLM (excludes message content)

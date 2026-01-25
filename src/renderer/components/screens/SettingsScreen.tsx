@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
-import { DEFAULT_GAME_SETTINGS } from '@shared/types';
+import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
 import styles from './SettingsScreen.module.css';
 
 export function SettingsScreen() {
-  const { settings, saveSettings, updateApiKey, updateGameSettings } = useSettingsStore();
+  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality } = useSettingsStore();
   const { setScreen } = useUIStore();
   const { isGameActive } = useGameStore();
   const [testing, setTesting] = useState<string | null>(null);
@@ -150,6 +150,21 @@ export function SettingsScreen() {
               />
             </div>
           </div>
+        </div>
+
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>Default Agent Personality</h3>
+          <p className={styles.sectionDescription}>
+            This personality will be used for default game agents and as the initial value when creating new agents.
+          </p>
+
+          <textarea
+            className={styles.personalityTextarea}
+            value={settings.defaultPersonality || DEFAULT_PERSONALITY}
+            onChange={e => updateDefaultPersonality(e.target.value)}
+            disabled={isGameActive}
+            rows={4}
+          />
         </div>
 
         <div className={styles.actions}>
