@@ -41,7 +41,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - **AgentManager.ts**: Agent state queries (getAgent, getAgentsByRole, getAliveMafia, getAliveTown, etc.).
 - **PhaseRunner.ts**: Orchestrates phase execution (discussions, voting, choices) with round-robin turns and timeouts.
 - **VoteResolver.ts**: Town vote (majority) and Mafia vote (Godfather final say, with unanimity fallback) resolution.
-- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, werewolf_private, jester_private, jailor_private, jail_conversation, host).
+- **Visibility.ts**: Filters game events by visibility type (public, mafia, sheriff_private, doctor_private, lookout_private, vigilante_private, mayor_private, framer_private, consigliere_private, werewolf_private, jester_private, jailor_private, tavern_keeper_private, jail_conversation, host).
 
 ### Game Controller (`src/main/services/gameController.ts`)
 - Main orchestrator wiring engine, phase runner, and LLM services.
@@ -144,18 +144,18 @@ All cross-layer types live in `src/shared/types/*` and are imported via `@shared
 Update these types first when introducing new fields or IPC payloads.
 
 Key types in `src/shared/types/game.ts`:
-- **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, JESTER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE, WEREWOLF, JAILOR
+- **Roles**: MAFIA, GODFATHER, FRAMER, CONSIGLIERE, JESTER, CITIZEN, SHERIFF, DOCTOR, LOOKOUT, MAYOR, VIGILANTE, WEREWOLF, JAILOR, TAVERN_KEEPER
 - **Factions**: MAFIA, TOWN, NEUTRAL (Godfather, Framer, and Consigliere are MAFIA faction; Jester and Werewolf are NEUTRAL faction; Jailor is TOWN)
 - **AttackLevel**: NONE, BASIC, POWERFUL, UNSTOPPABLE
 - **DefenseLevel**: NONE, BASIC, POWERFUL
 - **RoleTraits**: Interface defining visits, attack, defense, detection_immune, roleblock_immune
 - **ROLE_TRAITS**: Centralized configuration mapping roles to their traits
-- **Phases**: 28 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, JESTER_HAUNT_PRE_SPEECH, JESTER_HAUNT_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, POST_GAME_DISCUSSION)
+- **Phases**: 30 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, JESTER_HAUNT_PRE_SPEECH, JESTER_HAUNT_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, TAVERN_KEEPER_PRE_SPEECH, TAVERN_KEEPER_CHOICE, POST_GAME_DISCUSSION)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
-- **Visibility**: 14 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jester_private, jail_conversation)
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN, JESTER_HAUNT), INVESTIGATION_RESULT, DEATH, TRANSITION
+- **Visibility**: 15 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jester_private, tavern_keeper_private, jail_conversation)
+- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN, JESTER_HAUNT, TAVERN_KEEPER_ROLEBLOCK), INVESTIGATION_RESULT, DEATH, TRANSITION
 - **TransitionEvent**: Day/night cinematic banners with heading, subtitle, and transitionType (DAY/NIGHT)
-- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds, doctorSelfHealUsed, pendingJesterHauntTarget, jesterWhoHaunted, jesterLynchVotes)
+- **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds, roleblockedAgentIds, doctorSelfHealUsed, pendingJesterHauntTarget, jesterWhoHaunted, jesterLynchVotes)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
@@ -193,23 +193,25 @@ Helper functions:
 1. **Jailor Choice** - Jailor selects who to jail (FIRST action)
 2. **Jail Conversation** - Private 3-round interrogation between Jailor and prisoner
 3. **Jailor Execute Choice** - Jailor decides whether to execute (UNSTOPPABLE attack, **kills immediately**)
-4. **Doctor Pre-Speech** - Doctor deliberates (private)
-5. **Doctor Choice** - Protect target (grants POWERFUL defense, applies to immediate Mafia kill)
-6. **Mafia Discussion** - Mafia members discuss (jailed Mafia excluded)
-7. **Mafia Vote** - Godfather has final say; unanimity fallback (jailed Mafia excluded, **kills immediately**)
-8. **Framer Pre-Speech** - Framer deliberates (private)
-9. **Framer Choice** - Frame target (persists until investigated)
-10. **Consigliere Choice** - Learn exact role
-11. **Consigliere Post-Speech** - Consigliere reacts to findings (private)
-12. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
-13. **Sheriff Post-Speech** - Sheriff reacts to result
-14. **Vigilante Pre-Speech** - Vigilante deliberates (private, Night 2+ only)
-15. **Vigilante Choice** - Shoot target (3 bullets total, Night 2+ only, **kills immediately**)
-16. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
-17. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
-18. **Lookout Choice** - Watch target (sees all visitors)
-19. **Lookout Post-Speech** - Lookout reacts to visitors seen
-20. **Night Resolution** - Remaining attacks resolve, notifications sent
+4. **Tavern Keeper Pre-Speech** - Tavern Keeper deliberates (private)
+5. **Tavern Keeper Choice** - Roleblock target (Jailor and Werewolf on full moon immune)
+6. **Doctor Pre-Speech** - Doctor deliberates (private)
+7. **Doctor Choice** - Protect target (grants POWERFUL defense, applies to immediate Mafia kill)
+8. **Mafia Discussion** - Mafia members discuss (jailed and roleblocked Mafia excluded)
+9. **Mafia Vote** - Godfather has final say; unanimity fallback (jailed and roleblocked Mafia excluded, **kills immediately**)
+10. **Framer Pre-Speech** - Framer deliberates (private)
+11. **Framer Choice** - Frame target (persists until investigated)
+12. **Consigliere Choice** - Learn exact role
+13. **Consigliere Post-Speech** - Consigliere reacts to findings (private)
+14. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
+15. **Sheriff Post-Speech** - Sheriff reacts to result
+16. **Vigilante Pre-Speech** - Vigilante deliberates (private, Night 2+ only)
+17. **Vigilante Choice** - Shoot target (3 bullets total, Night 2+ only, **kills immediately**)
+18. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
+19. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
+20. **Lookout Choice** - Watch target (sees all visitors)
+21. **Lookout Post-Speech** - Lookout reacts to visitors seen
+22. **Night Resolution** - Remaining attacks resolve, notifications sent
 
 **Jailor Notes:**
 - Jailor does NOT visit (invisible to Lookout, immune to Werewolf rampage at target)
@@ -226,6 +228,13 @@ Helper functions:
 **Lookout Notes:**
 - Cannot watch jailed targets (receives "Your target was in jail.")
 - Jailor does NOT visit, so Lookout won't see Jailor visiting the jailed player
+
+**Tavern Keeper Notes:**
+- Visits target (visible to Lookout)
+- Cannot roleblock Jailor (`roleblock_immune: true`)
+- Cannot roleblock Werewolf on full moon nights (2, 4, 6...)
+- Roleblocked agents cannot perform their night action
+- Roleblocked Mafia members cannot participate in discussion OR vote
 
 **Immediate Kills:**
 - **Jailor Execution**: Kills target immediately when decision is made (UNSTOPPABLE - bypasses all defense)
@@ -290,6 +299,8 @@ Prompts live in `prompts/` organized by role folders. Template variables use `{{
 - `jailor/choice.md`: Jail target selection (goes FIRST at night)
 - `jailor/conversation.md`: Private jail interrogation (3 rounds)
 - `jailor/execute_choice.md`: Execution decision (UNSTOPPABLE attack, 3 total)
+- `tavern_keeper/choice_pre.md`: Deliberation before roleblocking
+- `tavern_keeper/choice.md`: Roleblock target selection (Jailor and Werewolf on full moon immune)
 - `jester/haunt_pre.md`: Deliberation before haunting (shows eligible voters)
 - `jester/haunt_choice.md`: Haunt target selection (only voters who voted GUILTY or ABSTAINED)
 - `mafia/discuss.md`: Mafia night discussion (Framer and Consigliere participate but cannot vote)

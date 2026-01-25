@@ -14,6 +14,7 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'JESTER', label: 'Jester' },
   { value: 'WEREWOLF', label: 'Werewolf' },
   { value: 'JAILOR', label: 'Jailor' },
+  { value: 'TAVERN_KEEPER', label: 'Tavern Keeper' },
   { value: 'SHERIFF', label: 'Sheriff' },
   { value: 'DOCTOR', label: 'Doctor' },
   { value: 'VIGILANTE', label: 'Vigilante' },

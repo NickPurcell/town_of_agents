@@ -44,6 +44,7 @@ const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   JAILOR_CHOICE: "Jailor's Turn",
   FRAMER_PRE_SPEECH: "Framer's Turn",
   CONSIGLIERE_CHOICE: "Consigliere's Turn",
+  TAVERN_KEEPER_PRE_SPEECH: "Tavern Keeper's Turn",
   DOCTOR_PRE_SPEECH: "Doctor's Turn",
   VIGILANTE_PRE_SPEECH: "Vigilante's Turn",
   WEREWOLF_PRE_SPEECH: "Werewolf's Turn",
@@ -257,6 +258,9 @@ export function GameEventItem({ event, agent }: GameEventItemProps) {
             break;
           case 'JESTER_HAUNT':
             actionText = `is haunting ${choiceEvent.targetName}`;
+            break;
+          case 'TAVERN_KEEPER_ROLEBLOCK':
+            actionText = `is roleblocking ${choiceEvent.targetName}`;
             break;
         }
       }

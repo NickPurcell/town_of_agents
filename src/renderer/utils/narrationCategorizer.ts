@@ -30,6 +30,10 @@ export function categorizeNarration(event: NarrationEvent): NarrationCategorizat
     // Jester private messages (during haunt) - use skull icon for thematic consistency
     return { category: 'critical_death', icon: 'skull' };
   }
+  if (visibility.kind === 'tavern_keeper_private') {
+    // Tavern Keeper private messages - use clock for action-related narrations
+    return { category: 'info_phase_prompt', icon: 'clock' };
+  }
 
   // Critical events - check text patterns
   if (/wins!/i.test(text)) {

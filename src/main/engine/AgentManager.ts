@@ -112,6 +112,11 @@ export class AgentManager {
     return jailors.length > 0 ? jailors[0] : undefined;
   }
 
+  getAliveTavernKeeper(): GameAgent | undefined {
+    const tavernKeepers = this.getAliveAgentsByRole('TAVERN_KEEPER');
+    return tavernKeepers.length > 0 ? tavernKeepers[0] : undefined;
+  }
+
   // Get eligible targets for jailor (alive agents except self)
   getJailorTargets(jailorId: string): GameAgent[] {
     return this.getAliveAgents().filter((a) => a.id !== jailorId);
@@ -210,6 +215,11 @@ export class AgentManager {
   // Get eligible targets for Jester haunt (voters who voted guilty or abstained)
   getJesterHauntTargets(eligibleVoterIds: string[]): GameAgent[] {
     return this.getAliveAgents().filter(a => eligibleVoterIds.includes(a.id));
+  }
+
+  // Get eligible targets for Tavern Keeper roleblock (all alive agents except self)
+  getTavernKeeperTargets(tavernKeeperId: string): GameAgent[] {
+    return this.getAliveAgents().filter((a) => a.id !== tavernKeeperId);
   }
 
   // Reset all agents to alive for new game

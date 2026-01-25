@@ -24,6 +24,8 @@ const PHASE_LABELS: Record<Phase, string> = {
   FRAMER_CHOICE: 'Night - Framer Framing',
   CONSIGLIERE_CHOICE: 'Night - Consigliere Investigation',
   CONSIGLIERE_POST_SPEECH: "Consigliere's Reaction",
+  TAVERN_KEEPER_PRE_SPEECH: 'Night - Tavern Keeper Deliberation',
+  TAVERN_KEEPER_CHOICE: 'Night - Tavern Keeper Roleblock',
   SHERIFF_CHOICE: 'Night - Sheriff Investigation',
   SHERIFF_POST_SPEECH: "Sheriff's Reaction",
   LOOKOUT_CHOICE: 'Night - Lookout Watch',

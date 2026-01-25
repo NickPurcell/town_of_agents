@@ -1,5 +1,5 @@
 // Game role types
-export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE' | 'WEREWOLF' | 'JAILOR';
+export type Role = 'MAFIA' | 'GODFATHER' | 'FRAMER' | 'CONSIGLIERE' | 'JESTER' | 'CITIZEN' | 'SHERIFF' | 'DOCTOR' | 'LOOKOUT' | 'MAYOR' | 'VIGILANTE' | 'WEREWOLF' | 'JAILOR' | 'TAVERN_KEEPER';
 
 // Attack and defense power levels
 export type AttackLevel = 'NONE' | 'BASIC' | 'POWERFUL' | 'UNSTOPPABLE';
@@ -29,6 +29,7 @@ export const ROLE_TRAITS: Record<Role, RoleTraits> = {
   JESTER:       { visits: false, attack: 'NONE',  defense: 'NONE',  detection_immune: false, roleblock_immune: false },
   WEREWOLF:     { visits: true,  attack: 'POWERFUL', defense: 'BASIC', detection_immune: false, roleblock_immune: false },
   JAILOR:       { visits: false, attack: 'UNSTOPPABLE', defense: 'NONE', detection_immune: false, roleblock_immune: true },
+  TAVERN_KEEPER: { visits: true, attack: 'NONE', defense: 'NONE', detection_immune: false, roleblock_immune: false },
 };
 
 // Helper function to get role traits
@@ -86,6 +87,8 @@ export type Phase =
   | 'JAILOR_CHOICE'
   | 'JAIL_CONVERSATION'
   | 'JAILOR_EXECUTE_CHOICE'
+  | 'TAVERN_KEEPER_PRE_SPEECH'
+  | 'TAVERN_KEEPER_CHOICE'
   | 'POST_GAME_DISCUSSION';
 
 // Get faction from role
@@ -126,6 +129,7 @@ export type Visibility =
   | { kind: 'werewolf_private'; agentId: string }
   | { kind: 'jailor_private'; agentId: string }
   | { kind: 'jester_private'; agentId: string }
+  | { kind: 'tavern_keeper_private'; agentId: string }
   | { kind: 'jail_conversation'; jailorId: string; prisonerId: string }
   | { kind: 'host' };
 
@@ -177,7 +181,7 @@ export interface ChoiceEvent {
   type: 'CHOICE';
   agentId: string;
   targetName: string;
-  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE' | 'JAILOR_ABSTAIN' | 'JESTER_HAUNT';
+  choiceType: 'DOCTOR_PROTECT' | 'SHERIFF_INVESTIGATE' | 'LOOKOUT_WATCH' | 'VIGILANTE_KILL' | 'FRAMER_FRAME' | 'CONSIGLIERE_INVESTIGATE' | 'WEREWOLF_KILL' | 'JAILOR_JAIL' | 'JAILOR_EXECUTE' | 'JAILOR_ABSTAIN' | 'JESTER_HAUNT' | 'TAVERN_KEEPER_ROLEBLOCK';
   visibility: Visibility;
   ts: number;
   reasoning?: string;
@@ -231,6 +235,7 @@ export interface GameState {
   jailorExecutionsRemaining: number;  // Track 3-execution limit
   jailorLostExecutionPower?: boolean;  // True if Jailor executed a Town member
   jailedAgentIds: string[];  // Agents currently jailed this night
+  roleblockedAgentIds: string[];  // Agents roleblocked by Tavern Keeper this night
   doctorSelfHealUsed: boolean;  // Track 1 self-heal limit
   pendingNightDeaths: string[];  // Agent IDs killed this night, not yet revealed
   pendingJesterHauntTarget?: string;  // Agent ID haunted by Jester, dies at dawn
@@ -316,6 +321,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   VIGILANTE: '#4caf50', // Green
   WEREWOLF: '#8B4513', // Saddle brown
   JAILOR: '#607D8B',   // Blue-grey
+  TAVERN_KEEPER: '#8D6E63', // Brown
 };
 
 // Helper to get visible events for an agent
@@ -346,6 +352,8 @@ export function canAgentSeeEvent(agent: GameAgent, event: GameEvent): boolean {
     case 'jailor_private':
       return visibility.agentId === agent.id;
     case 'jester_private':
+      return visibility.agentId === agent.id;
+    case 'tavern_keeper_private':
       return visibility.agentId === agent.id;
     case 'jail_conversation':
       return agent.id === visibility.jailorId || agent.id === visibility.prisonerId;

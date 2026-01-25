@@ -144,7 +144,8 @@ export class PhaseRunner extends EventEmitter {
         phase === 'WEREWOLF_CHOICE' ||
         phase === 'JAILOR_CHOICE' ||
         phase === 'JAILOR_EXECUTE_CHOICE' ||
-        phase === 'JESTER_HAUNT_CHOICE'
+        phase === 'JESTER_HAUNT_CHOICE' ||
+        phase === 'TAVERN_KEEPER_CHOICE'
       ) {
         this.clearTurnTimeout();
         this.currentTurnAgentId = null;
@@ -248,8 +249,8 @@ export class PhaseRunner extends EventEmitter {
       case 'POST_EXECUTION_DISCUSSION':
         return agentManager.getAliveAgents();
       case 'NIGHT_DISCUSSION':
-        // Exclude jailed Mafia from discussion
-        return agentManager.getAliveMafia().filter(a => !this.engine.isAgentJailed(a.id));
+        // Exclude jailed and roleblocked Mafia from discussion
+        return agentManager.getAliveMafia().filter(a => !this.engine.isAgentJailed(a.id) && !this.engine.isAgentRoleblocked(a.id));
       case 'POST_GAME_DISCUSSION':
         // All agents participate (dead and alive)
         return agentManager.getAllAgents();
@@ -412,8 +413,8 @@ export class PhaseRunner extends EventEmitter {
       case 'DAY_VOTE':
         return agentManager.getDayVoters();
       case 'NIGHT_VOTE':
-        // Exclude jailed Mafia from voting
-        return agentManager.getNightVoters().filter(a => !this.engine.isAgentJailed(a.id));
+        // Exclude jailed and roleblocked Mafia from voting
+        return agentManager.getNightVoters().filter(a => !this.engine.isAgentJailed(a.id) && !this.engine.isAgentRoleblocked(a.id));
       default:
         return [];
     }
@@ -630,6 +631,8 @@ export class PhaseRunner extends EventEmitter {
       choiceAgent = agentManager.getAliveJailor();
     } else if (phase === 'JESTER_HAUNT_CHOICE') {
       choiceAgent = this.engine.getLynchingJester();
+    } else if (phase === 'TAVERN_KEEPER_CHOICE') {
+      choiceAgent = agentManager.getAliveTavernKeeper();
     }
 
     if (choiceAgent) {
@@ -649,6 +652,17 @@ export class PhaseRunner extends EventEmitter {
         // Host-only notification - haunted agents cannot act
         this.engine.appendNarration(
           `**${choiceAgent.name} is haunted and cannot act.**`,
+          VisibilityFilter.host()
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      // Check if agent is roleblocked by Tavern Keeper - except Tavern Keeper itself
+      if (phase !== 'TAVERN_KEEPER_CHOICE' && this.engine.isAgentRoleblocked(choiceAgent.id)) {
+        // Host-only notification with role info
+        this.engine.appendNarration(
+          `**The ${choiceAgent.role} was blocked by the Tavern Keeper.**`,
           VisibilityFilter.host()
         );
         this.engine.nextPhase();
@@ -727,6 +741,9 @@ export class PhaseRunner extends EventEmitter {
       } else if (phase === 'JESTER_HAUNT_CHOICE') {
         choiceType = 'JESTER_HAUNT';
         visibility = VisibilityFilter.jesterPrivate(agent.id);
+      } else if (phase === 'TAVERN_KEEPER_CHOICE') {
+        choiceType = 'TAVERN_KEEPER_ROLEBLOCK';
+        visibility = VisibilityFilter.tavernKeeperPrivate(agent.id);
       }
 
       if (choiceType && visibility) {
@@ -818,6 +835,8 @@ export class PhaseRunner extends EventEmitter {
       eligibleTargets = agentManager.getJailorTargets(agent.id);
     } else if (phase === 'JESTER_HAUNT_CHOICE') {
       eligibleTargets = this.engine.getJesterHauntEligibleTargets();
+    } else if (phase === 'TAVERN_KEEPER_CHOICE') {
+      eligibleTargets = agentManager.getTavernKeeperTargets(agent.id);
     }
     const target = this.findTargetByName(normalizedTarget, eligibleTargets);
     if (!target) {
@@ -1137,6 +1156,45 @@ export class PhaseRunner extends EventEmitter {
       this.engine.appendNarration(
         `**You will haunt ${target.name}. They will meet their doom at dawn.**`,
         VisibilityFilter.jesterPrivate(agent.id)
+      );
+    } else if (phase === 'TAVERN_KEEPER_CHOICE') {
+      // Check immunity: Jailor is always immune, Werewolf is immune on full moon nights
+      const targetTraits = ROLE_TRAITS[target.role];
+      const isFullMoon = this.engine.getDayNumber() % 2 === 0;
+      const isWerewolfOnFullMoon = target.role === 'WEREWOLF' && isFullMoon;
+
+      if (targetTraits.roleblock_immune || isWerewolfOnFullMoon) {
+        this.engine.appendNarration(
+          `**That player cannot be roleblocked tonight.**`,
+          VisibilityFilter.tavernKeeperPrivate(agent.id)
+        );
+        // Skip to next phase without applying roleblock
+        this.engine.nextPhase();
+        return;
+      }
+
+      // Emit choice event for tavern keeper roleblock
+      const choiceEvent: ChoiceEvent = {
+        type: 'CHOICE',
+        agentId: agent.id,
+        targetName: target.name,
+        choiceType: 'TAVERN_KEEPER_ROLEBLOCK',
+        visibility: VisibilityFilter.tavernKeeperPrivate(agent.id),
+        ts: Date.now(),
+        reasoning,
+      };
+      this.engine.appendEvent(choiceEvent);
+
+      // Track visit for lookout
+      this.engine.addNightVisit(agent.id, target.id);
+
+      // Apply roleblock
+      this.engine.setRoleblockedAgent(target.id);
+
+      // Feedback
+      this.engine.appendNarration(
+        `**You have roleblocked ${target.name}. They cannot perform their night action.**`,
+        VisibilityFilter.tavernKeeperPrivate(agent.id)
       );
     }
 

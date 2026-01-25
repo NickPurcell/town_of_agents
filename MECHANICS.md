@@ -54,6 +54,7 @@ A role **visits** when their night ability requires them to go to the target's l
 | Lookout | ✓ | Watches target (but excluded from own visitor list) |
 | Vigilante | ✓ | Shoots target |
 | Jailor | ✗ | Prisoner comes to jail (invisible to Lookout) |
+| Tavern Keeper | ✓ | Roleblocks target |
 | Mayor | ✗ | Day ability only |
 | Citizen | ✗ | No ability |
 | Mafia (kill) | ✓ | Godfather or designated killer visits |
@@ -126,6 +127,22 @@ A role **visits** when their night ability requires them to go to the target's l
 - **Reveal Effect:**
   - Vote count becomes 3
   - **Cannot be healed by Doctor** after revealing
+
+#### Tavern Keeper
+- **Faction:** Town
+- **Ability:** Roleblock one player per night
+- **Attack:** None | **Defense:** None
+- **Visits:** Yes
+- **Night Order:** After Jailor Execute, before Doctor
+- **Roleblock Effect:**
+  - Target cannot use their night ability
+  - Roleblocked Mafia members cannot participate in Mafia discussion OR vote
+- **Roleblock Immunity:**
+  - **Jailor:** Always immune to roleblock (`roleblock_immune: true`)
+  - **Werewolf on full moon nights:** Cannot be roleblocked on nights 2, 4, 6...
+- **Notes:**
+  - Lookout can see Tavern Keeper visiting their target
+  - Roleblock is applied at the start of night, before most actions resolve
 
 #### Jailor
 - **Faction:** Town
@@ -207,16 +224,17 @@ Night actions resolve in this specific order:
 | 1 | **Jailor Choice** | Jailor selects who to jail |
 | 2 | Jail Conversation | Private 3-round interrogation |
 | 3 | **Jailor Execute** | Jailor decides whether to execute prisoner **(kills immediately)** |
-| 4 | Doctor | Doctor applies Powerful protection to target |
-| 5 | Mafia Discussion | Mafia members discuss (jailed Mafia excluded) |
-| 6 | **Mafia Vote** | Mafia votes on kill target **(kills immediately, checked against Doctor protection)** |
-| 7 | Framer | Framer applies frame to target |
-| 8 | Consigliere | Consigliere investigates target, learns exact role |
-| 9 | Sheriff | Sheriff investigates target (frame already applied) |
-| 10 | **Vigilante** | Vigilante shoots target **(kills immediately, checked against Doctor protection)** |
-| 11 | Werewolf | Werewolf rampages (only on even nights) |
-| 12 | Lookout | Lookout sees all visitors (including attackers) |
-| 13 | Night Resolution | Remaining attacks resolve, notifications sent |
+| 4 | **Tavern Keeper** | Tavern Keeper roleblocks a target (Jailor and Werewolf on full moon immune) |
+| 5 | Doctor | Doctor applies Powerful protection to target |
+| 6 | Mafia Discussion | Mafia members discuss (jailed and roleblocked Mafia excluded) |
+| 7 | **Mafia Vote** | Mafia votes on kill target **(kills immediately, checked against Doctor protection)** |
+| 8 | Framer | Framer applies frame to target |
+| 9 | Consigliere | Consigliere investigates target, learns exact role |
+| 10 | Sheriff | Sheriff investigates target (frame already applied) |
+| 11 | **Vigilante** | Vigilante shoots target **(kills immediately, checked against Doctor protection)** |
+| 12 | Werewolf | Werewolf rampages (only on even nights) |
+| 13 | Lookout | Lookout sees all visitors (including attackers) |
+| 14 | Night Resolution | Remaining attacks resolve, notifications sent |
 
 ### Immediate Kills
 - **Jailor Execution**: Kills immediately when decision is made (UNSTOPPABLE - bypasses all defense)
@@ -320,12 +338,15 @@ When a player dies, their **role is publicly revealed** to all players. This app
 
 ---
 
-## Future Mechanics (Planned)
+## Implemented Mechanics
 
-### Roleblocking
+### Roleblocking (via Tavern Keeper)
 - Roleblocked players cannot use their night ability
-- Some roles will have `roleblock_immune: true`
-- Relevant for future Escort/Consort roles
+- Some roles have `roleblock_immune: true` (Jailor)
+- Werewolf is immune on full moon nights (2, 4, 6...)
+- Roleblocked Mafia members cannot participate in discussion or vote
+
+## Future Mechanics (Planned)
 
 ### Unstoppable Attacks
 - Bypasses all defense levels
@@ -349,6 +370,7 @@ When a player dies, their **role is publicly revealed** to all players. This app
 | Vigilante | Town | Basic | None | Yes | - |
 | Mayor | Town | None | None | No | - |
 | Jailor | Town | Unstoppable* | None | No | - |
+| Tavern Keeper | Town | None | None | Yes | - |
 | Mafia | Mafia | Basic | None | Yes | Suspicious |
 | Godfather | Mafia | Basic | Basic | Yes | Not Suspicious |
 | Framer | Mafia | None | None | Yes | Suspicious |

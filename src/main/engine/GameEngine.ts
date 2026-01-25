@@ -107,6 +107,8 @@ export class GameEngine extends EventEmitter {
   private pendingJailorExecution?: string;
   // Doctor self-heal limit
   private doctorSelfHealUsed: boolean = false;
+  // Tavern Keeper roleblock state
+  private roleblockedThisNight: Set<string> = new Set();
   // Track immediate kills (processed before night resolution)
   private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE' | 'VIGILANTE_KILL'> = new Map();
   // Track if Mafia attack was processed (killed or blocked by Doctor)
@@ -162,6 +164,8 @@ export class GameEngine extends EventEmitter {
     this.pendingJailorExecution = undefined;
     // Reset Doctor self-heal
     this.doctorSelfHealUsed = false;
+    // Reset Tavern Keeper roleblock state
+    this.roleblockedThisNight.clear();
     // Reset Jester state
     this.jesterLynchVotes = [];
     this.lynchingJesterId = undefined;
@@ -205,6 +209,7 @@ export class GameEngine extends EventEmitter {
       jailorExecutionsRemaining: this.jailorExecutionsRemaining,
       jailorLostExecutionPower: this.jailorLostExecutionPower,
       jailedAgentIds: Array.from(this.jailedThisNight),
+      roleblockedAgentIds: Array.from(this.roleblockedThisNight),
       doctorSelfHealUsed: this.doctorSelfHealUsed,
       pendingNightDeaths: Array.from(this.pendingNightDeaths),
       pendingJesterHauntTarget: this.pendingJesterHauntTarget,
@@ -395,7 +400,17 @@ export class GameEngine extends EventEmitter {
         return;
 
       case 'JAILOR_EXECUTE_CHOICE':
-        // After execution decision, go to Doctor
+        // After execution decision, go to Tavern Keeper (if alive)
+        this.goToTavernKeeperPhase();
+        return;
+
+      case 'TAVERN_KEEPER_PRE_SPEECH':
+        // After pre-speech, go to choice
+        this.emitPhaseChange('TAVERN_KEEPER_CHOICE');
+        return;
+
+      case 'TAVERN_KEEPER_CHOICE':
+        // After choice, go to Doctor
         this.goToDoctorPhase();
         return;
 
@@ -606,6 +621,22 @@ export class GameEngine extends EventEmitter {
       return;
     }
     this.goToVigilantePhase();
+  }
+
+  // Go to Tavern Keeper phase (after Jailor execute, before Doctor)
+  private goToTavernKeeperPhase(): void {
+    const tavernKeeper = this.agentManager.getAliveTavernKeeper();
+    if (tavernKeeper) {
+      if (this.jailedThisNight.has(tavernKeeper.id)) {
+        this.appendNarration(`**${tavernKeeper.name} is jailed.**`, VisibilityFilter.host());
+        this.goToDoctorPhase();
+        return;
+      }
+      this.emitPhaseChange('TAVERN_KEEPER_PRE_SPEECH');
+      this.appendNarration('**Tavern Keeper, gather your thoughts.**', VisibilityFilter.tavernKeeperPrivate(tavernKeeper.id));
+      return;
+    }
+    this.goToDoctorPhase();
   }
 
   // Go to Doctor phase (after Jailor, before Mafia)
@@ -1171,6 +1202,8 @@ export class GameEngine extends EventEmitter {
     this.pendingJailTarget = undefined;
     this.pendingJailorExecution = undefined;
     this.jailedThisNight.clear();
+    // Clear Tavern Keeper roleblock state for next night
+    this.roleblockedThisNight.clear();
 
     // Check win condition
     if (this.winner) return;
@@ -1416,6 +1449,20 @@ export class GameEngine extends EventEmitter {
   // Get pending Jailor execution target
   getPendingJailorExecution(): string | undefined {
     return this.pendingJailorExecution;
+  }
+
+  // =====================================================
+  // Tavern Keeper Methods
+  // =====================================================
+
+  // Set an agent as roleblocked by Tavern Keeper
+  setRoleblockedAgent(agentId: string): void {
+    this.roleblockedThisNight.add(agentId);
+  }
+
+  // Check if an agent is roleblocked by Tavern Keeper this night
+  isAgentRoleblocked(agentId: string): boolean {
+    return this.roleblockedThisNight.has(agentId);
   }
 
   // =====================================================
