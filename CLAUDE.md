@@ -192,23 +192,23 @@ Helper functions:
 1. **Jailor Choice** - Jailor selects who to jail (FIRST action)
 2. **Jail Conversation** - Private 3-round interrogation between Jailor and prisoner
 3. **Jailor Execute Choice** - Jailor decides whether to execute (UNSTOPPABLE attack, **kills immediately**)
-4. **Mafia Discussion** - Mafia members discuss (jailed Mafia excluded)
-5. **Mafia Vote** - Godfather has final say; unanimity fallback (jailed Mafia excluded, **kills immediately**)
-6. **Framer Pre-Speech** - Framer deliberates (private)
-7. **Framer Choice** - Frame target (persists until investigated)
-8. **Consigliere Choice** - Learn exact role
-9. **Consigliere Post-Speech** - Consigliere reacts to findings (private)
-10. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
-11. **Sheriff Post-Speech** - Sheriff reacts to result
-12. **Doctor Pre-Speech** - Doctor deliberates (private)
-13. **Doctor Choice** - Protect target (grants POWERFUL defense)
+4. **Doctor Pre-Speech** - Doctor deliberates (private)
+5. **Doctor Choice** - Protect target (grants POWERFUL defense, applies to immediate Mafia kill)
+6. **Mafia Discussion** - Mafia members discuss (jailed Mafia excluded)
+7. **Mafia Vote** - Godfather has final say; unanimity fallback (jailed Mafia excluded, **kills immediately**)
+8. **Framer Pre-Speech** - Framer deliberates (private)
+9. **Framer Choice** - Frame target (persists until investigated)
+10. **Consigliere Choice** - Learn exact role
+11. **Consigliere Post-Speech** - Consigliere reacts to findings (private)
+12. **Sheriff Choice** - Investigate (consumes frame, Godfather appears innocent, Werewolf conditional)
+13. **Sheriff Post-Speech** - Sheriff reacts to result
 14. **Vigilante Pre-Speech** - Vigilante deliberates (private)
 15. **Vigilante Choice** - Shoot target (3 bullets total)
 16. **Werewolf Pre-Speech** - Werewolf deliberates (private, only on even nights)
 17. **Werewolf Choice** - Rampage at target or stay home (only on nights 2, 4, 6...)
 18. **Lookout Choice** - Watch target (sees all visitors)
 19. **Lookout Post-Speech** - Lookout reacts to visitors seen
-20. **Night Resolution** - Attacks resolve, notifications sent
+20. **Night Resolution** - Remaining attacks resolve, notifications sent
 
 **Jailor Notes:**
 - Jailor does NOT visit (invisible to Lookout, immune to Werewolf rampage at target)
@@ -219,7 +219,7 @@ Helper functions:
 
 **Immediate Kills:**
 - **Jailor Execution**: Kills target immediately when decision is made (UNSTOPPABLE - bypasses all defense)
-- **Mafia Kill**: Kills target immediately after vote resolves (checks innate defense only - Doctor hasn't chosen yet)
+- **Mafia Kill**: Kills target immediately after vote resolves (checks full defense including Doctor protection)
 - Immediate kills prevent the victim from performing their night action
 - Morning announcements still appear at dawn for public visibility
 

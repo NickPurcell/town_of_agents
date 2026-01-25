@@ -32,7 +32,7 @@ function numberToOrdinal(n: number): string {
 }
 
 // Phase order for state machine (night phases per MECHANICS.md)
-// Night order: Jailor → Jail Conversation → Execute → Mafia discuss/vote → Framer → Consigliere → Sheriff → Doctor → Vigilante → Werewolf → Lookout
+// Night order: Jailor → Execute → Doctor → Mafia discuss/vote → Framer → Consigliere → Sheriff → Vigilante → Werewolf → Lookout
 const PHASE_ORDER: Phase[] = [
   'DAY_ONE_DISCUSSION',
   'DAY_DISCUSSION',
@@ -43,6 +43,9 @@ const PHASE_ORDER: Phase[] = [
   'JAILOR_CHOICE',
   'JAIL_CONVERSATION',
   'JAILOR_EXECUTE_CHOICE',
+  // Doctor goes before Mafia so protection applies to immediate Mafia kills
+  'DOCTOR_PRE_SPEECH',
+  'DOCTOR_CHOICE',
   // Then Mafia
   'NIGHT_DISCUSSION',
   'NIGHT_VOTE',
@@ -52,8 +55,6 @@ const PHASE_ORDER: Phase[] = [
   'CONSIGLIERE_POST_SPEECH',
   'SHERIFF_CHOICE',
   'SHERIFF_POST_SPEECH',
-  'DOCTOR_PRE_SPEECH',
-  'DOCTOR_CHOICE',
   'VIGILANTE_PRE_SPEECH',
   'VIGILANTE_CHOICE',
   'WEREWOLF_PRE_SPEECH',
@@ -104,6 +105,8 @@ export class GameEngine extends EventEmitter {
   private pendingJailorExecution?: string;
   // Track immediate kills (processed before night resolution)
   private immediateNightKills: Map<string, 'MAFIA' | 'JAILOR_EXECUTE'> = new Map();
+  // Track if Mafia attack was processed (killed or blocked by Doctor)
+  private mafiaAttackProcessed: boolean = false;
 
   constructor(settings: GameSettings = DEFAULT_GAME_SETTINGS) {
     super();
@@ -132,6 +135,7 @@ export class GameEngine extends EventEmitter {
     this.lookoutIntelQueue = {};
     this.nightVisits = [];
     this.immediateNightKills.clear();
+    this.mafiaAttackProcessed = false;
     this.winner = undefined;
     this.lastWordsAgentId = undefined;
     this.isRunning = false;
@@ -706,13 +710,17 @@ export class GameEngine extends EventEmitter {
     this.immediateNightKills.set(targetId, 'JAILOR_EXECUTE');
   }
 
-  // Execute immediate Mafia kill (BASIC attack - checks innate defense)
-  // Returns true if kill succeeded, false if target was immune
+  // Execute immediate Mafia kill (BASIC attack - checks defense including Doctor protection)
+  // Returns true if kill succeeded, false if target was immune or protected
   executeImmediateMafiaKill(targetId: string): boolean {
     const target = this.agentManager.getAgent(targetId);
     if (!target || !target.alive) return false;
 
-    const defense = this.getInnateDefense(targetId);
+    this.mafiaAttackProcessed = true;
+
+    // Doctor goes before Mafia, so check effective defense (includes Doctor protection)
+    const defense = this.getEffectiveDefense(targetId);
+    const wasProtectedByDoctor = this.pendingDoctorProtectTarget === targetId;
     const attack: AttackLevel = 'BASIC';
 
     if (doesAttackSucceed(attack, defense)) {
@@ -720,8 +728,15 @@ export class GameEngine extends EventEmitter {
       this.immediateNightKills.set(targetId, 'MAFIA');
       return true;
     } else {
-      // Target was immune - notify Mafia
-      this.notifyAttackerImmune('MAFIA', targetId);
+      // Target was protected or immune
+      if (wasProtectedByDoctor) {
+        // Blocked by Doctor protection - notify Doctor privately
+        this.notifyDoctorSaved(targetId);
+        // Public announcement will appear in morning via resolveNight
+      } else {
+        // Blocked by innate defense - notify Mafia only
+        this.notifyAttackerImmune('MAFIA', targetId);
+      }
       return false;
     }
   }
@@ -842,17 +857,29 @@ export class GameEngine extends EventEmitter {
       const target = this.agentManager.getAgent(targetId);
       if (!target) continue;
 
-      // Check if target was already killed immediately by Mafia
-      if (sources.has('MAFIA') && this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'MAFIA') {
-        // Already killed immediately - just add morning message
-        morningMessages.push(`**${target.name} was found dead in the morning.**`);
-        // Note: Vigilante might also target the same agent, but they're already dead
-        continue;
+      const wasProtectedByDoctor = this.pendingDoctorProtectTarget === targetId;
+
+      // Handle Mafia attack that was already processed immediately
+      if (sources.has('MAFIA') && this.mafiaAttackProcessed) {
+        if (this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'MAFIA') {
+          // Mafia killed target immediately - add morning message
+          morningMessages.push(`**${target.name} was found dead in the morning.**`);
+        } else if (wasProtectedByDoctor) {
+          // Mafia attack was blocked by Doctor - add morning message (Doctor already notified)
+          morningMessages.push(
+            `**${target.name} was attacked in the night, but was saved by the doctor!**`
+          );
+        }
+        // If only Mafia targeted this agent, skip to next target
+        if (!sources.has('VIGILANTE')) {
+          continue;
+        }
+        // Otherwise, still need to process Vigilante attack
+        sources.delete('MAFIA');
       }
 
       // Get effective defense (includes Doctor protection)
       const targetDefense = this.getEffectiveDefense(targetId);
-      const wasProtectedByDoctor = this.pendingDoctorProtectTarget === targetId;
 
       // Check each attack source
       let targetKilled = false;
@@ -938,6 +965,7 @@ export class GameEngine extends EventEmitter {
     this.pendingFramedTarget = undefined;  // Deprecated, kept for compatibility
     this.nightVisits = [];
     this.immediateNightKills.clear();  // Clear immediate kills tracking
+    this.mafiaAttackProcessed = false;  // Reset Mafia attack tracking
     // Clear Jailor state for next night
     this.pendingJailTarget = undefined;
     this.pendingJailorExecution = undefined;
