@@ -376,7 +376,8 @@ export class GameController extends EventEmitter {
   }
 
   private async handleAgentSpeakRequest(agent: GameAgent, phase: Phase, turnId: number): Promise<void> {
-    if (!this.isRunning || !agent.alive) return;
+    // Allow dead agents to speak during post-game discussion
+    if (!this.isRunning || (!agent.alive && phase !== 'POST_GAME_DISCUSSION')) return;
 
     const service = this.llmServices.get(agent.id);
     if (!service) return;
