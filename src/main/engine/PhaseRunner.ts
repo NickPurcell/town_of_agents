@@ -723,11 +723,11 @@ export class PhaseRunner extends EventEmitter {
           return;
         }
 
-        // Emit choice event for self-heal
+        // Emit choice event for self-heal (use agent's name for consistent display)
         const choiceEvent: ChoiceEvent = {
           type: 'CHOICE',
           agentId: agent.id,
-          targetName: 'SELF',
+          targetName: agent.name,
           choiceType: 'DOCTOR_PROTECT',
           visibility: VisibilityFilter.doctorPrivate(agent.id),
           ts: Date.now(),
