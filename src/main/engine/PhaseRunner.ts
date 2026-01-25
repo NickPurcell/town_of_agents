@@ -728,15 +728,7 @@ export class PhaseRunner extends EventEmitter {
     // Check if target is jailed (cannot be visited) - exceptions: JAILOR_CHOICE, LOOKOUT_CHOICE (watches, doesn't visit)
     // Werewolf staying home is also not a visit to someone else
     const isWerewolfStayingHome = phase === 'WEREWOLF_CHOICE' && target.id === agent.id;
-    if (phase !== 'JAILOR_CHOICE' && phase !== 'LOOKOUT_CHOICE' && !isWerewolfStayingHome && this.engine.isAgentJailed(target.id)) {
-      const roleVisibility = this.getPrivateVisibilityForPhase(phase, agent.id);
-      this.engine.appendNarration(
-        `**Your target is in jail. Your visit failed.**`,
-        roleVisibility
-      );
-      this.engine.nextPhase();
-      return;
-    }
+    const targetIsJailed = phase !== 'JAILOR_CHOICE' && phase !== 'LOOKOUT_CHOICE' && !isWerewolfStayingHome && this.engine.isAgentJailed(target.id);
 
     if (phase === 'SHERIFF_CHOICE') {
       // Emit choice event for sheriff investigation
@@ -750,6 +742,16 @@ export class PhaseRunner extends EventEmitter {
         reasoning,
       };
       this.engine.appendEvent(choiceEvent);
+
+      // Check if target is jailed - visit fails
+      if (targetIsJailed) {
+        this.engine.appendNarration(
+          `**Your target is in jail. Your visit failed.**`,
+          VisibilityFilter.sheriffPrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
 
       // Track sheriff visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
@@ -784,6 +786,16 @@ export class PhaseRunner extends EventEmitter {
       };
       this.engine.appendEvent(choiceEvent);
 
+      // Check if target is jailed - visit fails
+      if (targetIsJailed) {
+        this.engine.appendNarration(
+          `**Your target is in jail. Your visit failed.**`,
+          VisibilityFilter.framerPrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
       // Track framer visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
 
@@ -808,6 +820,16 @@ export class PhaseRunner extends EventEmitter {
       };
       this.engine.appendEvent(choiceEvent);
 
+      // Check if target is jailed - visit fails
+      if (targetIsJailed) {
+        this.engine.appendNarration(
+          `**Your target is in jail. Your visit failed.**`,
+          VisibilityFilter.consiglierePrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
       // Track consigliere visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
 
@@ -826,6 +848,16 @@ export class PhaseRunner extends EventEmitter {
         reasoning,
       };
       this.engine.appendEvent(choiceEvent);
+
+      // Check if target is jailed - visit fails
+      if (targetIsJailed) {
+        this.engine.appendNarration(
+          `**Your target is in jail. Your visit failed.**`,
+          VisibilityFilter.doctorPrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
 
       // Track doctor visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
@@ -854,18 +886,7 @@ export class PhaseRunner extends EventEmitter {
         VisibilityFilter.lookoutPrivate(agent.id)
       );
     } else if (phase === 'VIGILANTE_CHOICE') {
-      // Use a bullet
-      if (!this.engine.useVigilanteBullet()) {
-        // No bullets remaining - shouldn't happen, but handle gracefully
-        this.engine.appendNarration(
-          `**You have no bullets remaining.**`,
-          VisibilityFilter.vigilantePrivate(agent.id)
-        );
-        this.engine.nextPhase();
-        return;
-      }
-
-      // Emit choice event for vigilante kill
+      // Emit choice event for vigilante kill first (before using bullet)
       const choiceEvent: ChoiceEvent = {
         type: 'CHOICE',
         agentId: agent.id,
@@ -876,6 +897,27 @@ export class PhaseRunner extends EventEmitter {
         reasoning,
       };
       this.engine.appendEvent(choiceEvent);
+
+      // Check if target is jailed - visit fails (don't use bullet)
+      if (targetIsJailed) {
+        this.engine.appendNarration(
+          `**Your target is in jail. Your visit failed.**`,
+          VisibilityFilter.vigilantePrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
+
+      // Use a bullet
+      if (!this.engine.useVigilanteBullet()) {
+        // No bullets remaining - shouldn't happen, but handle gracefully
+        this.engine.appendNarration(
+          `**You have no bullets remaining.**`,
+          VisibilityFilter.vigilantePrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
 
       // Track vigilante visit for lookout
       this.engine.addNightVisit(agent.id, target.id);
@@ -903,6 +945,16 @@ export class PhaseRunner extends EventEmitter {
         reasoning,
       };
       this.engine.appendEvent(choiceEvent);
+
+      // Check if target is jailed - visit fails (only if not staying home)
+      if (targetIsJailed) {
+        this.engine.appendNarration(
+          `**Your target is in jail. Your visit failed.**`,
+          VisibilityFilter.werewolfPrivate(agent.id)
+        );
+        this.engine.nextPhase();
+        return;
+      }
 
       // Track werewolf visit for lookout (only if not staying home)
       if (!isStayingHome) {
