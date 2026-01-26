@@ -164,6 +164,7 @@ Helper functions:
 - `getRoleTraits(role)`: Get traits for a role
 - `doesAttackSucceed(attack, defense)`: Compare attack vs defense levels
 - `getFactionForRole(role)`: Get faction from role
+- `formatRoleName(role)`: Format role enum for display (e.g., TAVERN_KEEPER -> "Tavern Keeper")
 - `canAgentSeeEvent(agent, event)`: Check event visibility for an agent
 
 ## Game Flow
