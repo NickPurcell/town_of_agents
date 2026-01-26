@@ -109,6 +109,7 @@ export function GameSetupScreen() {
     JESTER: pendingAgents.filter(a => a.role === 'JESTER'),
     WEREWOLF: pendingAgents.filter(a => a.role === 'WEREWOLF'),
     JAILOR: pendingAgents.filter(a => a.role === 'JAILOR'),
+    TAVERN_KEEPER: pendingAgents.filter(a => a.role === 'TAVERN_KEEPER'),
     SHERIFF: pendingAgents.filter(a => a.role === 'SHERIFF'),
     DOCTOR: pendingAgents.filter(a => a.role === 'DOCTOR'),
     VIGILANTE: pendingAgents.filter(a => a.role === 'VIGILANTE'),
