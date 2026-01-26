@@ -16,6 +16,7 @@ import {
   DefenseLevel,
   ROLE_TRAITS,
   doesAttackSucceed,
+  formatRoleName,
 } from '../../shared/types';
 import { AgentManager } from './AgentManager';
 import { ConversationStore } from '../store/ConversationStore';
@@ -977,7 +978,7 @@ export class GameEngine extends EventEmitter {
       if (hauntedAgent && jester) {
         // Kill the haunted target
         this.eliminateAgent(this.pendingJesterHauntTarget, 'JESTER_HAUNT');
-        morningMessages.push(`**${hauntedAgent.name} was haunted by ${jester.name}. Their role was ${hauntedAgent.role}.**`);
+        morningMessages.push(`**${hauntedAgent.name} was haunted by ${jester.name}. Their role was ${formatRoleName(hauntedAgent.role)}.**`);
       }
       // Clear Jester haunt state
       this.pendingJesterHauntTarget = undefined;
@@ -995,7 +996,7 @@ export class GameEngine extends EventEmitter {
       werewolfKilledJailor = true;
       // Werewolf kills Jailor
       this.eliminateAgent(jailor.id, 'WEREWOLF_KILL');
-      morningMessages.push(`**${jailor.name} was mauled by their prisoner! Their role was ${jailor.role}.**`);
+      morningMessages.push(`**${jailor.name} was mauled by their prisoner! Their role was ${formatRoleName(jailor.role)}.**`);
 
       // Kill anyone who visited the Jailor
       const visitorsToJailor = this.nightVisits
@@ -1005,7 +1006,7 @@ export class GameEngine extends EventEmitter {
         const visitor = this.agentManager.getAgent(visitorId);
         if (visitor && visitor.alive) {
           this.eliminateAgent(visitorId, 'WEREWOLF_KILL');
-          morningMessages.push(`**${visitor.name} was mauled by a werewolf. Their role was ${visitor.role}.**`);
+          morningMessages.push(`**${visitor.name} was mauled by a werewolf. Their role was ${formatRoleName(visitor.role)}.**`);
         }
       }
 
@@ -1021,11 +1022,11 @@ export class GameEngine extends EventEmitter {
         // Check if already killed immediately during the phase
         if (this.wasKilledImmediately(prisoner.id) && this.getImmediateKillCause(prisoner.id) === 'JAILOR_EXECUTE') {
           // Already executed - just add morning message
-          morningMessages.push(`**${prisoner.name} was executed by the Jailor. Their role was ${prisoner.role}.**`);
+          morningMessages.push(`**${prisoner.name} was executed by the Jailor. Their role was ${formatRoleName(prisoner.role)}.**`);
         } else if (prisoner.alive) {
           // Not yet executed - execute now
           this.eliminateAgent(prisoner.id, 'JAILOR_EXECUTE');
-          morningMessages.push(`**${prisoner.name} was executed by the Jailor. Their role was ${prisoner.role}.**`);
+          morningMessages.push(`**${prisoner.name} was executed by the Jailor. Their role was ${formatRoleName(prisoner.role)}.**`);
         }
       }
     }
@@ -1087,7 +1088,7 @@ export class GameEngine extends EventEmitter {
       if (sources.has('MAFIA') && this.mafiaAttackProcessed) {
         if (this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'MAFIA') {
           // Mafia killed target immediately - add morning message
-          morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${target.role}.**`);
+          morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${formatRoleName(target.role)}.**`);
         } else if (wasProtectedByDoctor) {
           // Mafia attack was blocked by Doctor - add morning message (Doctor already notified)
           morningMessages.push(
@@ -1105,7 +1106,7 @@ export class GameEngine extends EventEmitter {
       if (sources.has('VIGILANTE') && this.vigilanteAttackProcessed) {
         if (this.wasKilledImmediately(targetId) && this.getImmediateKillCause(targetId) === 'VIGILANTE_KILL') {
           // Vigilante killed target immediately - add morning message
-          morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${target.role}.**`);
+          morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${formatRoleName(target.role)}.**`);
         } else if (wasProtectedByDoctor) {
           // Vigilante attack was blocked by Doctor - add morning message (Doctor already notified)
           morningMessages.push(
@@ -1150,7 +1151,7 @@ export class GameEngine extends EventEmitter {
       if (targetKilled) {
         const cause = sources.has('MAFIA') ? 'NIGHT_KILL' : 'VIGILANTE_KILL';
         this.eliminateAgent(targetId, cause);
-        morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${target.role}.**`);
+        morningMessages.push(`**${target.name} was found dead in the morning. Their role was ${formatRoleName(target.role)}.**`);
 
         // Check for Vigilante guilt
         if (sources.has('VIGILANTE') && target.faction === 'TOWN' && vigilanteActor) {
@@ -1172,7 +1173,7 @@ export class GameEngine extends EventEmitter {
       if (doesAttackSucceed(attackLevel, victimDefense)) {
         // Werewolf attack succeeded
         this.eliminateAgent(victimId, 'WEREWOLF_KILL');
-        morningMessages.push(`**${victim.name} was mauled by a werewolf. Their role was ${victim.role}.**`);
+        morningMessages.push(`**${victim.name} was mauled by a werewolf. Their role was ${formatRoleName(victim.role)}.**`);
       } else {
         // Attack was blocked (only by Doctor's POWERFUL protection)
         if (wasProtectedByDoctor) {

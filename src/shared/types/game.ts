@@ -91,6 +91,14 @@ export type Phase =
   | 'TAVERN_KEEPER_CHOICE'
   | 'POST_GAME_DISCUSSION';
 
+// Format role for display (e.g., TAVERN_KEEPER -> "Tavern Keeper")
+export function formatRoleName(role: Role): string {
+  return role
+    .split('_')
+    .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // Get faction from role
 export function getFactionForRole(role: Role): Faction {
   if (role === 'MAFIA' || role === 'GODFATHER' || role === 'FRAMER' || role === 'CONSIGLIERE') {

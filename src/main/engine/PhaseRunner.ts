@@ -11,6 +11,7 @@ import {
   GameSettings,
   ROLE_TRAITS,
   Visibility,
+  formatRoleName,
 } from '../../shared/types';
 import { GameEngine } from './GameEngine';
 import { VoteResolver } from './VoteResolver';
@@ -691,7 +692,7 @@ export class PhaseRunner extends EventEmitter {
       if (phase !== 'TAVERN_KEEPER_CHOICE' && this.engine.isAgentRoleblocked(choiceAgent.id)) {
         // Host-only notification with role info
         this.engine.appendNarration(
-          `**The ${choiceAgent.role} was blocked by the Tavern Keeper.**`,
+          `**The ${formatRoleName(choiceAgent.role)} was blocked by the Tavern Keeper.**`,
           VisibilityFilter.host()
         );
         this.engine.nextPhase();
@@ -983,7 +984,7 @@ export class PhaseRunner extends EventEmitter {
       this.engine.addNightVisit(agent.id, target.id);
 
       // Emit immediate investigation result (exact role)
-      const resultMessage = `**Your investigation reveals that ${target.name}'s role is ${target.role}!**`;
+      const resultMessage = `**Your investigation reveals that ${target.name}'s role is ${formatRoleName(target.role)}!**`;
       this.engine.appendNarration(resultMessage, VisibilityFilter.consiglierePrivate(agent.id));
     } else if (phase === 'DOCTOR_CHOICE') {
       // Emit choice event for doctor protection
