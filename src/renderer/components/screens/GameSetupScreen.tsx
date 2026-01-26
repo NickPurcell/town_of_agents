@@ -36,6 +36,7 @@ const DEFAULT_AGENT_CONFIGS = [
   { name: 'Oliver', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Mia', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
   { name: 'Noah', role: 'JAILOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Greta', role: 'TAVERN_KEEPER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
 ];
 
 export function GameSetupScreen() {
