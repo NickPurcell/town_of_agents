@@ -158,6 +158,17 @@ export class PhaseRunner extends EventEmitter {
   // Start a discussion phase with round-robin
   async startDiscussionPhase(): Promise<void> {
     const phase = this.engine.getCurrentPhase();
+
+    // Guard: Only run for actual discussion phases to prevent race conditions
+    const validDiscussionPhases: Phase[] = [
+      'DAY_ONE_DISCUSSION', 'DAY_DISCUSSION', 'NIGHT_DISCUSSION',
+      'POST_EXECUTION_DISCUSSION', 'POST_GAME_DISCUSSION'
+    ];
+    if (!validDiscussionPhases.includes(phase)) {
+      console.warn(`[PhaseRunner] startDiscussionPhase called during unexpected phase: ${phase}, ignoring`);
+      return;
+    }
+
     this.isDiscussionActive = true;
     this.roundsCompleted = 0;
     this.currentAgentIndex = 0;
@@ -319,6 +330,13 @@ export class PhaseRunner extends EventEmitter {
   // Start voting phase - reuse round-robin order from discussion
   async startVotingPhase(): Promise<void> {
     const phase = this.engine.getCurrentPhase();
+
+    // Guard: Only run for actual voting phases to prevent race conditions
+    if (phase !== 'DAY_VOTE' && phase !== 'NIGHT_VOTE') {
+      console.warn(`[PhaseRunner] startVotingPhase called during unexpected phase: ${phase}, ignoring`);
+      return;
+    }
+
     this.pendingVotes.clear();
     this.awaitingVotes.clear();
     this.isVotingActive = true;
@@ -609,6 +627,17 @@ export class PhaseRunner extends EventEmitter {
   async startChoicePhase(): Promise<void> {
     const phase = this.engine.getCurrentPhase();
     const agentManager = this.engine.getAgentManager();
+
+    // Guard: Only run for actual choice phases to prevent race conditions
+    const validChoicePhases: Phase[] = [
+      'SHERIFF_CHOICE', 'DOCTOR_CHOICE', 'LOOKOUT_CHOICE', 'VIGILANTE_CHOICE',
+      'FRAMER_CHOICE', 'CONSIGLIERE_CHOICE', 'WEREWOLF_CHOICE',
+      'JAILOR_CHOICE', 'JAILOR_EXECUTE_CHOICE', 'JESTER_HAUNT_CHOICE', 'TAVERN_KEEPER_CHOICE'
+    ];
+    if (!validChoicePhases.includes(phase)) {
+      console.warn(`[PhaseRunner] startChoicePhase called during unexpected phase: ${phase}, ignoring`);
+      return;
+    }
 
     let choiceAgent: GameAgent | undefined;
     if (this.deferIfPaused(() => this.startChoicePhase())) return;

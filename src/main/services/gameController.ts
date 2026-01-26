@@ -78,6 +78,8 @@ export class GameController extends EventEmitter {
   private isRunning: boolean = false;
   private isPaused: boolean = false;
   private pendingPhase: Phase | null = null;
+  private isHandlingPhaseChange: boolean = false;
+  private queuedPhaseChange: Phase | null = null;
 
   constructor(
     mainWindow: BrowserWindow,
@@ -154,6 +156,8 @@ export class GameController extends EventEmitter {
   async initializeGame(pendingAgents: PendingAgent[]): Promise<void> {
     this.isPaused = false;
     this.pendingPhase = null;
+    this.isHandlingPhaseChange = false;
+    this.queuedPhaseChange = null;
     // Convert pending agents to game agents
     const agentConfigs = pendingAgents.map((pa) => ({
       id: uuidv4(),
@@ -213,6 +217,8 @@ export class GameController extends EventEmitter {
     this.isRunning = false;
     this.isPaused = false;
     this.pendingPhase = null;
+    this.isHandlingPhaseChange = false;
+    this.queuedPhaseChange = null;
     this.engine.stopGame();
     this.phaseRunner.reset();
     // Finalize log with "Game Stopped" (async, non-blocking)
@@ -293,6 +299,39 @@ export class GameController extends EventEmitter {
       return;
     }
 
+    // Prevent concurrent phase handling - queue the phase if already handling one
+    if (this.isHandlingPhaseChange) {
+      console.log(`[GameController] Phase change already in progress, queuing phase: ${phase}`);
+      this.queuedPhaseChange = phase;
+      return;
+    }
+
+    // Verify phase consistency - the engine's current phase should match what we're handling
+    const enginePhase = this.engine.getCurrentPhase();
+    if (enginePhase !== phase) {
+      console.warn(`[GameController] Phase mismatch: handling ${phase} but engine is at ${enginePhase}, using engine phase`);
+      phase = enginePhase;
+    }
+
+    this.isHandlingPhaseChange = true;
+    this.queuedPhaseChange = null;
+
+    try {
+      await this.executePhaseChange(phase);
+    } finally {
+      this.isHandlingPhaseChange = false;
+
+      // Process any queued phase change
+      const queued = this.queuedPhaseChange;
+      this.queuedPhaseChange = null;
+      if (queued && this.isRunning && !this.isPaused) {
+        // Use setImmediate to avoid stack growth
+        setImmediate(() => void this.handlePhaseChange(queued));
+      }
+    }
+  }
+
+  private async executePhaseChange(phase: Phase): Promise<void> {
     // Wait for transition animation to complete for phases that follow day/night transitions
     const phasesAfterTransition: Phase[] = ['DAY_ONE_DISCUSSION', 'DAY_DISCUSSION', 'NIGHT_DISCUSSION'];
     if (phasesAfterTransition.includes(phase)) {
