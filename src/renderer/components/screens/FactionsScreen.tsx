@@ -171,14 +171,14 @@ export function FactionsScreen() {
     clearPendingAgents();
 
     if (mode === 'solo') {
-      // Solo mode: use random assignments
+      // Solo mode: use random assignments, name characters after their models
       for (const faction of FACTIONS) {
         const agents = DEFAULT_AGENTS_BY_FACTION[faction];
         for (const agent of agents) {
           const assignment = soloAssignments.find(a => a.name === agent.name);
           if (assignment) {
             addPendingAgent({
-              name: agent.name,
+              name: assignment.model.name,
               role: agent.role,
               model: assignment.model.id,
               provider: assignment.model.provider,
@@ -378,12 +378,11 @@ export function FactionsScreen() {
                     return (
                       <div key={agent.name} className={styles.soloCharacterItem}>
                         <div className={styles.soloCharacterInfo}>
-                          <span className={styles.soloCharacterName}>{agent.name}</span>
+                          <span className={styles.soloCharacterName}>
+                            {assignment?.model.name ?? 'Assigning...'}
+                          </span>
                           <span className={styles.soloCharacterRole}>{formatRoleName(agent.role)}</span>
                         </div>
-                        <span className={styles.soloCharacterModel}>
-                          {assignment?.model.name ?? 'Assigning...'}
-                        </span>
                       </div>
                     );
                   })}
