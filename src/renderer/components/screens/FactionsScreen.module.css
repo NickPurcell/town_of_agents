@@ -30,6 +30,118 @@
   font-size: 14px;
 }
 
+.modeToggle {
+  display: inline-flex;
+  margin-top: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+.modeButton {
+  padding: 8px 20px;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all var(--transition-fast);
+}
+
+.modeButton:hover {
+  color: var(--text-secondary);
+}
+
+.modeButton.active {
+  background: linear-gradient(135deg, rgba(196, 30, 58, 0.8), rgba(139, 21, 40, 0.8));
+  color: white;
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+}
+
+/* Mono mode layout */
+.monoLayout {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.monoConfigPanel {
+  flex: 1;
+  max-width: 400px;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(20, 20, 30, 0.95), rgba(10, 10, 16, 0.92));
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.monoConfigTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.monoConfigSubtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.monoCharacterList {
+  flex: 1;
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(16, 16, 26, 0.95), rgba(8, 8, 14, 0.92));
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.monoFactionGroup {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+}
+
+.monoFactionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.monoCharacters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.monoCharacter {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .factionsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

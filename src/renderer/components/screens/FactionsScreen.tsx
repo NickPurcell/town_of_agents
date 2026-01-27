@@ -31,6 +31,12 @@ export function FactionsScreen() {
   const { setScreen } = useUIStore();
   const { clearPendingAgents, addPendingAgent, startGame } = useGameStore();
 
+  const [monoMode, setMonoMode] = useState(true);
+  const [monoConfig, setMonoConfig] = useState<FactionConfig>({
+    model: DEFAULT_MODEL,
+    personality: DEFAULT_PERSONALITY,
+  });
+
   const [configs, setConfigs] = useState<Record<Faction, FactionConfig>>({
     MAFIA: { model: DEFAULT_MODEL, personality: DEFAULT_PERSONALITY },
     TOWN: { model: DEFAULT_MODEL, personality: DEFAULT_PERSONALITY },
@@ -50,7 +56,7 @@ export function FactionsScreen() {
 
     // Add agents for each faction
     for (const faction of FACTIONS) {
-      const config = configs[faction];
+      const config = monoMode ? monoConfig : configs[faction];
       const provider = getProviderForModel(config.model);
       const agents = DEFAULT_AGENTS_BY_FACTION[faction];
 
@@ -75,35 +81,36 @@ export function FactionsScreen() {
       <div className={styles.header}>
         <h1 className={styles.title}>Factions</h1>
         <p className={styles.subtitle}>Configure your factions and start the game</p>
+        <div className={styles.modeToggle}>
+          <button
+            className={`${styles.modeButton} ${monoMode ? styles.active : ''}`}
+            onClick={() => setMonoMode(true)}
+          >
+            Mono
+          </button>
+          <button
+            className={`${styles.modeButton} ${!monoMode ? styles.active : ''}`}
+            onClick={() => setMonoMode(false)}
+          >
+            Per Faction
+          </button>
+        </div>
       </div>
 
-      <div className={styles.factionsGrid}>
-        {FACTIONS.map(faction => (
-          <div
-            key={faction}
-            className={`${styles.factionCard} ${styles[faction.toLowerCase()]}`}
-          >
-            <div className={styles.factionHeader}>
-              <div className={`${styles.factionIndicator} ${styles[faction.toLowerCase()]}`} />
-              <span className={styles.factionName}>{FACTION_LABELS[faction]}</span>
-            </div>
-
-            <div className={styles.characterList}>
-              <div className={styles.characterListTitle}>Characters</div>
-              {DEFAULT_AGENTS_BY_FACTION[faction].map(agent => (
-                <div key={agent.name} className={styles.characterItem}>
-                  <span className={styles.characterName}>{agent.name}</span>
-                  <span className={styles.characterRole}>{formatRoleName(agent.role)}</span>
-                </div>
-              ))}
-            </div>
+      {monoMode ? (
+        <div className={styles.monoLayout}>
+          <div className={styles.monoConfigPanel}>
+            <div className={styles.monoConfigTitle}>All Characters</div>
+            <p className={styles.monoConfigSubtitle}>
+              Same model and personality for all 12 characters
+            </p>
 
             <div className={styles.formSection}>
               <label className={styles.label}>Model</label>
               <select
                 className={styles.select}
-                value={configs[faction].model}
-                onChange={e => updateFactionConfig(faction, { model: e.target.value })}
+                value={monoConfig.model}
+                onChange={e => setMonoConfig(prev => ({ ...prev, model: e.target.value }))}
               >
                 {MODEL_OPTIONS.map(model => (
                   <option key={model.id} value={model.id}>
@@ -115,14 +122,79 @@ export function FactionsScreen() {
               <label className={styles.label}>Personality</label>
               <textarea
                 className={styles.textarea}
-                value={configs[faction].personality}
-                onChange={e => updateFactionConfig(faction, { personality: e.target.value })}
+                value={monoConfig.personality}
+                onChange={e => setMonoConfig(prev => ({ ...prev, personality: e.target.value }))}
                 placeholder="Enter personality guidelines..."
               />
             </div>
           </div>
-        ))}
-      </div>
+
+          <div className={styles.monoCharacterList}>
+            {FACTIONS.map(faction => (
+              <div key={faction} className={styles.monoFactionGroup}>
+                <div className={styles.monoFactionHeader}>
+                  <div className={`${styles.factionIndicator} ${styles[faction.toLowerCase()]}`} />
+                  <span>{FACTION_LABELS[faction]}</span>
+                </div>
+                <div className={styles.monoCharacters}>
+                  {DEFAULT_AGENTS_BY_FACTION[faction].map(agent => (
+                    <span key={agent.name} className={styles.monoCharacter}>
+                      {agent.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.factionsGrid}>
+          {FACTIONS.map(faction => (
+            <div
+              key={faction}
+              className={`${styles.factionCard} ${styles[faction.toLowerCase()]}`}
+            >
+              <div className={styles.factionHeader}>
+                <div className={`${styles.factionIndicator} ${styles[faction.toLowerCase()]}`} />
+                <span className={styles.factionName}>{FACTION_LABELS[faction]}</span>
+              </div>
+
+              <div className={styles.characterList}>
+                <div className={styles.characterListTitle}>Characters</div>
+                {DEFAULT_AGENTS_BY_FACTION[faction].map(agent => (
+                  <div key={agent.name} className={styles.characterItem}>
+                    <span className={styles.characterName}>{agent.name}</span>
+                    <span className={styles.characterRole}>{formatRoleName(agent.role)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className={styles.formSection}>
+                <label className={styles.label}>Model</label>
+                <select
+                  className={styles.select}
+                  value={configs[faction].model}
+                  onChange={e => updateFactionConfig(faction, { model: e.target.value })}
+                >
+                  {MODEL_OPTIONS.map(model => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className={styles.label}>Personality</label>
+                <textarea
+                  className={styles.textarea}
+                  value={configs[faction].personality}
+                  onChange={e => updateFactionConfig(faction, { personality: e.target.value })}
+                  placeholder="Enter personality guidelines..."
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className={styles.actions}>
         <button className={styles.backButton} onClick={() => setScreen('welcome')}>
