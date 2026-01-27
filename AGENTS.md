@@ -115,8 +115,9 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
 - Root: `src/renderer/App.tsx`
 - Layout: `src/renderer/components/layout/*` (ThreeColumnLayout, LeftSidebar, CenterPanel, RightSidebar)
 - Screens: `src/renderer/components/screens/*`
-  - **WelcomeScreen.tsx**: Landing page
-  - **GameSetupScreen.tsx**: Agent creation with role/model selection
+  - **WelcomeScreen.tsx**: Landing page with Factions and Custom Game buttons
+  - **FactionsScreen.tsx**: Quick game setup with faction-based model/personality config
+  - **GameSetupScreen.tsx**: Agent creation with role/model selection (Custom Game)
   - **GameChatScreen.tsx**: Main game viewer with event stream
   - **AgentChatScreen.tsx**: Side chat for user-to-agent interaction
   - **SettingsScreen.tsx**: API key configuration
@@ -159,6 +160,10 @@ Key types in `src/shared/types/game.ts`:
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
 - **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
 - **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
+
+### Shared Constants
+Centralized configuration in `src/shared/constants/*`:
+- **defaultAgents.ts**: `DEFAULT_AGENTS_BY_FACTION` - default agent names/roles per faction for FactionsScreen quick setup
 
 Helper functions:
 - `getRoleTraits(role)`: Get traits for a role
