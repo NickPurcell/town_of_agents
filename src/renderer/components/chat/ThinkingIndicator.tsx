@@ -18,14 +18,11 @@ function AgentAvatar({ agent }: { agent: GameAgent }) {
   const [avatarError, setAvatarError] = useState(false);
   const avatarSrc = agent.avatar ? `/avatars/${agent.avatar}` : null;
   const avatarInitial = agent.name.charAt(0) || '?';
-  const avatarTextColor = agent.role === 'DOCTOR' || agent.role === 'CITIZEN'
-    ? '#1b1b1b'
-    : '#ffffff';
 
   return (
     <div
       className={styles.avatar}
-      style={{ backgroundColor: ROLE_COLORS[agent.role], color: avatarTextColor }}
+      style={{ backgroundColor: '#ffffff', color: '#1b1b1b' }}
     >
       {avatarSrc && !avatarError ? (
         <img
