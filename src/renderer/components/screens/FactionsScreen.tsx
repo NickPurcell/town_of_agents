@@ -1,17 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { DEFAULT_AGENTS_BY_FACTION } from '@shared/constants/defaultAgents';
-import { getAllModels, type Provider } from '@shared/types';
+import { getAllModels, type Provider, type CustomModel } from '@shared/types';
 import { formatRoleName, DEFAULT_PERSONALITY, type Faction } from '@shared/types/game';
 import styles from './FactionsScreen.module.css';
 
 type ApiKeyProvider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral';
+type Mode = 'mono' | 'faction' | 'solo';
 
 interface FactionConfig {
   model: string;
   personality: string;
+}
+
+interface SoloAssignment {
+  name: string;
+  model: CustomModel;
 }
 
 const FACTIONS: Faction[] = ['MAFIA', 'TOWN', 'NEUTRAL'];
@@ -43,7 +49,7 @@ export function FactionsScreen() {
     return model?.provider ?? 'google';
   };
 
-  const [monoMode, setMonoMode] = useState(true);
+  const [mode, setMode] = useState<Mode>('mono');
   const [monoConfig, setMonoConfig] = useState<FactionConfig>({
     model: DEFAULT_MODEL,
     personality: DEFAULT_PERSONALITY,
@@ -54,6 +60,47 @@ export function FactionsScreen() {
     TOWN: { model: DEFAULT_MODEL, personality: DEFAULT_PERSONALITY },
     NEUTRAL: { model: DEFAULT_MODEL, personality: DEFAULT_PERSONALITY },
   });
+
+  const [soloAssignments, setSoloAssignments] = useState<SoloAssignment[]>([]);
+  const [soloPersonality, setSoloPersonality] = useState(DEFAULT_PERSONALITY);
+
+  // Get all agent names in order
+  const allAgents = useMemo(() => {
+    return FACTIONS.flatMap(faction => DEFAULT_AGENTS_BY_FACTION[faction]);
+  }, []);
+
+  // Generate random solo assignments
+  const generateSoloAssignments = useCallback(() => {
+    const agentCount = allAgents.length;
+    const models = [...modelOptions];
+
+    // If we have fewer models than agents, repeat models
+    const assignedModels: CustomModel[] = [];
+    for (let i = 0; i < agentCount; i++) {
+      assignedModels.push(models[i % models.length]);
+    }
+
+    // Shuffle the assigned models
+    for (let i = assignedModels.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [assignedModels[i], assignedModels[j]] = [assignedModels[j], assignedModels[i]];
+    }
+
+    // Create assignments
+    const assignments = allAgents.map((agent, index) => ({
+      name: agent.name,
+      model: assignedModels[index],
+    }));
+
+    setSoloAssignments(assignments);
+  }, [allAgents, modelOptions]);
+
+  // Generate initial solo assignments when switching to solo mode
+  useEffect(() => {
+    if (mode === 'solo' && soloAssignments.length === 0) {
+      generateSoloAssignments();
+    }
+  }, [mode, soloAssignments.length, generateSoloAssignments]);
 
   const updateFactionConfig = (faction: Faction, updates: Partial<FactionConfig>) => {
     setConfigs(prev => ({
@@ -123,20 +170,39 @@ export function FactionsScreen() {
     // Clear any existing pending agents
     clearPendingAgents();
 
-    // Add agents for each faction
-    for (const faction of FACTIONS) {
-      const config = monoMode ? monoConfig : configs[faction];
-      const provider = getProviderForModel(config.model);
-      const agents = DEFAULT_AGENTS_BY_FACTION[faction];
+    if (mode === 'solo') {
+      // Solo mode: use random assignments
+      for (const faction of FACTIONS) {
+        const agents = DEFAULT_AGENTS_BY_FACTION[faction];
+        for (const agent of agents) {
+          const assignment = soloAssignments.find(a => a.name === agent.name);
+          if (assignment) {
+            addPendingAgent({
+              name: agent.name,
+              role: agent.role,
+              model: assignment.model.id,
+              provider: assignment.model.provider,
+              personality: soloPersonality,
+            });
+          }
+        }
+      }
+    } else {
+      // Mono or Faction mode
+      for (const faction of FACTIONS) {
+        const config = mode === 'mono' ? monoConfig : configs[faction];
+        const provider = getProviderForModel(config.model);
+        const agents = DEFAULT_AGENTS_BY_FACTION[faction];
 
-      for (const agent of agents) {
-        addPendingAgent({
-          name: agent.name,
-          role: agent.role,
-          model: config.model,
-          provider,
-          personality: config.personality,
-        });
+        for (const agent of agents) {
+          addPendingAgent({
+            name: agent.name,
+            role: agent.role,
+            model: config.model,
+            provider,
+            personality: config.personality,
+          });
+        }
       }
     }
 
@@ -152,21 +218,27 @@ export function FactionsScreen() {
         <p className={styles.subtitle}>Configure your factions and start the game</p>
         <div className={styles.modeToggle}>
           <button
-            className={`${styles.modeButton} ${monoMode ? styles.active : ''}`}
-            onClick={() => setMonoMode(true)}
+            className={`${styles.modeButton} ${mode === 'mono' ? styles.active : ''}`}
+            onClick={() => setMode('mono')}
           >
             Mono
           </button>
           <button
-            className={`${styles.modeButton} ${!monoMode ? styles.active : ''}`}
-            onClick={() => setMonoMode(false)}
+            className={`${styles.modeButton} ${mode === 'faction' ? styles.active : ''}`}
+            onClick={() => setMode('faction')}
           >
             Per Faction
+          </button>
+          <button
+            className={`${styles.modeButton} ${mode === 'solo' ? styles.active : ''}`}
+            onClick={() => setMode('solo')}
+          >
+            Solo
           </button>
         </div>
       </div>
 
-      {monoMode ? (
+      {mode === 'mono' && (
         <div className={styles.monoLayout}>
           <div className={styles.monoConfigPanel}>
             <div className={styles.monoConfigTitle}>All Characters</div>
@@ -216,7 +288,9 @@ export function FactionsScreen() {
             ))}
           </div>
         </div>
-      ) : (
+      )}
+
+      {mode === 'faction' && (
         <div className={styles.factionsGrid}>
           {FACTIONS.map(faction => (
             <div
@@ -262,6 +336,61 @@ export function FactionsScreen() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {mode === 'solo' && (
+        <div className={styles.soloLayout}>
+          <div className={styles.soloConfigPanel}>
+            <div className={styles.monoConfigTitle}>Random Assignment</div>
+            <p className={styles.monoConfigSubtitle}>
+              Each character gets a randomly assigned model
+            </p>
+
+            <button
+              className={styles.shuffleButton}
+              onClick={generateSoloAssignments}
+            >
+              Shuffle Models
+            </button>
+
+            <div className={styles.formSection}>
+              <label className={styles.label}>Personality (all characters)</label>
+              <textarea
+                className={styles.textarea}
+                value={soloPersonality}
+                onChange={e => setSoloPersonality(e.target.value)}
+                placeholder="Enter personality guidelines..."
+              />
+            </div>
+          </div>
+
+          <div className={styles.soloCharacterList}>
+            {FACTIONS.map(faction => (
+              <div key={faction} className={styles.monoFactionGroup}>
+                <div className={styles.monoFactionHeader}>
+                  <div className={`${styles.factionIndicator} ${styles[faction.toLowerCase()]}`} />
+                  <span>{FACTION_LABELS[faction]}</span>
+                </div>
+                <div className={styles.soloCharacters}>
+                  {DEFAULT_AGENTS_BY_FACTION[faction].map(agent => {
+                    const assignment = soloAssignments.find(a => a.name === agent.name);
+                    return (
+                      <div key={agent.name} className={styles.soloCharacterItem}>
+                        <div className={styles.soloCharacterInfo}>
+                          <span className={styles.soloCharacterName}>{agent.name}</span>
+                          <span className={styles.soloCharacterRole}>{formatRoleName(agent.role)}</span>
+                        </div>
+                        <span className={styles.soloCharacterModel}>
+                          {assignment?.model.name ?? 'Assigning...'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
