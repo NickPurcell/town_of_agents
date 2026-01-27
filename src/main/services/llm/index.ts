@@ -2,6 +2,7 @@ import type { Provider, LLMResponse } from '@shared/types';
 import { OpenAIService } from './openaiService';
 import { AnthropicService } from './anthropicService';
 import { GeminiService } from './geminiService';
+import { DeepSeekService } from './deepseekService';
 
 export interface LLMMessage {
   role: 'user' | 'assistant';
@@ -32,6 +33,8 @@ export function createLLMService(provider: Provider, apiKey: string): LLMService
       return new AnthropicService(apiKey);
     case 'google':
       return new GeminiService(apiKey);
+    case 'deepseek':
+      return new DeepSeekService(apiKey);
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }

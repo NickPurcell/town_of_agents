@@ -46,6 +46,14 @@ export function registerIpcHandlers(mainWindow?: BrowserWindow): void {
             contents: 'Hi'
           });
           break;
+        case 'deepseek':
+          const { OpenAI: DeepSeekOpenAI } = await import('openai');
+          const deepseek = new DeepSeekOpenAI({
+            apiKey,
+            baseURL: 'https://api.deepseek.com'
+          });
+          await deepseek.models.list();
+          break;
         default:
           throw new Error('Unknown provider');
       }

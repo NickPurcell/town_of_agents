@@ -2,7 +2,7 @@
 export * from './game';
 
 // Provider types
-export type Provider = 'openai' | 'anthropic' | 'google';
+export type Provider = 'openai' | 'anthropic' | 'google' | 'deepseek';
 
 // Agent configuration
 export interface Agent {
@@ -30,6 +30,7 @@ export interface Settings {
     openai: string;
     anthropic: string;
     google: string;
+    deepseek: string;
   };
   gameSettings?: {
     roundsPerDiscussion: number;
@@ -51,7 +52,7 @@ export interface RawResponse {
     thinkingTokens?: number;
   };
   id?: string;
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek';
   finishTime?: number;
 }
 
@@ -75,7 +76,8 @@ export const MODEL_OPTIONS: ModelOption[] = [
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai' },
   { id: 'claude-opus-4-5', name: 'Claude Opus 4.5', provider: 'anthropic' },
   { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google' }
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google' },
+  { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek' }
 ];
 
 // Color palette for agents

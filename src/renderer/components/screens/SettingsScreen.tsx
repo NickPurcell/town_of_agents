@@ -19,7 +19,7 @@ export function SettingsScreen() {
     setScreen('welcome');
   };
 
-  const handleTest = async (provider: 'openai' | 'anthropic' | 'google') => {
+  const handleTest = async (provider: 'openai' | 'anthropic' | 'google' | 'deepseek') => {
     const apiKey = settings.apiKeys[provider];
     if (!apiKey) {
       setTestResults({ ...testResults, [provider]: { success: false, error: 'No API key provided' } });
@@ -38,7 +38,7 @@ export function SettingsScreen() {
   };
 
   const renderApiKeyInput = (
-    provider: 'openai' | 'anthropic' | 'google',
+    provider: 'openai' | 'anthropic' | 'google' | 'deepseek',
     label: string,
     placeholder: string
   ) => {
@@ -88,6 +88,7 @@ export function SettingsScreen() {
           {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
           {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
           {renderApiKeyInput('google', 'Google AI', 'AI...')}
+          {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
         </div>
 
         <div className={styles.section}>

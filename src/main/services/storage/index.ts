@@ -18,7 +18,8 @@ export async function initializeStorage(): Promise<void> {
       apiKeys: {
         openai: '',
         anthropic: '',
-        google: ''
+        google: '',
+        deepseek: ''
       }
     });
   }
@@ -35,7 +36,8 @@ export async function getSettings(): Promise<Settings> {
       apiKeys: {
         openai: '',
         anthropic: '',
-        google: ''
+        google: '',
+        deepseek: ''
       }
     };
   }

@@ -50,7 +50,7 @@ export function GameSetupScreen() {
   const [name, setName] = useState('');
   const [personality, setPersonality] = useState(defaultPersonality);
   const [role, setRole] = useState<Role>('CITIZEN');
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('google');
+  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek'>('google');
   const [model, setModel] = useState('gemini-3-flash-preview');
 
   // Create default agents with current personality setting
@@ -191,7 +191,7 @@ export function GameSetupScreen() {
               className={styles.select}
               value={provider}
               onChange={e => {
-                const newProvider = e.target.value as 'openai' | 'anthropic' | 'google';
+                const newProvider = e.target.value as 'openai' | 'anthropic' | 'google' | 'deepseek';
                 setProvider(newProvider);
                 // Set default model for provider
                 const defaultModel = MODEL_OPTIONS.find(m => m.provider === newProvider);
@@ -201,6 +201,7 @@ export function GameSetupScreen() {
               <option value="anthropic">Anthropic</option>
               <option value="openai">OpenAI</option>
               <option value="google">Google</option>
+              <option value="deepseek">DeepSeek</option>
             </select>
           </div>
 
