@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
-import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY, BUILT_IN_MODELS, AVAILABLE_AVATARS } from '@shared/types';
+import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY, AVAILABLE_AVATARS } from '@shared/types';
 import type { Provider, CustomModel } from '@shared/types';
 import styles from './SettingsScreen.module.css';
 
@@ -16,7 +16,7 @@ const PROVIDER_OPTIONS: { value: Provider; label: string }[] = [
 ];
 
 export function SettingsScreen() {
-  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality, addCustomModel, removeCustomModel } = useSettingsStore();
+  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality, addCustomModel, removeCustomModel, resetModelsToDefaults } = useSettingsStore();
   const { setScreen } = useUIStore();
   const { isGameActive } = useGameStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('api');
@@ -36,8 +36,7 @@ export function SettingsScreen() {
     if (!newModelId.trim() || !newModelName.trim()) return;
 
     // Check for duplicate ID
-    const allModelIds = [...BUILT_IN_MODELS.map(m => m.id), ...customModels.map(m => m.id)];
-    if (allModelIds.includes(newModelId.trim())) {
+    if (customModels.some(m => m.id === newModelId.trim())) {
       alert('A model with this ID already exists.');
       return;
     }
@@ -56,6 +55,12 @@ export function SettingsScreen() {
     setNewModelName('');
     setNewModelProvider('openai');
     setNewModelAvatar(AVAILABLE_AVATARS[0]);
+  };
+
+  const handleResetModels = () => {
+    if (confirm('This will replace all your models with the default set. Continue?')) {
+      resetModelsToDefaults();
+    }
   };
 
   const handleSave = async () => {
@@ -155,9 +160,9 @@ export function SettingsScreen() {
 
             <div className={styles.modelsColumn}>
               <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Custom Models</h3>
+                <h3 className={styles.sectionTitle}>Models</h3>
                 <p className={styles.sectionDescription}>
-                  Add custom models from any provider to use in your games.
+                  Manage the models available for your games. Add, remove, or customize as needed.
                 </p>
 
                 <div className={styles.modelForm}>
@@ -215,7 +220,16 @@ export function SettingsScreen() {
                   </button>
                 </div>
 
-                <h4 className={styles.builtInModelsTitle}>Your Models</h4>
+                <div className={styles.modelListHeader}>
+                  <h4 className={styles.modelListTitle}>Available Models</h4>
+                  <button
+                    className={styles.resetModelsButton}
+                    onClick={handleResetModels}
+                    title="Reset to default models"
+                  >
+                    Reset to Defaults
+                  </button>
+                </div>
                 {customModels.length > 0 ? (
                   <div className={styles.modelList}>
                     {customModels.map(model => (
@@ -241,20 +255,8 @@ export function SettingsScreen() {
                     ))}
                   </div>
                 ) : (
-                  <p className={styles.emptyModelsList}>No custom models added yet.</p>
+                  <p className={styles.emptyModelsList}>No models configured. Click "Reset to Defaults" to restore the default models.</p>
                 )}
-
-                <div className={styles.builtInModels}>
-                  <h4 className={styles.builtInModelsTitle}>Built-in Models</h4>
-                  <div className={styles.builtInModelsList}>
-                    {BUILT_IN_MODELS.map(model => (
-                      <div key={model.id} className={styles.builtInModelItem}>
-                        {model.name}
-                        <span className={styles.builtInModelProvider}>({model.provider})</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </div>

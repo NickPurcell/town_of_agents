@@ -79,19 +79,6 @@ export interface ModelOption {
   provider: Provider;
 }
 
-export const BUILT_IN_MODELS: ModelOption[] = [
-  { id: 'gpt-5', name: 'GPT-5 Thinking', provider: 'openai' },
-  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai' },
-  { id: 'claude-opus-4-5', name: 'Claude Opus 4.5', provider: 'anthropic' },
-  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google' },
-  { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek' }
-];
-
-// Backwards compatibility alias
-export const MODEL_OPTIONS = BUILT_IN_MODELS;
-
 // Available avatar files for custom models
 export const AVAILABLE_AVATARS = [
   'chatgpt.png',
@@ -106,12 +93,30 @@ export const AVAILABLE_AVATARS = [
   'user.png'
 ];
 
-// Get all models (built-in + custom)
+// Default models that ship with the app (users can modify/remove these)
+export const DEFAULT_MODELS: CustomModel[] = [
+  { id: 'gpt-5', name: 'GPT-5 Thinking', provider: 'openai', avatar: 'chatgpt.png' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai', avatar: 'chatgpt.png' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai', avatar: 'chatgpt.png' },
+  { id: 'claude-opus-4-5', name: 'Claude Opus 4.5', provider: 'anthropic', avatar: 'claude.png' },
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google', avatar: 'gemini.png' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google', avatar: 'gemini.png' },
+  { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek', avatar: 'deepseek.png' }
+];
+
+// Backwards compatibility - derived from DEFAULT_MODELS
+export const BUILT_IN_MODELS: ModelOption[] = DEFAULT_MODELS.map(m => ({
+  id: m.id,
+  name: m.name,
+  provider: m.provider
+}));
+
+// Backwards compatibility alias
+export const MODEL_OPTIONS = BUILT_IN_MODELS;
+
+// Get all models from custom models list
 export function getAllModels(customModels: CustomModel[] = []): ModelOption[] {
-  return [
-    ...BUILT_IN_MODELS,
-    ...customModels.map(m => ({ id: m.id, name: m.name, provider: m.provider }))
-  ];
+  return customModels.map(m => ({ id: m.id, name: m.name, provider: m.provider }));
 }
 
 // Color palette for agents

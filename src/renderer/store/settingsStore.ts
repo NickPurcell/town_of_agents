@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Settings, GameSettings, CustomModel } from '@shared/types';
-import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
+import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY, DEFAULT_MODELS } from '@shared/types';
 
 interface SettingsState {
   settings: Settings;
@@ -14,6 +14,7 @@ interface SettingsState {
   updateDefaultPersonality: (personality: string) => void;
   addCustomModel: (model: CustomModel) => void;
   removeCustomModel: (id: string) => void;
+  resetModelsToDefaults: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -26,7 +27,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     },
     gameSettings: DEFAULT_GAME_SETTINGS,
     defaultPersonality: DEFAULT_PERSONALITY,
-    customModels: []
+    customModels: [...DEFAULT_MODELS]
   },
   isLoading: false,
   error: null,
@@ -43,9 +44,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (!settings.defaultPersonality) {
         settings.defaultPersonality = DEFAULT_PERSONALITY;
       }
-      // Ensure custom models array exists
-      if (!settings.customModels) {
-        settings.customModels = [];
+      // Initialize custom models with defaults if not set
+      if (!settings.customModels || settings.customModels.length === 0) {
+        settings.customModels = [...DEFAULT_MODELS];
       }
       set({ settings, isLoading: false });
     } catch (error) {
@@ -117,6 +118,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       settings: {
         ...settings,
         customModels: currentModels.filter(m => m.id !== id)
+      }
+    });
+  },
+
+  resetModelsToDefaults: () => {
+    const { settings } = get();
+    set({
+      settings: {
+        ...settings,
+        customModels: [...DEFAULT_MODELS]
       }
     });
   }

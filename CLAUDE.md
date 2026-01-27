@@ -328,26 +328,28 @@ If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a 
 ## LLM Providers
 Supported providers: OpenAI, Anthropic, Google (Gemini), DeepSeek.
 
-Built-in models (defined in `src/shared/types/index.ts` as `BUILT_IN_MODELS`):
-- `gpt-5`, `gpt-5-mini`, `gpt-4o-mini` (OpenAI)
-- `claude-opus-4-5` (Anthropic)
-- `gemini-3-pro-preview`, `gemini-3-flash-preview` (Google)
-- `deepseek-chat` (DeepSeek)
+### Models System
+All models are stored as `CustomModel` entries in `settings.customModels`. Default models ship with the app but users can add, remove, or modify them.
 
-### Custom Models
-Users can add custom models via Settings > API Keys tab. Custom models are stored in `settings.customModels` and include:
+Default models (defined in `src/shared/types/index.ts` as `DEFAULT_MODELS`):
+- `gpt-5`, `gpt-5-mini`, `gpt-4o-mini` (OpenAI, avatar: chatgpt.png)
+- `claude-opus-4-5` (Anthropic, avatar: claude.png)
+- `gemini-3-pro-preview`, `gemini-3-flash-preview` (Google, avatar: gemini.png)
+- `deepseek-chat` (DeepSeek, avatar: deepseek.png)
+
+Each model includes:
 - `id`: Model identifier sent to API
 - `name`: Display name in UI
-- `provider`: Which API endpoint to use
+- `provider`: Which API endpoint to use (openai, anthropic, google, deepseek)
 - `avatar`: Avatar image filename from `assets/avatars/`
 
-Use `getAllModels(customModels)` to get combined list of built-in + custom models.
+Use `getAllModels(customModels)` to get the list of available models.
+Use `resetModelsToDefaults()` from settingsStore to restore default models.
 
-To add a built-in model:
-1. Update provider types in `src/shared/types/index.ts`.
-2. Add model entry to `BUILT_IN_MODELS`.
-3. Add service implementation and wire it in `createLLMService`.
-4. Update any UI dropdowns or validation.
+To add a new default model:
+1. Update `DEFAULT_MODELS` in `src/shared/types/index.ts`.
+2. Add service implementation if new provider, and wire it in `createLLMService`.
+3. Add avatar image to `assets/avatars/` if needed.
 
 API keys are stored in user data (`settings.json`) via the Settings screen.
 
