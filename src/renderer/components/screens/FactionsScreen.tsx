@@ -3,7 +3,7 @@ import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { DEFAULT_AGENTS_BY_FACTION } from '@shared/constants/defaultAgents';
-import { getAllModels, type Provider, type CustomModel } from '@shared/types';
+import { getAllModels, type CustomModel } from '@shared/types';
 import { formatRoleName, DEFAULT_PERSONALITY, type Faction } from '@shared/types/game';
 import styles from './FactionsScreen.module.css';
 
@@ -43,11 +43,6 @@ export function FactionsScreen() {
 
   // Get all models (built-in + custom)
   const modelOptions = useMemo(() => getAllModels(settings.customModels), [settings.customModels]);
-
-  const getProviderForModel = (modelId: string): Provider => {
-    const model = modelOptions.find(m => m.id === modelId);
-    return model?.provider ?? 'google';
-  };
 
   const [mode, setMode] = useState<Mode>('mono');
   const [monoConfig, setMonoConfig] = useState<FactionConfig>({
@@ -166,6 +161,10 @@ export function FactionsScreen() {
     );
   };
 
+  const getModelById = (modelId: string) => {
+    return modelOptions.find(m => m.id === modelId);
+  };
+
   const handleStartGame = async () => {
     // Clear any existing pending agents
     clearPendingAgents();
@@ -183,6 +182,7 @@ export function FactionsScreen() {
               model: assignment.model.id,
               provider: assignment.model.provider,
               personality: soloPersonality,
+              avatar: assignment.model.avatar,
             });
           }
         }
@@ -191,7 +191,7 @@ export function FactionsScreen() {
       // Mono or Faction mode
       for (const faction of FACTIONS) {
         const config = mode === 'mono' ? monoConfig : configs[faction];
-        const provider = getProviderForModel(config.model);
+        const model = getModelById(config.model);
         const agents = DEFAULT_AGENTS_BY_FACTION[faction];
 
         for (const agent of agents) {
@@ -199,8 +199,9 @@ export function FactionsScreen() {
             name: agent.name,
             role: agent.role,
             model: config.model,
-            provider,
+            provider: model?.provider ?? 'google',
             personality: config.personality,
+            avatar: model?.avatar ?? 'user.png',
           });
         }
       }

@@ -14,15 +14,9 @@ interface Props {
   compact?: boolean;
 }
 
-const providerAvatarMap: Record<GameAgent['provider'], string> = {
-  openai: '/avatars/chatgpt.png',
-  anthropic: '/avatars/claude.png',
-  google: '/avatars/gemini.png'
-};
-
 function AgentAvatar({ agent }: { agent: GameAgent }) {
   const [avatarError, setAvatarError] = useState(false);
-  const avatarSrc = providerAvatarMap[agent.provider];
+  const avatarSrc = agent.avatar ? `/avatars/${agent.avatar}` : null;
   const avatarInitial = agent.name.charAt(0) || '?';
   const avatarTextColor = agent.role === 'DOCTOR' || agent.role === 'CITIZEN'
     ? '#1b1b1b'

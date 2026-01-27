@@ -33,8 +33,9 @@ interface PendingAgent {
   name: string;
   personality: string;
   role: Role;
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter';
   model: string;
+  avatar: string;
 }
 
 const MAX_LLM_RETRIES = 5;
@@ -166,6 +167,7 @@ export class GameController extends EventEmitter {
       personality: pa.personality,
       provider: pa.provider,
       model: pa.model,
+      avatar: pa.avatar,
     }));
 
     // Initialize game engine
@@ -201,7 +203,7 @@ export class GameController extends EventEmitter {
     }
   }
 
-  private getApiKeyForProvider(provider: 'openai' | 'anthropic' | 'google'): string {
+  private getApiKeyForProvider(provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter'): string {
     return this.settings.apiKeys[provider] || '';
   }
 

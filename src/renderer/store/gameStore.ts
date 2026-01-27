@@ -5,8 +5,9 @@ interface PendingAgent {
   name: string;
   personality: string;
   role: Role;
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter';
   model: string;
+  avatar: string;
 }
 
 interface ThinkingAgent {

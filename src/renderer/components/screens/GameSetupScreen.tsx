@@ -27,18 +27,18 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
 
 // Default game agent names and roles - personality comes from settings
 const DEFAULT_AGENT_CONFIGS = [
-  { name: 'Marcus', role: 'GODFATHER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Elena', role: 'CONSIGLIERE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Riley', role: 'FRAMER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Jasper', role: 'JESTER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Fenrir', role: 'WEREWOLF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'James', role: 'SHERIFF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Sophie', role: 'DOCTOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Ava', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Oliver', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Mia', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Noah', role: 'JAILOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
-  { name: 'Greta', role: 'TAVERN_KEEPER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview' },
+  { name: 'Marcus', role: 'GODFATHER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Elena', role: 'CONSIGLIERE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Riley', role: 'FRAMER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Jasper', role: 'JESTER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Fenrir', role: 'WEREWOLF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'James', role: 'SHERIFF' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Sophie', role: 'DOCTOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Ava', role: 'LOOKOUT' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Oliver', role: 'MAYOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Mia', role: 'VIGILANTE' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Noah', role: 'JAILOR' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
+  { name: 'Greta', role: 'TAVERN_KEEPER' as Role, provider: 'google' as const, model: 'gemini-3-flash-preview', avatar: 'gemini.png' },
 ];
 
 export function GameSetupScreen() {
@@ -137,12 +137,17 @@ export function GameSetupScreen() {
       return;
     }
 
+    // Get avatar from selected model
+    const selectedModel = modelOptions.find(m => m.id === model);
+    const avatar = selectedModel?.avatar ?? 'user.png';
+
     addPendingAgent({
       name: name.trim(),
       personality: personality.trim(),
       role,
       provider,
       model,
+      avatar,
     });
 
     // Reset form

@@ -117,8 +117,9 @@ export interface GameAgent {
   role: Role;
   faction: Faction;
   personality: string;
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter';
   model: string;
+  avatar: string;
   alive: boolean;
   hasRevealedMayor?: boolean;
 }

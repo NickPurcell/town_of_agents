@@ -4,8 +4,9 @@ interface PendingAgent {
   name: string;
   personality: string;
   role: Role;
-  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter';
   model: string;
+  avatar: string;
 }
 
 export interface API {
