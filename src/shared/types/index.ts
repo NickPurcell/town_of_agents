@@ -88,6 +88,7 @@ export const AVAILABLE_AVATARS = [
   'claude.png',
   'deepseek.png',
   'gemini.png',
+  'glm.svg',
   'grok.png',
   'kimi.png',
   'meta.png',
