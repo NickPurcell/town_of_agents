@@ -23,7 +23,11 @@ export function MessageItem({ message, agent, onAgentClick }: Props) {
   const providerAvatarMap: Record<Provider, string> = {
     openai: '/avatars/chatgpt.png',
     anthropic: '/avatars/claude.png',
-    google: '/avatars/gemini.png'
+    google: '/avatars/gemini.png',
+    deepseek: '/avatars/deepseek.png',
+    xai: '/avatars/grok.png',
+    mistral: '/avatars/mistral.png',
+    openrouter: '/avatars/user.png'
   };
   const avatarSrc = isUser
     ? '/avatars/user.png'

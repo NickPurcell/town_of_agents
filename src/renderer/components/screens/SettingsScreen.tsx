@@ -14,7 +14,8 @@ const PROVIDER_OPTIONS: { value: Provider; label: string }[] = [
   { value: 'google', label: 'Google' },
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'xai', label: 'xAI (Grok)' },
-  { value: 'mistral', label: 'Mistral' }
+  { value: 'mistral', label: 'Mistral' },
+  { value: 'openrouter', label: 'OpenRouter' }
 ];
 
 export function SettingsScreen() {
@@ -70,7 +71,7 @@ export function SettingsScreen() {
     setScreen('welcome');
   };
 
-  const handleTest = async (provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral') => {
+  const handleTest = async (provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter') => {
     const apiKey = settings.apiKeys[provider];
     if (!apiKey) {
       setTestResults({ ...testResults, [provider]: { success: false, error: 'No API key provided' } });
@@ -89,7 +90,7 @@ export function SettingsScreen() {
   };
 
   const renderApiKeyInput = (
-    provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral',
+    provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter',
     label: string,
     placeholder: string
   ) => {
@@ -159,6 +160,7 @@ export function SettingsScreen() {
                 {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
                 {renderApiKeyInput('xai', 'xAI (Grok)', 'xai-...')}
                 {renderApiKeyInput('mistral', 'Mistral', 'sk-...')}
+                {renderApiKeyInput('openrouter', 'OpenRouter', 'sk-or-...')}
               </div>
             </div>
 
