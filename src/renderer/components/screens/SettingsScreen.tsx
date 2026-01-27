@@ -25,6 +25,7 @@ export function SettingsScreen() {
 
   // Custom model form state
   const [newModelId, setNewModelId] = useState('');
+  const [newModelName, setNewModelName] = useState('');
   const [newModelProvider, setNewModelProvider] = useState<Provider>('openai');
   const [newModelAvatar, setNewModelAvatar] = useState(AVAILABLE_AVATARS[0]);
 
@@ -42,7 +43,7 @@ export function SettingsScreen() {
 
     const model: CustomModel = {
       id: newModelId.trim(),
-      name: newModelId.trim(),
+      name: newModelName.trim() || newModelId.trim(), // Use name if provided, otherwise use ID
       provider: newModelProvider,
       avatar: newModelAvatar
     };
@@ -51,6 +52,7 @@ export function SettingsScreen() {
 
     // Reset form
     setNewModelId('');
+    setNewModelName('');
     setNewModelProvider('openai');
     setNewModelAvatar(AVAILABLE_AVATARS[0]);
   };
@@ -170,6 +172,13 @@ export function SettingsScreen() {
                     placeholder="Model ID (e.g., mistral-large-latest)"
                     value={newModelId}
                     onChange={e => setNewModelId(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className={styles.modelInput}
+                    placeholder="Display Name (optional)"
+                    value={newModelName}
+                    onChange={e => setNewModelName(e.target.value)}
                   />
                   <div className={styles.modelFormRow}>
                     <select
