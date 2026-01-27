@@ -22,8 +22,8 @@
   text-shadow: 0 0 20px var(--accent-blood-glow);
 }
 
-/* Main action button - New Game */
-.newGameButton {
+/* Home button */
+.homeButton {
   width: 100%;
   padding: 14px 20px;
   background: linear-gradient(135deg, var(--accent-blood) 0%, #8b1528 100%);
@@ -43,7 +43,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.newGameButton::before {
+.homeButton::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -57,7 +57,7 @@
   transition: transform 0.6s ease;
 }
 
-.newGameButton:hover:not(:disabled) {
+.homeButton:hover {
   background: linear-gradient(135deg, var(--accent-blood-bright) 0%, var(--accent-blood) 100%);
   box-shadow:
     0 6px 25px rgba(196, 30, 58, 0.5),
@@ -66,17 +66,11 @@
   transform: translateY(-1px);
 }
 
-.newGameButton:hover::before {
+.homeButton:hover::before {
   transform: translateX(100%);
 }
 
-.newGameButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.newGameButton:active:not(:disabled) {
+.homeButton:active {
   transform: translateY(0);
 }
 

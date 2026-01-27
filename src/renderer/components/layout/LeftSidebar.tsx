@@ -15,11 +15,10 @@ export function LeftSidebar() {
       </div>
 
       <button
-        className={styles.newGameButton}
-        onClick={() => setScreen('gameSetup')}
-        disabled={isGameActive}
+        className={styles.homeButton}
+        onClick={() => setScreen('welcome')}
       >
-        + New Game
+        Home
       </button>
 
       {gameState && (
