@@ -123,9 +123,9 @@ export const BUILT_IN_MODELS: ModelOption[] = DEFAULT_MODELS.map(m => ({
 // Backwards compatibility alias
 export const MODEL_OPTIONS = BUILT_IN_MODELS;
 
-// Get all models from custom models list
-export function getAllModels(customModels: CustomModel[] = []): ModelOption[] {
-  return customModels.map(m => ({ id: m.id, name: m.name, provider: m.provider }));
+// Get all models from custom models list (returns full CustomModel with avatar)
+export function getAllModels(customModels: CustomModel[] = []): CustomModel[] {
+  return customModels;
 }
 
 // Color palette for agents
