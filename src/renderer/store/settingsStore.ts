@@ -13,6 +13,7 @@ interface SettingsState {
   updateGameSettings: (partial: Partial<GameSettings>) => void;
   updateDefaultPersonality: (personality: string) => void;
   addCustomModel: (model: CustomModel) => void;
+  updateCustomModel: (id: string, updates: Partial<CustomModel>) => void;
   removeCustomModel: (id: string) => void;
   resetModelsToDefaults: () => void;
 }
@@ -110,6 +111,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       settings: {
         ...settings,
         customModels: [...currentModels, model]
+      }
+    });
+  },
+
+  updateCustomModel: (id: string, updates: Partial<CustomModel>) => {
+    const { settings } = get();
+    const currentModels = settings.customModels || [];
+    set({
+      settings: {
+        ...settings,
+        customModels: currentModels.map(m =>
+          m.id === id ? { ...m, ...updates } : m
+        )
       }
     });
   },

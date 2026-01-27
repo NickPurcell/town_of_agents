@@ -425,6 +425,48 @@
   color: var(--danger);
 }
 
+.editModelButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--text-muted);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.editModelButton:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.modelItem.editing {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.modelFormActions {
+  display: flex;
+  gap: 8px;
+}
+
+.cancelEditButton {
+  padding: 10px 20px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.cancelEditButton:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
 /* Built-in Models Section */
 .builtInModels {
   margin-top: 16px;

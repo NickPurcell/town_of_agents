@@ -19,7 +19,7 @@ const PROVIDER_OPTIONS: { value: Provider; label: string }[] = [
 ];
 
 export function SettingsScreen() {
-  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality, addCustomModel, removeCustomModel, resetModelsToDefaults } = useSettingsStore();
+  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality, addCustomModel, updateCustomModel, removeCustomModel, resetModelsToDefaults } = useSettingsStore();
   const { setScreen } = useUIStore();
   const { isGameActive } = useGameStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('api');
@@ -32,28 +32,58 @@ export function SettingsScreen() {
   const [newModelProvider, setNewModelProvider] = useState<Provider>('openai');
   const [newModelAvatar, setNewModelAvatar] = useState(AVAILABLE_AVATARS[0]);
 
+  // Edit mode state
+  const [editingModelId, setEditingModelId] = useState<string | null>(null);
+
   const gameSettings = settings.gameSettings || DEFAULT_GAME_SETTINGS;
   const customModels = settings.customModels || [];
 
   const handleAddModel = () => {
     if (!newModelId.trim()) return;
 
-    // Check for duplicate ID
-    if (customModels.some(m => m.id === newModelId.trim())) {
-      alert('A model with this ID already exists.');
-      return;
+    if (editingModelId) {
+      // Update existing model
+      updateCustomModel(editingModelId, {
+        id: newModelId.trim(),
+        name: newModelName.trim() || newModelId.trim(),
+        provider: newModelProvider,
+        avatar: newModelAvatar
+      });
+      setEditingModelId(null);
+    } else {
+      // Check for duplicate ID when adding new
+      if (customModels.some(m => m.id === newModelId.trim())) {
+        alert('A model with this ID already exists.');
+        return;
+      }
+
+      const model: CustomModel = {
+        id: newModelId.trim(),
+        name: newModelName.trim() || newModelId.trim(),
+        provider: newModelProvider,
+        avatar: newModelAvatar
+      };
+
+      addCustomModel(model);
     }
 
-    const model: CustomModel = {
-      id: newModelId.trim(),
-      name: newModelName.trim() || newModelId.trim(), // Use name if provided, otherwise use ID
-      provider: newModelProvider,
-      avatar: newModelAvatar
-    };
-
-    addCustomModel(model);
-
     // Reset form
+    setNewModelId('');
+    setNewModelName('');
+    setNewModelProvider('openai');
+    setNewModelAvatar(AVAILABLE_AVATARS[0]);
+  };
+
+  const handleEditModel = (model: CustomModel) => {
+    setEditingModelId(model.id);
+    setNewModelId(model.id);
+    setNewModelName(model.name);
+    setNewModelProvider(model.provider);
+    setNewModelAvatar(model.avatar);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingModelId(null);
     setNewModelId('');
     setNewModelName('');
     setNewModelProvider('openai');
@@ -217,13 +247,23 @@ export function SettingsScreen() {
                       />
                     </div>
                   </div>
-                  <button
-                    className={styles.addModelButton}
-                    onClick={handleAddModel}
-                    disabled={!newModelId.trim()}
-                  >
-                    Add Model
-                  </button>
+                  <div className={styles.modelFormActions}>
+                    <button
+                      className={styles.addModelButton}
+                      onClick={handleAddModel}
+                      disabled={!newModelId.trim()}
+                    >
+                      {editingModelId ? 'Update Model' : 'Add Model'}
+                    </button>
+                    {editingModelId && (
+                      <button
+                        className={styles.cancelEditButton}
+                        onClick={handleCancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className={styles.modelListHeader}>
@@ -239,7 +279,7 @@ export function SettingsScreen() {
                 {customModels.length > 0 ? (
                   <div className={styles.modelList}>
                     {customModels.map(model => (
-                      <div key={model.id} className={styles.modelItem}>
+                      <div key={model.id} className={`${styles.modelItem} ${editingModelId === model.id ? styles.editing : ''}`}>
                         <img
                           src={`avatars/${model.avatar}`}
                           alt={model.name}
@@ -250,6 +290,13 @@ export function SettingsScreen() {
                           <div className={styles.modelItemId}>{model.id}</div>
                         </div>
                         <span className={styles.modelItemProvider}>{model.provider}</span>
+                        <button
+                          className={styles.editModelButton}
+                          onClick={() => handleEditModel(model)}
+                          title="Edit model"
+                        >
+                          ✎
+                        </button>
                         <button
                           className={styles.removeModelButton}
                           onClick={() => removeCustomModel(model.id)}
