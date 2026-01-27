@@ -2,7 +2,7 @@
 export * from './game';
 
 // Provider types
-export type Provider = 'openai' | 'anthropic' | 'google' | 'deepseek';
+export type Provider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter';
 
 // Agent configuration
 export interface Agent {
@@ -39,6 +39,9 @@ export interface Settings {
     anthropic: string;
     google: string;
     deepseek: string;
+    xai: string;
+    mistral: string;
+    openrouter: string;
   };
   gameSettings?: {
     roundsPerDiscussion: number;
@@ -61,7 +64,7 @@ export interface RawResponse {
     thinkingTokens?: number;
   };
   id?: string;
-  provider: 'openai' | 'anthropic' | 'google' | 'deepseek';
+  provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter';
   finishTime?: number;
 }
 
@@ -85,6 +88,7 @@ export const AVAILABLE_AVATARS = [
   'claude.png',
   'deepseek.png',
   'gemini.png',
+  'grok.png',
   'kimi.png',
   'meta.png',
   'mistral.png',
@@ -101,7 +105,11 @@ export const DEFAULT_MODELS: CustomModel[] = [
   { id: 'claude-opus-4-5', name: 'claude-opus-4-5', provider: 'anthropic', avatar: 'claude.png' },
   { id: 'gemini-3-pro-preview', name: 'gemini-3-pro-preview', provider: 'google', avatar: 'gemini.png' },
   { id: 'gemini-3-flash-preview', name: 'gemini-3-flash-preview', provider: 'google', avatar: 'gemini.png' },
-  { id: 'deepseek-chat', name: 'deepseek-chat', provider: 'deepseek', avatar: 'deepseek.png' }
+  { id: 'deepseek-chat', name: 'deepseek-chat', provider: 'deepseek', avatar: 'deepseek.png' },
+  { id: 'grok-3-beta', name: 'Grok 3 Beta', provider: 'xai', avatar: 'grok.png' },
+  { id: 'mistral-large-latest', name: 'Mistral Large', provider: 'mistral', avatar: 'mistral.png' },
+  { id: 'mistral-small-latest', name: 'Mistral Small', provider: 'mistral', avatar: 'mistral.png' },
+  { id: 'openrouter/auto', name: 'OpenRouter Auto', provider: 'openrouter', avatar: 'user.png' }
 ];
 
 // Backwards compatibility - derived from DEFAULT_MODELS

@@ -86,6 +86,9 @@ Your message here
 - **openaiService.ts**: OpenAI responses API with reasoning (streams thinking via onThinkingChunk).
 - **anthropicService.ts**: Claude with extended thinking (8000 token budget, streams thinking via onThinkingChunk).
 - **geminiService.ts**: Google Gemini support (streams thinking via onThinkingChunk).
+- **deepseekService.ts**: DeepSeek support using OpenAI SDK with custom base URL.
+- **xaiService.ts**: xAI (Grok) support using OpenAI SDK with `https://api.x.ai/v1` base URL.
+- **mistralService.ts**: Mistral support using official `@mistralai/mistralai` SDK.
 - **rateLimiter.ts**: Rate limiting wrapper for both generate and generateStream.
 
 ### Game Logging (`src/main/services/logging/`)
@@ -326,7 +329,7 @@ Mayor overrides only `DAY_VOTE`; the pre-speech reveal uses `MAYOR_REVEAL_CHOICE
 If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a new prompt file.
 
 ## LLM Providers
-Supported providers: OpenAI, Anthropic, Google (Gemini), DeepSeek.
+Supported providers: OpenAI, Anthropic, Google (Gemini), DeepSeek, xAI (Grok), Mistral.
 
 ### Models System
 All models are stored as `CustomModel` entries in `settings.customModels`. Default models ship with the app but users can add, remove, or modify them.
@@ -336,11 +339,13 @@ Default models (defined in `src/shared/types/index.ts` as `DEFAULT_MODELS`):
 - `claude-opus-4-5` (Anthropic, avatar: claude.png)
 - `gemini-3-pro-preview`, `gemini-3-flash-preview` (Google, avatar: gemini.png)
 - `deepseek-chat` (DeepSeek, avatar: deepseek.png)
+- `grok-3-beta` (xAI, avatar: grok.png)
+- `mistral-large-latest`, `mistral-small-latest` (Mistral, avatar: mistral.png)
 
 Each model includes:
 - `id`: Model identifier sent to API
 - `name`: Display name in UI
-- `provider`: Which API endpoint to use (openai, anthropic, google, deepseek)
+- `provider`: Which API endpoint to use (openai, anthropic, google, deepseek, xai, mistral)
 - `avatar`: Avatar image filename from `assets/avatars/`
 
 Use `getAllModels(customModels)` to get the list of available models.

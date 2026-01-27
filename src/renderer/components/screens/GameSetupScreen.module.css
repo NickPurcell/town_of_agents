@@ -349,3 +349,125 @@
   color: var(--text-muted);
   font-size: 13px;
 }
+
+/* API Keys Panel */
+.apiKeysPanel {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(16, 16, 26, 0.95), rgba(8, 8, 14, 0.92));
+  border: 1px solid var(--border);
+}
+
+.apiKeysToggle {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: all var(--transition-fast);
+}
+
+.apiKeysToggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.apiKeysContent {
+  margin-top: 16px;
+}
+
+.apiKeysGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.apiKeySection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.apiKeyLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.apiInputRow {
+  display: flex;
+  gap: 8px;
+}
+
+.apiInput {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(10, 10, 16, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.apiInput:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.testButton {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.testButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.testButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.testResult {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.testResult.success {
+  color: #65d46e;
+  background: rgba(67, 160, 71, 0.15);
+}
+
+.testResult.error {
+  color: #ff6b6b;
+  background: rgba(229, 57, 53, 0.15);
+}
+
+.saveApiKeysButton {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #1565c0, #0d47a1);
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: all var(--transition-fast);
+}
+
+.saveApiKeysButton:hover {
+  background: linear-gradient(135deg, #1e88e5, #0d47a1);
+  box-shadow: 0 8px 20px rgba(30, 136, 229, 0.3);
+}

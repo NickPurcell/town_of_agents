@@ -3,6 +3,9 @@ import { OpenAIService } from './openaiService';
 import { AnthropicService } from './anthropicService';
 import { GeminiService } from './geminiService';
 import { DeepSeekService } from './deepseekService';
+import { XAIService } from './xaiService';
+import { MistralService } from './mistralService';
+import { OpenRouterService } from './openrouterService';
 
 export interface LLMMessage {
   role: 'user' | 'assistant';
@@ -35,6 +38,12 @@ export function createLLMService(provider: Provider, apiKey: string): LLMService
       return new GeminiService(apiKey);
     case 'deepseek':
       return new DeepSeekService(apiKey);
+    case 'xai':
+      return new XAIService(apiKey);
+    case 'mistral':
+      return new MistralService(apiKey);
+    case 'openrouter':
+      return new OpenRouterService(apiKey);
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }

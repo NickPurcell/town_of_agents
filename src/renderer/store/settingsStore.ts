@@ -9,7 +9,7 @@ interface SettingsState {
 
   loadSettings: () => Promise<void>;
   saveSettings: (settings: Settings) => Promise<void>;
-  updateApiKey: (provider: 'openai' | 'anthropic' | 'google' | 'deepseek', key: string) => void;
+  updateApiKey: (provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter', key: string) => void;
   updateGameSettings: (partial: Partial<GameSettings>) => void;
   updateDefaultPersonality: (personality: string) => void;
   addCustomModel: (model: CustomModel) => void;
@@ -23,7 +23,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       openai: '',
       anthropic: '',
       google: '',
-      deepseek: ''
+      deepseek: '',
+      xai: '',
+      mistral: '',
+      openrouter: ''
     },
     gameSettings: DEFAULT_GAME_SETTINGS,
     defaultPersonality: DEFAULT_PERSONALITY,
@@ -63,7 +66,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
-  updateApiKey: (provider: 'openai' | 'anthropic' | 'google' | 'deepseek', key: string) => {
+  updateApiKey: (provider: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral' | 'openrouter', key: string) => {
     const { settings } = get();
     set({
       settings: {

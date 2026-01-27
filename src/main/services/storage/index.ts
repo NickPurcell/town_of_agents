@@ -19,7 +19,10 @@ export async function initializeStorage(): Promise<void> {
         openai: '',
         anthropic: '',
         google: '',
-        deepseek: ''
+        deepseek: '',
+        xai: '',
+        mistral: '',
+        openrouter: ''
       }
     });
   }
@@ -37,7 +40,10 @@ export async function getSettings(): Promise<Settings> {
         openai: '',
         anthropic: '',
         google: '',
-        deepseek: ''
+        deepseek: '',
+        xai: '',
+        mistral: '',
+        openrouter: ''
       }
     };
   }

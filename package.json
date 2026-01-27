@@ -10,26 +10,27 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.35.0",
+    "@electron-toolkit/utils": "^2.0.0",
+    "@google/genai": "^1.37.0",
+    "@mistralai/mistralai": "^1.13.0",
+    "openai": "^4.80.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "zustand": "^4.5.5",
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.5.0",
-    "@electron-toolkit/utils": "^2.0.0",
-    "openai": "^4.80.0",
-    "@anthropic-ai/sdk": "^0.35.0",
-    "@google/genai": "^1.37.0",
-    "uuid": "^11.0.5"
+    "uuid": "^11.0.5",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "electron": "^32.2.6",
-    "electron-vite": "^2.3.0",
-    "electron-builder": "^25.1.8",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@types/node": "^22.10.2",
-    "@types/uuid": "^10.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/uuid": "^10.0.0",
+    "electron": "^32.2.6",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
     "typescript": "^5.7.2",
     "vite": "^5.4.11"
   }

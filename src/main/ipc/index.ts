@@ -54,6 +54,27 @@ export function registerIpcHandlers(mainWindow?: BrowserWindow): void {
           });
           await deepseek.models.list();
           break;
+        case 'xai':
+          const { OpenAI: XAIOpenAI } = await import('openai');
+          const xai = new XAIOpenAI({
+            apiKey,
+            baseURL: 'https://api.x.ai/v1'
+          });
+          await xai.models.list();
+          break;
+        case 'mistral':
+          const { Mistral } = await import('@mistralai/mistralai');
+          const mistral = new Mistral({ apiKey });
+          await mistral.models.list();
+          break;
+        case 'openrouter':
+          const { OpenAI: OpenRouterOpenAI } = await import('openai');
+          const openrouter = new OpenRouterOpenAI({
+            apiKey,
+            baseURL: 'https://openrouter.ai/api/v1'
+          });
+          await openrouter.models.list();
+          break;
         default:
           throw new Error('Unknown provider');
       }

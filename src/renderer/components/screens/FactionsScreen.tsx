@@ -7,6 +7,8 @@ import { getAllModels, type Provider } from '@shared/types';
 import { formatRoleName, DEFAULT_PERSONALITY, type Faction } from '@shared/types/game';
 import styles from './FactionsScreen.module.css';
 
+type ApiKeyProvider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral';
+
 interface FactionConfig {
   model: string;
   personality: string;
@@ -26,7 +28,12 @@ const DEFAULT_MODEL = 'gemini-3-flash-preview';
 export function FactionsScreen() {
   const { setScreen } = useUIStore();
   const { clearPendingAgents, addPendingAgent, startGame } = useGameStore();
-  const { settings } = useSettingsStore();
+  const { settings, updateApiKey, saveSettings } = useSettingsStore();
+
+  // API keys state
+  const [showApiKeys, setShowApiKeys] = useState(false);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { success: boolean; error?: string }>>({});
 
   // Get all models (built-in + custom)
   const modelOptions = useMemo(() => getAllModels(settings.customModels), [settings.customModels]);
@@ -53,6 +60,63 @@ export function FactionsScreen() {
       ...prev,
       [faction]: { ...prev[faction], ...updates },
     }));
+  };
+
+  const handleTestApiKey = async (provider: ApiKeyProvider) => {
+    const apiKey = settings.apiKeys[provider];
+    if (!apiKey) {
+      setTestResults({ ...testResults, [provider]: { success: false, error: 'No API key provided' } });
+      return;
+    }
+
+    setTesting(provider);
+    try {
+      const result = await window.api.testConnection(provider, apiKey);
+      setTestResults({ ...testResults, [provider]: result });
+    } catch (error) {
+      setTestResults({ ...testResults, [provider]: { success: false, error: (error as Error).message } });
+    } finally {
+      setTesting(null);
+    }
+  };
+
+  const handleApiKeyChange = (provider: ApiKeyProvider, value: string) => {
+    updateApiKey(provider, value);
+  };
+
+  const handleSaveApiKeys = async () => {
+    await saveSettings(settings);
+  };
+
+  const renderApiKeyInput = (provider: ApiKeyProvider, label: string, placeholder: string) => {
+    const result = testResults[provider];
+
+    return (
+      <div className={styles.apiKeySection}>
+        <label className={styles.apiKeyLabel}>{label}</label>
+        <div className={styles.apiInputRow}>
+          <input
+            type="password"
+            className={styles.apiInput}
+            placeholder={placeholder}
+            value={settings.apiKeys[provider]}
+            onChange={e => handleApiKeyChange(provider, e.target.value)}
+          />
+          <button
+            className={styles.testButton}
+            onClick={() => handleTestApiKey(provider)}
+            disabled={testing === provider || !settings.apiKeys[provider]}
+          >
+            {testing === provider ? '...' : 'Test'}
+          </button>
+        </div>
+        {result && (
+          <div className={`${styles.testResult} ${result.success ? styles.success : styles.error}`}>
+            {result.success ? 'Connected' : result.error}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleStartGame = async () => {
@@ -181,7 +245,7 @@ export function FactionsScreen() {
                   value={configs[faction].model}
                   onChange={e => updateFactionConfig(faction, { model: e.target.value })}
                 >
-                  {MODEL_OPTIONS.map(model => (
+                  {modelOptions.map(model => (
                     <option key={model.id} value={model.id}>
                       {model.name}
                     </option>
@@ -200,6 +264,31 @@ export function FactionsScreen() {
           ))}
         </div>
       )}
+
+      {/* API Keys Panel */}
+      <div className={styles.apiKeysPanel}>
+        <button
+          className={styles.apiKeysToggle}
+          onClick={() => setShowApiKeys(!showApiKeys)}
+        >
+          {showApiKeys ? 'Hide' : 'Show'} API Keys
+        </button>
+        {showApiKeys && (
+          <div className={styles.apiKeysContent}>
+            <div className={styles.apiKeysGrid}>
+              {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
+              {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
+              {renderApiKeyInput('google', 'Google AI', 'AI...')}
+              {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
+              {renderApiKeyInput('xai', 'xAI (Grok)', 'xai-...')}
+              {renderApiKeyInput('mistral', 'Mistral', 'sk-...')}
+            </div>
+            <button className={styles.saveApiKeysButton} onClick={handleSaveApiKeys}>
+              Save API Keys
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className={styles.actions}>
         <button className={styles.backButton} onClick={() => setScreen('welcome')}>

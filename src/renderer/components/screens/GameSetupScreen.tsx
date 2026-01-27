@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
-import type { Role } from '@shared/types';
-import { MODEL_OPTIONS, ROLE_COLORS, DEFAULT_PERSONALITY } from '@shared/types';
+import type { Role, Provider } from '@shared/types';
+import { getAllModels, ROLE_COLORS, DEFAULT_PERSONALITY } from '@shared/types';
 import styles from './GameSetupScreen.module.css';
+
+type ApiKeyProvider = 'openai' | 'anthropic' | 'google' | 'deepseek' | 'xai' | 'mistral';
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'MAFIA', label: 'Mafia' },
@@ -42,16 +44,24 @@ const DEFAULT_AGENT_CONFIGS = [
 export function GameSetupScreen() {
   const { setScreen } = useUIStore();
   const { pendingAgents, addPendingAgent, removePendingAgent, clearPendingAgents, canStartGame, startGame } = useGameStore();
-  const { settings } = useSettingsStore();
+  const { settings, updateApiKey, saveSettings } = useSettingsStore();
 
   const defaultPersonality = settings.defaultPersonality || DEFAULT_PERSONALITY;
+
+  // Get all models (built-in + custom)
+  const modelOptions = useMemo(() => getAllModels(settings.customModels), [settings.customModels]);
 
   // Form state
   const [name, setName] = useState('');
   const [personality, setPersonality] = useState(defaultPersonality);
   const [role, setRole] = useState<Role>('CITIZEN');
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek'>('google');
+  const [provider, setProvider] = useState<Provider>('google');
   const [model, setModel] = useState('gemini-3-flash-preview');
+
+  // API keys state
+  const [showApiKeys, setShowApiKeys] = useState(false);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { success: boolean; error?: string }>>({});
 
   // Create default agents with current personality setting
   const getDefaultAgents = () => {
@@ -59,6 +69,63 @@ export function GameSetupScreen() {
       ...config,
       personality: defaultPersonality
     }));
+  };
+
+  const handleTestApiKey = async (apiProvider: ApiKeyProvider) => {
+    const apiKey = settings.apiKeys[apiProvider];
+    if (!apiKey) {
+      setTestResults({ ...testResults, [apiProvider]: { success: false, error: 'No API key provided' } });
+      return;
+    }
+
+    setTesting(apiProvider);
+    try {
+      const result = await window.api.testConnection(apiProvider, apiKey);
+      setTestResults({ ...testResults, [apiProvider]: result });
+    } catch (error) {
+      setTestResults({ ...testResults, [apiProvider]: { success: false, error: (error as Error).message } });
+    } finally {
+      setTesting(null);
+    }
+  };
+
+  const handleApiKeyChange = (apiProvider: ApiKeyProvider, value: string) => {
+    updateApiKey(apiProvider, value);
+  };
+
+  const handleSaveApiKeys = async () => {
+    await saveSettings(settings);
+  };
+
+  const renderApiKeyInput = (apiProvider: ApiKeyProvider, label: string, placeholder: string) => {
+    const result = testResults[apiProvider];
+
+    return (
+      <div className={styles.apiKeySection}>
+        <label className={styles.apiKeyLabel}>{label}</label>
+        <div className={styles.apiInputRow}>
+          <input
+            type="password"
+            className={styles.apiInput}
+            placeholder={placeholder}
+            value={settings.apiKeys[apiProvider]}
+            onChange={e => handleApiKeyChange(apiProvider, e.target.value)}
+          />
+          <button
+            className={styles.testButton}
+            onClick={() => handleTestApiKey(apiProvider)}
+            disabled={testing === apiProvider || !settings.apiKeys[apiProvider]}
+          >
+            {testing === apiProvider ? '...' : 'Test'}
+          </button>
+        </div>
+        {result && (
+          <div className={`${styles.testResult} ${result.success ? styles.success : styles.error}`}>
+            {result.success ? 'Connected' : result.error}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleAddAgent = () => {
@@ -191,10 +258,10 @@ export function GameSetupScreen() {
               className={styles.select}
               value={provider}
               onChange={e => {
-                const newProvider = e.target.value as 'openai' | 'anthropic' | 'google' | 'deepseek';
+                const newProvider = e.target.value as Provider;
                 setProvider(newProvider);
                 // Set default model for provider
-                const defaultModel = MODEL_OPTIONS.find(m => m.provider === newProvider);
+                const defaultModel = modelOptions.find(m => m.provider === newProvider);
                 if (defaultModel) setModel(defaultModel.id);
               }}
             >
@@ -202,6 +269,8 @@ export function GameSetupScreen() {
               <option value="openai">OpenAI</option>
               <option value="google">Google</option>
               <option value="deepseek">DeepSeek</option>
+              <option value="xai">xAI (Grok)</option>
+              <option value="mistral">Mistral</option>
             </select>
           </div>
 
@@ -264,6 +333,31 @@ export function GameSetupScreen() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* API Keys Panel */}
+      <div className={styles.apiKeysPanel}>
+        <button
+          className={styles.apiKeysToggle}
+          onClick={() => setShowApiKeys(!showApiKeys)}
+        >
+          {showApiKeys ? 'Hide' : 'Show'} API Keys
+        </button>
+        {showApiKeys && (
+          <div className={styles.apiKeysContent}>
+            <div className={styles.apiKeysGrid}>
+              {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
+              {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
+              {renderApiKeyInput('google', 'Google AI', 'AI...')}
+              {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
+              {renderApiKeyInput('xai', 'xAI (Grok)', 'xai-...')}
+              {renderApiKeyInput('mistral', 'Mistral', 'sk-...')}
+            </div>
+            <button className={styles.saveApiKeysButton} onClick={handleSaveApiKeys}>
+              Save API Keys
+            </button>
+          </div>
+        )}
       </div>
 
       <div className={styles.actions}>
