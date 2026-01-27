@@ -25,7 +25,6 @@ export function SettingsScreen() {
 
   // Custom model form state
   const [newModelId, setNewModelId] = useState('');
-  const [newModelName, setNewModelName] = useState('');
   const [newModelProvider, setNewModelProvider] = useState<Provider>('openai');
   const [newModelAvatar, setNewModelAvatar] = useState(AVAILABLE_AVATARS[0]);
 
@@ -33,7 +32,7 @@ export function SettingsScreen() {
   const customModels = settings.customModels || [];
 
   const handleAddModel = () => {
-    if (!newModelId.trim() || !newModelName.trim()) return;
+    if (!newModelId.trim()) return;
 
     // Check for duplicate ID
     if (customModels.some(m => m.id === newModelId.trim())) {
@@ -43,7 +42,7 @@ export function SettingsScreen() {
 
     const model: CustomModel = {
       id: newModelId.trim(),
-      name: newModelName.trim(),
+      name: newModelId.trim(),
       provider: newModelProvider,
       avatar: newModelAvatar
     };
@@ -52,7 +51,6 @@ export function SettingsScreen() {
 
     // Reset form
     setNewModelId('');
-    setNewModelName('');
     setNewModelProvider('openai');
     setNewModelAvatar(AVAILABLE_AVATARS[0]);
   };
@@ -173,13 +171,6 @@ export function SettingsScreen() {
                     value={newModelId}
                     onChange={e => setNewModelId(e.target.value)}
                   />
-                  <input
-                    type="text"
-                    className={styles.modelInput}
-                    placeholder="Display Name (e.g., Mistral Large)"
-                    value={newModelName}
-                    onChange={e => setNewModelName(e.target.value)}
-                  />
                   <div className={styles.modelFormRow}>
                     <select
                       className={styles.modelSelect}
@@ -214,7 +205,7 @@ export function SettingsScreen() {
                   <button
                     className={styles.addModelButton}
                     onClick={handleAddModel}
-                    disabled={!newModelId.trim() || !newModelName.trim()}
+                    disabled={!newModelId.trim()}
                   >
                     Add Model
                   </button>

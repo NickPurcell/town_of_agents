@@ -95,13 +95,13 @@ export const AVAILABLE_AVATARS = [
 
 // Default models that ship with the app (users can modify/remove these)
 export const DEFAULT_MODELS: CustomModel[] = [
-  { id: 'gpt-5', name: 'GPT-5 Thinking', provider: 'openai', avatar: 'chatgpt.png' },
-  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai', avatar: 'chatgpt.png' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai', avatar: 'chatgpt.png' },
-  { id: 'claude-opus-4-5', name: 'Claude Opus 4.5', provider: 'anthropic', avatar: 'claude.png' },
-  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', provider: 'google', avatar: 'gemini.png' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google', avatar: 'gemini.png' },
-  { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek', avatar: 'deepseek.png' }
+  { id: 'gpt-5', name: 'gpt-5', provider: 'openai', avatar: 'chatgpt.png' },
+  { id: 'gpt-5-mini', name: 'gpt-5-mini', provider: 'openai', avatar: 'chatgpt.png' },
+  { id: 'gpt-4o-mini', name: 'gpt-4o-mini', provider: 'openai', avatar: 'chatgpt.png' },
+  { id: 'claude-opus-4-5', name: 'claude-opus-4-5', provider: 'anthropic', avatar: 'claude.png' },
+  { id: 'gemini-3-pro-preview', name: 'gemini-3-pro-preview', provider: 'google', avatar: 'gemini.png' },
+  { id: 'gemini-3-flash-preview', name: 'gemini-3-flash-preview', provider: 'google', avatar: 'gemini.png' },
+  { id: 'deepseek-chat', name: 'deepseek-chat', provider: 'deepseek', avatar: 'deepseek.png' }
 ];
 
 // Backwards compatibility - derived from DEFAULT_MODELS
