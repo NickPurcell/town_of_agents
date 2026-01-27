@@ -329,7 +329,7 @@ Mayor overrides only `DAY_VOTE`; the pre-speech reveal uses `MAYOR_REVEAL_CHOICE
 If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a new prompt file.
 
 ## LLM Providers
-Supported providers: OpenAI, Anthropic, Google (Gemini), DeepSeek, xAI (Grok), Mistral.
+Supported providers: OpenAI, Anthropic, Google (Gemini), DeepSeek, xAI (Grok), Mistral, OpenRouter.
 
 ### Models System
 All models are stored as `CustomModel` entries in `settings.customModels`. Default models ship with the app but users can add, remove, or modify them.
@@ -341,6 +341,7 @@ Default models (defined in `src/shared/types/index.ts` as `DEFAULT_MODELS`):
 - `deepseek-chat` (DeepSeek, avatar: deepseek.png)
 - `grok-3-beta` (xAI, avatar: grok.png)
 - `mistral-large-latest`, `mistral-small-latest` (Mistral, avatar: mistral.png)
+- `openrouter/auto` (OpenRouter, avatar: user.png)
 
 Each model includes:
 - `id`: Model identifier sent to API
