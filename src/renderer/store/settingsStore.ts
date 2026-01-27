@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Settings, GameSettings } from '@shared/types';
+import type { Settings, GameSettings, CustomModel } from '@shared/types';
 import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
 
 interface SettingsState {
@@ -12,6 +12,8 @@ interface SettingsState {
   updateApiKey: (provider: 'openai' | 'anthropic' | 'google' | 'deepseek', key: string) => void;
   updateGameSettings: (partial: Partial<GameSettings>) => void;
   updateDefaultPersonality: (personality: string) => void;
+  addCustomModel: (model: CustomModel) => void;
+  removeCustomModel: (id: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -23,7 +25,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       deepseek: ''
     },
     gameSettings: DEFAULT_GAME_SETTINGS,
-    defaultPersonality: DEFAULT_PERSONALITY
+    defaultPersonality: DEFAULT_PERSONALITY,
+    customModels: []
   },
   isLoading: false,
   error: null,
@@ -39,6 +42,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Ensure default personality has default
       if (!settings.defaultPersonality) {
         settings.defaultPersonality = DEFAULT_PERSONALITY;
+      }
+      // Ensure custom models array exists
+      if (!settings.customModels) {
+        settings.customModels = [];
       }
       set({ settings, isLoading: false });
     } catch (error) {
@@ -88,6 +95,28 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       settings: {
         ...settings,
         defaultPersonality: personality
+      }
+    });
+  },
+
+  addCustomModel: (model: CustomModel) => {
+    const { settings } = get();
+    const currentModels = settings.customModels || [];
+    set({
+      settings: {
+        ...settings,
+        customModels: [...currentModels, model]
+      }
+    });
+  },
+
+  removeCustomModel: (id: string) => {
+    const { settings } = get();
+    const currentModels = settings.customModels || [];
+    set({
+      settings: {
+        ...settings,
+        customModels: currentModels.filter(m => m.id !== id)
       }
     });
   }

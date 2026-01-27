@@ -24,6 +24,14 @@ export interface Message {
   timestamp: number;
 }
 
+// Custom model configuration
+export interface CustomModel {
+  id: string;        // Unique identifier (used as model ID for API)
+  name: string;      // Display name in UI
+  provider: Provider;
+  avatar: string;    // Avatar filename (e.g., 'mistral.png')
+}
+
 // Application settings
 export interface Settings {
   apiKeys: {
@@ -39,6 +47,7 @@ export interface Settings {
     mafiaVotingRetries: number;
   };
   defaultPersonality?: string;
+  customModels?: CustomModel[];
 }
 
 // Raw response metadata from LLM (excludes message content)
@@ -70,7 +79,7 @@ export interface ModelOption {
   provider: Provider;
 }
 
-export const MODEL_OPTIONS: ModelOption[] = [
+export const BUILT_IN_MODELS: ModelOption[] = [
   { id: 'gpt-5', name: 'GPT-5 Thinking', provider: 'openai' },
   { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai' },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast)', provider: 'openai' },
@@ -79,6 +88,31 @@ export const MODEL_OPTIONS: ModelOption[] = [
   { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)', provider: 'google' },
   { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek' }
 ];
+
+// Backwards compatibility alias
+export const MODEL_OPTIONS = BUILT_IN_MODELS;
+
+// Available avatar files for custom models
+export const AVAILABLE_AVATARS = [
+  'chatgpt.png',
+  'claude.png',
+  'deepseek.png',
+  'gemini.png',
+  'kimi.png',
+  'meta.png',
+  'mistral.png',
+  'nvidia.png',
+  'qwen.png',
+  'user.png'
+];
+
+// Get all models (built-in + custom)
+export function getAllModels(customModels: CustomModel[] = []): ModelOption[] {
+  return [
+    ...BUILT_IN_MODELS,
+    ...customModels.map(m => ({ id: m.id, name: m.name, provider: m.provider }))
+  ];
+}
 
 // Color palette for agents
 export const AGENT_COLORS = [

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { DEFAULT_AGENTS_BY_FACTION } from '@shared/constants/defaultAgents';
-import { MODEL_OPTIONS, type Provider } from '@shared/types';
+import { getAllModels, type Provider } from '@shared/types';
 import { formatRoleName, DEFAULT_PERSONALITY, type Faction } from '@shared/types/game';
 import styles from './FactionsScreen.module.css';
 
@@ -22,14 +23,18 @@ const FACTION_LABELS: Record<Faction, string> = {
 // Default model for all factions
 const DEFAULT_MODEL = 'gemini-3-flash-preview';
 
-function getProviderForModel(modelId: string): Provider {
-  const model = MODEL_OPTIONS.find(m => m.id === modelId);
-  return model?.provider ?? 'google';
-}
-
 export function FactionsScreen() {
   const { setScreen } = useUIStore();
   const { clearPendingAgents, addPendingAgent, startGame } = useGameStore();
+  const { settings } = useSettingsStore();
+
+  // Get all models (built-in + custom)
+  const modelOptions = useMemo(() => getAllModels(settings.customModels), [settings.customModels]);
+
+  const getProviderForModel = (modelId: string): Provider => {
+    const model = modelOptions.find(m => m.id === modelId);
+    return model?.provider ?? 'google';
+  };
 
   const [monoMode, setMonoMode] = useState(true);
   const [monoConfig, setMonoConfig] = useState<FactionConfig>({
@@ -112,7 +117,7 @@ export function FactionsScreen() {
                 value={monoConfig.model}
                 onChange={e => setMonoConfig(prev => ({ ...prev, model: e.target.value }))}
               >
-                {MODEL_OPTIONS.map(model => (
+                {modelOptions.map(model => (
                   <option key={model.id} value={model.id}>
                     {model.name}
                   </option>

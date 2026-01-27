@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Agent, Provider } from '@shared/types';
-import { MODEL_OPTIONS } from '@shared/types';
+import { getAllModels } from '@shared/types';
+import { useSettingsStore } from '../../store/settingsStore';
 import styles from './AddAgentModal.module.css';
 
 interface Props {
@@ -9,11 +10,14 @@ interface Props {
 }
 
 export function AddAgentModal({ onAdd, onClose }: Props) {
+  const { settings } = useSettingsStore();
+  const modelOptions = useMemo(() => getAllModels(settings.customModels), [settings.customModels]);
+
   const [name, setName] = useState('');
-  const [model, setModel] = useState(MODEL_OPTIONS[0].id);
+  const [model, setModel] = useState(modelOptions[0]?.id || '');
   const [systemPrompt, setSystemPrompt] = useState('');
 
-  const selectedModel = MODEL_OPTIONS.find(m => m.id === model);
+  const selectedModel = modelOptions.find(m => m.id === model);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +65,7 @@ export function AddAgentModal({ onAdd, onClose }: Props) {
               value={model}
               onChange={e => setModel(e.target.value)}
             >
-              {MODEL_OPTIONS.map(option => (
+              {modelOptions.map(option => (
                 <option key={option.id} value={option.id}>
                   {option.name}
                 </option>

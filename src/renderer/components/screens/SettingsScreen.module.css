@@ -48,7 +48,24 @@
 }
 
 .content {
-  max-width: 600px;
+  max-width: 900px;
+}
+
+/* Two-column layout for API tab */
+.apiTabLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.apiKeysColumn,
+.modelsColumn {
+  min-width: 0;
+}
+
+.modelsColumn {
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 32px;
 }
 
 .section {
@@ -210,4 +227,216 @@
 .personalityTextarea:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Custom Models Form */
+.modelForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.modelFormRow {
+  display: flex;
+  gap: 12px;
+}
+
+.modelFormRow > * {
+  flex: 1;
+}
+
+.modelInput {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.modelInput:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.modelSelect {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.modelSelect:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.avatarSelectRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatarSelectRow .modelSelect {
+  flex: 1;
+}
+
+.avatarPreview {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.addModelButton {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, rgba(196, 30, 58, 0.8), rgba(139, 21, 40, 0.8));
+  color: white;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.addModelButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(196, 30, 58, 1), rgba(139, 21, 40, 1));
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+}
+
+.addModelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Custom Models List */
+.modelList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.modelItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.modelItemAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.modelItemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.modelItemName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.modelItemId {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelItemProvider {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.removeModelButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--text-muted);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.removeModelButton:hover {
+  background-color: rgba(237, 66, 69, 0.15);
+  color: var(--danger);
+}
+
+/* Built-in Models Section */
+.builtInModels {
+  margin-top: 16px;
+}
+
+.builtInModelsTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.builtInModelsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.builtInModelItem {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.builtInModelItem::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+}
+
+.builtInModelProvider {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.emptyModelsList {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+  padding: 12px 0;
 }

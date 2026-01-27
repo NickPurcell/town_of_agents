@@ -120,11 +120,11 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **GameSetupScreen.tsx**: Agent creation with role/model selection (Custom Game)
   - **GameChatScreen.tsx**: Main game viewer with event stream
   - **AgentChatScreen.tsx**: Side chat for user-to-agent interaction
-  - **SettingsScreen.tsx**: API key configuration
+  - **SettingsScreen.tsx**: API key configuration and custom models management
 - State: Zustand stores in `src/renderer/store/*`
   - **gameStore.ts**: Game state, pending agents, side chat threads, streaming content, streaming thinking content
   - **uiStore.ts**: Screen navigation, side chat agent selection
-  - **settingsStore.ts**: API key management
+  - **settingsStore.ts**: API key management, custom model management (addCustomModel, removeCustomModel)
 - Agent components: `src/renderer/components/agents/*`
   - **AddAgentModal.tsx**: Modal for adding new agents with role/model selection
   - **AgentCard.tsx**: Individual agent display card
@@ -326,16 +326,26 @@ Mayor overrides only `DAY_VOTE`; the pre-speech reveal uses `MAYOR_REVEAL_CHOICE
 If you add a new phase, update `PHASE_PROMPT_MAP` in PromptBuilder and create a new prompt file.
 
 ## LLM Providers
-Supported providers: OpenAI, Anthropic, Google (Gemini).
+Supported providers: OpenAI, Anthropic, Google (Gemini), DeepSeek.
 
-Available models (defined in `src/shared/types/index.ts`):
+Built-in models (defined in `src/shared/types/index.ts` as `BUILT_IN_MODELS`):
 - `gpt-5`, `gpt-5-mini`, `gpt-4o-mini` (OpenAI)
 - `claude-opus-4-5` (Anthropic)
 - `gemini-3-pro-preview`, `gemini-3-flash-preview` (Google)
+- `deepseek-chat` (DeepSeek)
 
-To add a model/provider:
+### Custom Models
+Users can add custom models via Settings > API Keys tab. Custom models are stored in `settings.customModels` and include:
+- `id`: Model identifier sent to API
+- `name`: Display name in UI
+- `provider`: Which API endpoint to use
+- `avatar`: Avatar image filename from `assets/avatars/`
+
+Use `getAllModels(customModels)` to get combined list of built-in + custom models.
+
+To add a built-in model:
 1. Update provider types in `src/shared/types/index.ts`.
-2. Add model entry to `MODEL_OPTIONS`.
+2. Add model entry to `BUILT_IN_MODELS`.
 3. Add service implementation and wire it in `createLLMService`.
 4. Update any UI dropdowns or validation.
 
@@ -343,7 +353,7 @@ API keys are stored in user data (`settings.json`) via the Settings screen.
 
 ## Data Storage
 All persistent data is stored under: `app.getPath('userData')/data`
-- `settings.json`: API keys and game settings.
+- `settings.json`: API keys, game settings, default personality, and custom models.
 
 Storage logic is in `src/main/services/storage/index.ts`.
 

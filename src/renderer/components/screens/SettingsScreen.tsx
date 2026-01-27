@@ -2,20 +2,61 @@ import React, { useState } from 'react';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
-import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
+import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY, BUILT_IN_MODELS, AVAILABLE_AVATARS } from '@shared/types';
+import type { Provider, CustomModel } from '@shared/types';
 import styles from './SettingsScreen.module.css';
 
 type SettingsTab = 'api' | 'game';
 
+const PROVIDER_OPTIONS: { value: Provider; label: string }[] = [
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'anthropic', label: 'Anthropic' },
+  { value: 'google', label: 'Google' },
+  { value: 'deepseek', label: 'DeepSeek' }
+];
+
 export function SettingsScreen() {
-  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality } = useSettingsStore();
+  const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality, addCustomModel, removeCustomModel } = useSettingsStore();
   const { setScreen } = useUIStore();
   const { isGameActive } = useGameStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('api');
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; error?: string }>>({});
 
+  // Custom model form state
+  const [newModelId, setNewModelId] = useState('');
+  const [newModelName, setNewModelName] = useState('');
+  const [newModelProvider, setNewModelProvider] = useState<Provider>('openai');
+  const [newModelAvatar, setNewModelAvatar] = useState(AVAILABLE_AVATARS[0]);
+
   const gameSettings = settings.gameSettings || DEFAULT_GAME_SETTINGS;
+  const customModels = settings.customModels || [];
+
+  const handleAddModel = () => {
+    if (!newModelId.trim() || !newModelName.trim()) return;
+
+    // Check for duplicate ID
+    const allModelIds = [...BUILT_IN_MODELS.map(m => m.id), ...customModels.map(m => m.id)];
+    if (allModelIds.includes(newModelId.trim())) {
+      alert('A model with this ID already exists.');
+      return;
+    }
+
+    const model: CustomModel = {
+      id: newModelId.trim(),
+      name: newModelName.trim(),
+      provider: newModelProvider,
+      avatar: newModelAvatar
+    };
+
+    addCustomModel(model);
+
+    // Reset form
+    setNewModelId('');
+    setNewModelName('');
+    setNewModelProvider('openai');
+    setNewModelAvatar(AVAILABLE_AVATARS[0]);
+  };
 
   const handleSave = async () => {
     await saveSettings(settings);
@@ -97,16 +138,125 @@ export function SettingsScreen() {
 
       <div className={styles.content}>
         {activeTab === 'api' ? (
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>API Keys</h3>
-            <p className={styles.sectionDescription}>
-              Enter your API keys for each provider. Keys are stored locally and never shared.
-            </p>
+          <div className={styles.apiTabLayout}>
+            <div className={styles.apiKeysColumn}>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>API Keys</h3>
+                <p className={styles.sectionDescription}>
+                  Enter your API keys for each provider. Keys are stored locally and never shared.
+                </p>
 
-            {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
-            {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
-            {renderApiKeyInput('google', 'Google AI', 'AI...')}
-            {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
+                {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
+                {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
+                {renderApiKeyInput('google', 'Google AI', 'AI...')}
+                {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
+              </div>
+            </div>
+
+            <div className={styles.modelsColumn}>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Custom Models</h3>
+                <p className={styles.sectionDescription}>
+                  Add custom models from any provider to use in your games.
+                </p>
+
+                <div className={styles.modelForm}>
+                  <input
+                    type="text"
+                    className={styles.modelInput}
+                    placeholder="Model ID (e.g., mistral-large-latest)"
+                    value={newModelId}
+                    onChange={e => setNewModelId(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className={styles.modelInput}
+                    placeholder="Display Name (e.g., Mistral Large)"
+                    value={newModelName}
+                    onChange={e => setNewModelName(e.target.value)}
+                  />
+                  <div className={styles.modelFormRow}>
+                    <select
+                      className={styles.modelSelect}
+                      value={newModelProvider}
+                      onChange={e => setNewModelProvider(e.target.value as Provider)}
+                    >
+                      {PROVIDER_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className={styles.avatarSelectRow}>
+                      <select
+                        className={styles.modelSelect}
+                        value={newModelAvatar}
+                        onChange={e => setNewModelAvatar(e.target.value)}
+                      >
+                        {AVAILABLE_AVATARS.map(avatar => (
+                          <option key={avatar} value={avatar}>
+                            {avatar.replace('.png', '')}
+                          </option>
+                        ))}
+                      </select>
+                      <img
+                        src={`avatars/${newModelAvatar}`}
+                        alt="Avatar preview"
+                        className={styles.avatarPreview}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    className={styles.addModelButton}
+                    onClick={handleAddModel}
+                    disabled={!newModelId.trim() || !newModelName.trim()}
+                  >
+                    Add Model
+                  </button>
+                </div>
+
+                <h4 className={styles.builtInModelsTitle}>Your Models</h4>
+                {customModels.length > 0 ? (
+                  <div className={styles.modelList}>
+                    {customModels.map(model => (
+                      <div key={model.id} className={styles.modelItem}>
+                        <img
+                          src={`avatars/${model.avatar}`}
+                          alt={model.name}
+                          className={styles.modelItemAvatar}
+                        />
+                        <div className={styles.modelItemInfo}>
+                          <div className={styles.modelItemName}>{model.name}</div>
+                          <div className={styles.modelItemId}>{model.id}</div>
+                        </div>
+                        <span className={styles.modelItemProvider}>{model.provider}</span>
+                        <button
+                          className={styles.removeModelButton}
+                          onClick={() => removeCustomModel(model.id)}
+                          title="Remove model"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.emptyModelsList}>No custom models added yet.</p>
+                )}
+
+                <div className={styles.builtInModels}>
+                  <h4 className={styles.builtInModelsTitle}>Built-in Models</h4>
+                  <div className={styles.builtInModelsList}>
+                    {BUILT_IN_MODELS.map(model => (
+                      <div key={model.id} className={styles.builtInModelItem}>
+                        {model.name}
+                        <span className={styles.builtInModelProvider}>({model.provider})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <>
