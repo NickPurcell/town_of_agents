@@ -1,0 +1,247 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow-y: auto;
+  background:
+    radial-gradient(600px circle at 10% 0%, rgba(196, 30, 58, 0.12), transparent 60%),
+    radial-gradient(500px circle at 90% 20%, rgba(59, 130, 246, 0.08), transparent 55%),
+    radial-gradient(400px circle at 50% 80%, rgba(156, 39, 176, 0.08), transparent 50%);
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(196, 30, 58, 0.35);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.factionsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.factionCard {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(20, 20, 30, 0.95), rgba(10, 10, 16, 0.92));
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.4);
+  transition: box-shadow var(--transition-smooth);
+}
+
+.factionCard:hover {
+  box-shadow: 0 22px 38px rgba(0, 0, 0, 0.5);
+}
+
+.factionCard.mafia {
+  border-color: rgba(196, 30, 58, 0.3);
+}
+
+.factionCard.mafia:hover {
+  box-shadow: 0 22px 38px rgba(0, 0, 0, 0.5), 0 0 30px rgba(196, 30, 58, 0.15);
+}
+
+.factionCard.town {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.factionCard.town:hover {
+  box-shadow: 0 22px 38px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.15);
+}
+
+.factionCard.neutral {
+  border-color: rgba(156, 39, 176, 0.3);
+}
+
+.factionCard.neutral:hover {
+  box-shadow: 0 22px 38px rgba(0, 0, 0, 0.5), 0 0 30px rgba(156, 39, 176, 0.15);
+}
+
+.factionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.factionIndicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.factionIndicator.mafia {
+  background: #c41e3a;
+  color: #c41e3a;
+}
+
+.factionIndicator.town {
+  background: #3b82f6;
+  color: #3b82f6;
+}
+
+.factionIndicator.neutral {
+  background: #9c27b0;
+  color: #9c27b0;
+}
+
+.factionName {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.characterList {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.characterListTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.characterItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.characterItem:last-child {
+  border-bottom: none;
+}
+
+.characterName {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.characterRole {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.formSection {
+  margin-top: auto;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: rgba(10, 10, 16, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  background: rgba(10, 10, 16, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.backButton {
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.backButton:hover {
+  background-color: var(--bg-hover);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.06);
+}
+
+.startButton {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #43a047, #2e7d32);
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 26px rgba(67, 160, 71, 0.4);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.startButton:hover {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(67, 160, 71, 0.5);
+}

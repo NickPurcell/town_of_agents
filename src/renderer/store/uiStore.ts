@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type Screen = 'welcome' | 'gameSetup' | 'chat' | 'agentChat' | 'settings';
+type Screen = 'welcome' | 'gameSetup' | 'factions' | 'chat' | 'agentChat' | 'settings';
 
 interface UIState {
   currentScreen: Screen;

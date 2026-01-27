@@ -2,6 +2,7 @@ import React from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { GameSetupScreen } from '../screens/GameSetupScreen';
+import { FactionsScreen } from '../screens/FactionsScreen';
 import { GameChatScreen } from '../screens/GameChatScreen';
 import { AgentChatScreen } from '../screens/AgentChatScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -14,6 +15,8 @@ export function CenterPanel() {
       return <WelcomeScreen />;
     case 'gameSetup':
       return <GameSetupScreen />;
+    case 'factions':
+      return <FactionsScreen />;
     case 'chat':
       return <GameChatScreen />;
     case 'agentChat':

@@ -47,52 +47,21 @@
   text-shadow: 0 0 20px rgba(196, 30, 58, 0.35);
 }
 
-.description {
-  color: var(--text-secondary);
-  font-size: 16px;
-  line-height: 1.7;
-  margin-bottom: 28px;
-}
-
-.features {
+.buttonGroup {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 30px;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
 }
 
-.feature {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
-}
-
-.featureIcon {
-  font-size: 16px;
-}
-
-.feature:hover {
-  transform: translateY(-1px);
-  color: var(--text-primary);
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.35), 0 0 18px rgba(196, 30, 58, 0.2);
-}
-
-.startButton {
-  padding: 14px 40px;
+.factionsButton {
+  padding: 16px 40px;
   background: linear-gradient(135deg, var(--accent-blood) 0%, #8b1528 100%);
   color: white;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -104,7 +73,7 @@
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-smooth);
 }
 
-.startButton:hover {
+.factionsButton:hover {
   transform: translateY(-1px);
   background: linear-gradient(135deg, var(--accent-blood-bright) 0%, var(--accent-blood) 100%);
   box-shadow:
@@ -112,7 +81,7 @@
     0 0 40px rgba(196, 30, 58, 0.45);
 }
 
-.startButton::before {
+.factionsButton::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -126,6 +95,26 @@
   transition: transform 0.7s ease;
 }
 
-.startButton:hover::before {
+.factionsButton:hover::before {
   transform: translateX(120%);
+}
+
+.customButton {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.2));
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.customButton:hover {
+  transform: translateY(-1px);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.05);
 }
