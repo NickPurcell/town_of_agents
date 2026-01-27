@@ -5,10 +5,13 @@ import { useGameStore } from '../../store/gameStore';
 import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
 import styles from './SettingsScreen.module.css';
 
+type SettingsTab = 'api' | 'game';
+
 export function SettingsScreen() {
   const { settings, saveSettings, updateApiKey, updateGameSettings, updateDefaultPersonality } = useSettingsStore();
   const { setScreen } = useUIStore();
   const { isGameActive } = useGameStore();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('api');
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; error?: string }>>({});
 
@@ -76,97 +79,115 @@ export function SettingsScreen() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2 className={styles.title}>Settings</h2>
+        <div className={styles.tabToggle}>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'api' ? styles.active : ''}`}
+            onClick={() => setActiveTab('api')}
+          >
+            API Keys
+          </button>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'game' ? styles.active : ''}`}
+            onClick={() => setActiveTab('game')}
+          >
+            Game Settings
+          </button>
+        </div>
       </div>
 
       <div className={styles.content}>
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>API Keys</h3>
-          <p className={styles.sectionDescription}>
-            Enter your API keys for each provider. Keys are stored locally and never shared.
-          </p>
+        {activeTab === 'api' ? (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>API Keys</h3>
+            <p className={styles.sectionDescription}>
+              Enter your API keys for each provider. Keys are stored locally and never shared.
+            </p>
 
-          {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
-          {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
-          {renderApiKeyInput('google', 'Google AI', 'AI...')}
-          {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
-        </div>
-
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Game Settings</h3>
-          <p className={styles.sectionDescription}>
-            Configure timing and behavior for Mafia games.
-            {isGameActive && <span className={styles.warning}> Cannot edit during an active game.</span>}
-          </p>
-
-          <div className={styles.gameSettingsGrid}>
-            <div className={styles.settingItem}>
-              <label className={styles.label}>Discussion Rounds</label>
-              <input
-                type="number"
-                className={styles.numberInput}
-                value={gameSettings.roundsPerDiscussion}
-                onChange={e => updateGameSettings({ roundsPerDiscussion: parseInt(e.target.value) || 2 })}
-                disabled={isGameActive}
-                min={1}
-                max={10}
-              />
-            </div>
-
-            <div className={styles.settingItem}>
-              <label className={styles.label}>Vote Retries</label>
-              <input
-                type="number"
-                className={styles.numberInput}
-                value={gameSettings.voteRetries}
-                onChange={e => updateGameSettings({ voteRetries: parseInt(e.target.value) || 1 })}
-                disabled={isGameActive}
-                min={1}
-                max={5}
-              />
-            </div>
-
-            <div className={styles.settingItem}>
-              <label className={styles.label}>Turn Timeout (seconds)</label>
-              <input
-                type="number"
-                className={styles.numberInput}
-                value={gameSettings.turnTimeoutSec}
-                onChange={e => updateGameSettings({ turnTimeoutSec: parseInt(e.target.value) || 5 })}
-                disabled={isGameActive}
-                min={1}
-                max={30}
-              />
-            </div>
-
-            <div className={styles.settingItem}>
-              <label className={styles.label}>Mafia Vote Retries</label>
-              <input
-                type="number"
-                className={styles.numberInput}
-                value={gameSettings.mafiaVotingRetries}
-                onChange={e => updateGameSettings({ mafiaVotingRetries: parseInt(e.target.value) || 3 })}
-                disabled={isGameActive}
-                min={1}
-                max={10}
-              />
-            </div>
+            {renderApiKeyInput('openai', 'OpenAI', 'sk-...')}
+            {renderApiKeyInput('anthropic', 'Anthropic', 'sk-ant-...')}
+            {renderApiKeyInput('google', 'Google AI', 'AI...')}
+            {renderApiKeyInput('deepseek', 'DeepSeek', 'sk-...')}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Game Settings</h3>
+              <p className={styles.sectionDescription}>
+                Configure timing and behavior for Mafia games.
+                {isGameActive && <span className={styles.warning}> Cannot edit during an active game.</span>}
+              </p>
 
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Default Agent Personality</h3>
-          <p className={styles.sectionDescription}>
-            This personality will be used for default game agents and as the initial value when creating new agents.
-          </p>
+              <div className={styles.gameSettingsGrid}>
+                <div className={styles.settingItem}>
+                  <label className={styles.label}>Discussion Rounds</label>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={gameSettings.roundsPerDiscussion}
+                    onChange={e => updateGameSettings({ roundsPerDiscussion: parseInt(e.target.value) || 2 })}
+                    disabled={isGameActive}
+                    min={1}
+                    max={10}
+                  />
+                </div>
 
-          <textarea
-            className={styles.personalityTextarea}
-            value={settings.defaultPersonality || DEFAULT_PERSONALITY}
-            onChange={e => updateDefaultPersonality(e.target.value)}
-            disabled={isGameActive}
-            rows={4}
-          />
-        </div>
+                <div className={styles.settingItem}>
+                  <label className={styles.label}>Vote Retries</label>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={gameSettings.voteRetries}
+                    onChange={e => updateGameSettings({ voteRetries: parseInt(e.target.value) || 1 })}
+                    disabled={isGameActive}
+                    min={1}
+                    max={5}
+                  />
+                </div>
+
+                <div className={styles.settingItem}>
+                  <label className={styles.label}>Turn Timeout (seconds)</label>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={gameSettings.turnTimeoutSec}
+                    onChange={e => updateGameSettings({ turnTimeoutSec: parseInt(e.target.value) || 5 })}
+                    disabled={isGameActive}
+                    min={1}
+                    max={30}
+                  />
+                </div>
+
+                <div className={styles.settingItem}>
+                  <label className={styles.label}>Mafia Vote Retries</label>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={gameSettings.mafiaVotingRetries}
+                    onChange={e => updateGameSettings({ mafiaVotingRetries: parseInt(e.target.value) || 3 })}
+                    disabled={isGameActive}
+                    min={1}
+                    max={10}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Default Agent Personality</h3>
+              <p className={styles.sectionDescription}>
+                This personality will be used for default game agents and as the initial value when creating new agents.
+              </p>
+
+              <textarea
+                className={styles.personalityTextarea}
+                value={settings.defaultPersonality || DEFAULT_PERSONALITY}
+                onChange={e => updateDefaultPersonality(e.target.value)}
+                disabled={isGameActive}
+                rows={4}
+              />
+            </div>
+          </>
+        )}
 
         <div className={styles.actions}>
           <button className={styles.cancelButton} onClick={() => setScreen('welcome')}>
