@@ -1188,6 +1188,18 @@ export class PhaseRunner extends EventEmitter {
         VisibilityFilter.jesterPrivate(agent.id)
       );
     } else if (phase === 'TAVERN_KEEPER_CHOICE') {
+      // Check if target is jailed - they're already locked up
+      if (this.engine.isAgentJailed(target.id)) {
+        this.engine.appendNarration(
+          `**${target.name} was hauled off to jail tonight. You cannot roleblock them.**`,
+          VisibilityFilter.tavernKeeperPrivate(agent.id)
+        );
+        // Still track the visit for lookout
+        this.engine.addNightVisit(agent.id, target.id);
+        this.engine.nextPhase();
+        return;
+      }
+
       // Check immunity: Jailor is always immune, Werewolf is immune on full moon nights
       const targetTraits = ROLE_TRAITS[target.role];
       const isFullMoon = this.engine.getDayNumber() % 2 === 0;
