@@ -36,7 +36,7 @@ export class AnthropicService implements LLMService {
       // @ts-ignore - Claude specific parameter
       thinking: {
         type: 'enabled',
-        budget_tokens: 8000
+        budget_tokens: 2000
       }
     });
 
@@ -106,7 +106,7 @@ export class AnthropicService implements LLMService {
       // @ts-ignore - Claude specific parameter
       thinking: {
         type: 'enabled',
-        budget_tokens: 8000
+        budget_tokens: 2000
       }
     });
 
