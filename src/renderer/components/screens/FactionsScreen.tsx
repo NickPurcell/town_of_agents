@@ -97,6 +97,21 @@ export function FactionsScreen() {
     }
   }, [mode, soloAssignments.length, generateSoloAssignments]);
 
+  // Compute unique display names for solo mode (handles duplicate model names)
+  const soloDisplayNames = useMemo(() => {
+    const modelNameCounts: Record<string, number> = {};
+    const displayNames: Record<string, string> = {};
+
+    for (const assignment of soloAssignments) {
+      const baseName = assignment.model.name;
+      modelNameCounts[baseName] = (modelNameCounts[baseName] || 0) + 1;
+      displayNames[assignment.name] = modelNameCounts[baseName] > 1
+        ? `${baseName} #${modelNameCounts[baseName]}`
+        : baseName;
+    }
+    return displayNames;
+  }, [soloAssignments]);
+
   const updateFactionConfig = (faction: Faction, updates: Partial<FactionConfig>) => {
     setConfigs(prev => ({
       ...prev,
@@ -171,13 +186,24 @@ export function FactionsScreen() {
 
     if (mode === 'solo') {
       // Solo mode: use random assignments, name characters after their models
+      // Track model name counts to create unique names when same model is used multiple times
+      const modelNameCounts: Record<string, number> = {};
+
       for (const faction of FACTIONS) {
         const agents = DEFAULT_AGENTS_BY_FACTION[faction];
         for (const agent of agents) {
           const assignment = soloAssignments.find(a => a.name === agent.name);
           if (assignment) {
+            const baseName = assignment.model.name;
+            // Count occurrences of this model name
+            modelNameCounts[baseName] = (modelNameCounts[baseName] || 0) + 1;
+            // Create unique name by appending number if this model is used more than once
+            const uniqueName = modelNameCounts[baseName] > 1
+              ? `${baseName} #${modelNameCounts[baseName]}`
+              : baseName;
+
             addPendingAgent({
-              name: assignment.model.name,
+              name: uniqueName,
               role: agent.role,
               model: assignment.model.id,
               provider: assignment.model.provider,
@@ -375,12 +401,12 @@ export function FactionsScreen() {
                 </div>
                 <div className={styles.soloCharacters}>
                   {DEFAULT_AGENTS_BY_FACTION[faction].map(agent => {
-                    const assignment = soloAssignments.find(a => a.name === agent.name);
+                    const displayName = soloDisplayNames[agent.name];
                     return (
                       <div key={agent.name} className={styles.soloCharacterItem}>
                         <div className={styles.soloCharacterInfo}>
                           <span className={styles.soloCharacterName}>
-                            {assignment?.model.name ?? 'Assigning...'}
+                            {displayName ?? 'Assigning...'}
                           </span>
                           <span className={styles.soloCharacterRole}>{formatRoleName(agent.role)}</span>
                         </div>
