@@ -20,7 +20,7 @@ This repo is split into Electron main/preload/renderer, with shared TypeScript t
 - `src/renderer`: React UI (screens, components, Zustand stores, CSS modules).
 - `src/shared`: Shared types, constants, and game model.
 - `prompts`: Markdown prompt templates for the Mafia game.
-- `assets/avatars`: Provider/user avatar images used in the UI.
+- `assets/avatars`: Provider/user avatar images (png, jpg, svg, etc.) dynamically loaded via IPC.
 - `out/`: Build output (generated; do not edit).
 - `spec.md`: Product spec and UX expectations.
 - `MECHANICS.md`: Game mechanics specification (attack/defense, visiting, night order, role traits).
@@ -382,6 +382,9 @@ interface API {
   // Settings
   getSettings(): Promise<Settings>
   saveSettings(settings: Settings): Promise<boolean>
+
+  // Avatars
+  getAvatars(): Promise<string[]>
 
   // LLM
   testConnection(provider: string, apiKey: string): Promise<{success, error?}>
