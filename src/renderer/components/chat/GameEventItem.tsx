@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NarrationEvent, TransitionEvent, DeathEvent, Phase } from '@shared/types';
+import type { GameEvent, GameAgent, SpeechEvent, VoteEvent, ChoiceEvent, NotificationEvent, TransitionEvent, DeathEvent, RoundTransitionEvent, Phase } from '@shared/types';
 import { ROLE_COLORS } from '@shared/types';
-import { categorizeNarration, getCategoryClassName } from '../../utils/narrationCategorizer';
+import { categorizeNotification, getCategoryClassName } from '../../utils/notificationCategorizer';
 import { NarrationIconMap } from './NarrationIcons';
 import styles from './GameEventItem.module.css';
 
@@ -27,8 +27,8 @@ interface ReasoningBlockProps {
 }
 
 
-// Phases that should show a banner (first phase of each role's turn)
-// Note: Pre-speech phases mark the start of a role's turn, choice phases are hidden
+// Phases that should show a banner
+// Note: Role-specific turn banners are now handled by ROUND_TRANSITION events
 const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   DAY_ONE_DISCUSSION: 'Day 1 Discussion',
   DAY_DISCUSSION: 'Day Discussion',
@@ -36,17 +36,6 @@ const VISIBLE_PHASES: Partial<Record<Phase, string>> = {
   LAST_WORDS: 'Last Words',
   JESTER_HAUNT_PRE_SPEECH: "Jester's Revenge",
   POST_EXECUTION_DISCUSSION: 'Post-Execution Discussion',
-  JAILOR_CHOICE: "Jailor's Turn",
-  FRAMER_PRE_SPEECH: "Framer's Turn",
-  CONSIGLIERE_CHOICE: "Consigliere's Turn",
-  TAVERN_KEEPER_PRE_SPEECH: "Tavern Keeper's Turn",
-  DOCTOR_PRE_SPEECH: "Doctor's Turn",
-  VIGILANTE_PRE_SPEECH: "Vigilante's Turn",
-  WEREWOLF_PRE_SPEECH: "Werewolf's Turn",
-  SHERIFF_CHOICE: "Sheriff's Turn",
-  LOOKOUT_CHOICE: "Lookout's Turn",
-  NIGHT_DISCUSSION: "Mafia's Turn",
-  MAYOR_REVEAL_CHOICE: "Mayor's Turn",
 };
 
 // Phases that should NOT show a banner (subsequent phases of a role's turn)
@@ -111,20 +100,32 @@ function ReasoningBlock({ reasoning }: ReasoningBlockProps) {
 
 export function GameEventItem({ event, agent }: GameEventItemProps) {
   switch (event.type) {
-    case 'NARRATION': {
-      const narrationEvent = event as NarrationEvent;
-      const { category, icon } = categorizeNarration(narrationEvent);
+    case 'NOTIFICATION': {
+      const notificationEvent = event as NotificationEvent;
+      const { category, icon } = categorizeNotification(notificationEvent);
       const IconComponent = NarrationIconMap[icon];
       const categoryClass = getCategoryClassName(category);
 
       return (
-        <div className={`${styles.narration} ${styles[`narration${categoryClass}`]}`}>
-          <div className={styles.narrationContent}>
-            <IconComponent className={styles.narrationIcon} />
+        <div className={`${styles.notification} ${styles[`notification${categoryClass}`]}`}>
+          <div className={styles.notificationContent}>
+            <IconComponent className={styles.notificationIcon} />
             <div>
-              <ReactMarkdown>{narrationEvent.textMarkdown}</ReactMarkdown>
+              <ReactMarkdown>{notificationEvent.textMarkdown}</ReactMarkdown>
             </div>
           </div>
+        </div>
+      );
+    }
+
+    case 'ROUND_TRANSITION': {
+      const roundEvent = event as RoundTransitionEvent;
+      return (
+        <div className={styles.roundTransition}>
+          <span className={styles.roundTransitionName}>{roundEvent.roundName}</span>
+          {roundEvent.subtitle && (
+            <span className={styles.roundTransitionSubtitle}>{roundEvent.subtitle}</span>
+          )}
         </div>
       );
     }

@@ -646,7 +646,7 @@ export class GameController extends EventEmitter {
         if (errorMessage.includes('Circuit breaker')) {
           console.error('[GameController] Circuit breaker detected - pausing game to prevent error loop');
           this.pauseGame();
-          this.engine.appendNarration('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
+          this.engine.appendNotification('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
         }
 
         this.phaseRunner.handleSpeechResponse(agent, {
@@ -765,7 +765,7 @@ export class GameController extends EventEmitter {
         if (errorMessage.includes('Circuit breaker')) {
           console.error('[GameController] Circuit breaker detected - pausing game to prevent error loop');
           this.pauseGame();
-          this.engine.appendNarration('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
+          this.engine.appendNotification('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
         }
 
         this.phaseRunner.handleVoteResponse(agent, {
@@ -869,7 +869,7 @@ export class GameController extends EventEmitter {
         if (errorMessage.includes('Circuit breaker')) {
           console.error('[GameController] Circuit breaker detected - pausing game to prevent error loop');
           this.pauseGame();
-          this.engine.appendNarration('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
+          this.engine.appendNotification('⚠️ **Game paused due to repeated API errors.** Check your API key and network connection, then resume.');
         }
 
         this.phaseRunner.handleChoiceResponse(agent, {
@@ -1766,7 +1766,7 @@ export class GameController extends EventEmitter {
     const result = ResponseParser.parseMayorRevealResponse(content);
     if (result.success && result.data?.reveal) {
       this.engine.getAgentManager().revealMayor(agent.id);
-      this.engine.appendNarration(`**${agent.name} is the Mayor!**`);
+      this.engine.appendNotification(`**${agent.name} is the Mayor!**`);
     }
   }
 
@@ -1986,12 +1986,12 @@ export class GameController extends EventEmitter {
     // Check if Jailor has execution power
     if (!this.engine.hasJailorExecutionPower()) {
       if (this.engine.hasJailorLostExecutionPower()) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           '**You have lost the ability to execute after killing a Town member.**',
           VisibilityFilter.jailorPrivate(jailor.id)
         );
       } else {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           '**You have no executions remaining.**',
           VisibilityFilter.jailorPrivate(jailor.id)
         );

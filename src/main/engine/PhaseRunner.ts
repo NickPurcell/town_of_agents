@@ -354,7 +354,7 @@ export class PhaseRunner extends EventEmitter {
       if (phase === 'NIGHT_VOTE') {
         // No Mafia can vote (all jailed/dead) - skip with no kill
         this.engine.setPendingNightKillTarget(undefined);
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           '**The mafia could not act tonight.**',
           VisibilityFilter.mafia()
         );
@@ -554,14 +554,14 @@ export class PhaseRunner extends EventEmitter {
         if (this.voteRetryAttempts >= this.settings.voteRetries) {
           // No more retries - skip to night
           this.voteRetryAttempts = 0;
-          this.engine.appendNarration(
+          this.engine.appendNotification(
             '**No majority reached. The town could not agree on who to eliminate.**',
             VisibilityFilter.public()
           );
           this.engine.nextPhase();
         } else {
           // Retry voting
-          this.engine.appendNarration(
+          this.engine.appendNotification(
             '**No majority reached. The town must vote again.**',
             VisibilityFilter.public()
           );
@@ -579,7 +579,7 @@ export class PhaseRunner extends EventEmitter {
         if (this.engine.isAgentJailed(result.target)) {
           this.mafiaVoteAttempts = 0;
           this.engine.setPendingNightKillTarget(undefined);
-          this.engine.appendNarration(
+          this.engine.appendNotification(
             '**Your target is in jail. Your visit failed.**',
             VisibilityFilter.mafia()
           );
@@ -605,14 +605,14 @@ export class PhaseRunner extends EventEmitter {
           // Give up - no kill tonight
           this.mafiaVoteAttempts = 0;
           this.engine.setPendingNightKillTarget(undefined);
-          this.engine.appendNarration(
+          this.engine.appendNotification(
             '**The mafia could not agree on a target.**',
             VisibilityFilter.mafia()
           );
           this.engine.nextPhase();
         } else {
           // Retry
-          this.engine.appendNarration(
+          this.engine.appendNotification(
             '**The mafia must reach agreement. Vote again.**',
             VisibilityFilter.mafia()
           );
@@ -669,7 +669,7 @@ export class PhaseRunner extends EventEmitter {
       // Check if agent is jailed (role blocked) - except Jailor who can't be jailed, and Jester haunt phase
       if (phase !== 'JAILOR_CHOICE' && phase !== 'JAILOR_EXECUTE_CHOICE' && phase !== 'JESTER_HAUNT_CHOICE' && this.engine.isAgentJailed(choiceAgent.id)) {
         // Host-only notification - jailed agents see nothing (treated like dead)
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**${choiceAgent.name} is jailed.**`,
           VisibilityFilter.host()
         );
@@ -680,7 +680,7 @@ export class PhaseRunner extends EventEmitter {
       // Check if agent is haunted by Jester (role blocked) - except Jester haunt phase itself
       if (phase !== 'JESTER_HAUNT_CHOICE' && this.engine.isAgentHauntedByJester(choiceAgent.id)) {
         // Host-only notification - haunted agents cannot act
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**${choiceAgent.name} is haunted and cannot act.**`,
           VisibilityFilter.host()
         );
@@ -691,7 +691,7 @@ export class PhaseRunner extends EventEmitter {
       // Check if agent is roleblocked by Tavern Keeper - except Tavern Keeper itself
       if (phase !== 'TAVERN_KEEPER_CHOICE' && this.engine.isAgentRoleblocked(choiceAgent.id)) {
         // Host-only notification with role info
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**The ${formatRoleName(choiceAgent.role)} was blocked by the Tavern Keeper.**`,
           VisibilityFilter.host()
         );
@@ -797,7 +797,7 @@ export class PhaseRunner extends EventEmitter {
     if (phase === 'DOCTOR_CHOICE') {
       // Check if Doctor is trying to target themselves by name (not allowed - must use SELF)
       if (normalizedTarget.toLowerCase() === agent.name.toLowerCase()) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**You cannot target yourself by name. Use "SELF" to heal yourself.**`,
           VisibilityFilter.doctorPrivate(agent.id)
         );
@@ -809,7 +809,7 @@ export class PhaseRunner extends EventEmitter {
       if (normalizedTarget.toUpperCase() === 'SELF') {
         // Check if self-heal already used
         if (this.engine.hasDoctorUsedSelfHeal()) {
-          this.engine.appendNarration(
+          this.engine.appendNotification(
             `**You have already used your one self-heal. You cannot heal yourself again.**`,
             VisibilityFilter.doctorPrivate(agent.id)
           );
@@ -834,7 +834,7 @@ export class PhaseRunner extends EventEmitter {
         this.engine.setPendingDoctorProtectTarget(agent.id);
 
         // Confirmation message
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**You have chosen to heal yourself tonight.**`,
           VisibilityFilter.doctorPrivate(agent.id)
         );
@@ -895,7 +895,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - visit fails
       if (targetIsJailed) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target is in jail. Your visit failed.**`,
           VisibilityFilter.sheriffPrivate(agent.id)
         );
@@ -922,7 +922,7 @@ export class PhaseRunner extends EventEmitter {
       const resultMessage = isSuspicious
         ? `**Your investigation reveals that ${target.name} appears SUSPICIOUS!**`
         : `**Your investigation reveals that ${target.name} does NOT appear suspicious.**`;
-      this.engine.appendNarration(resultMessage, VisibilityFilter.sheriffPrivate(agent.id));
+      this.engine.appendNotification(resultMessage, VisibilityFilter.sheriffPrivate(agent.id));
     } else if (phase === 'FRAMER_CHOICE') {
       // Emit choice event for framer framing
       const choiceEvent: ChoiceEvent = {
@@ -938,7 +938,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - visit fails
       if (targetIsJailed) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target is in jail. Your visit failed.**`,
           VisibilityFilter.framerPrivate(agent.id)
         );
@@ -953,7 +953,7 @@ export class PhaseRunner extends EventEmitter {
       this.engine.setPendingFramedTarget(target.id);
 
       // Immediate feedback - frame persists until investigated
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You have framed ${target.name}. They will appear suspicious until the Sheriff investigates them.**`,
         VisibilityFilter.framerPrivate(agent.id)
       );
@@ -972,7 +972,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - visit fails
       if (targetIsJailed) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target is in jail. Your visit failed.**`,
           VisibilityFilter.consiglierePrivate(agent.id)
         );
@@ -985,7 +985,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Emit immediate investigation result (exact role)
       const resultMessage = `**Your investigation reveals that ${target.name}'s role is ${formatRoleName(target.role)}!**`;
-      this.engine.appendNarration(resultMessage, VisibilityFilter.consiglierePrivate(agent.id));
+      this.engine.appendNotification(resultMessage, VisibilityFilter.consiglierePrivate(agent.id));
     } else if (phase === 'DOCTOR_CHOICE') {
       // Emit choice event for doctor protection
       const choiceEvent: ChoiceEvent = {
@@ -1001,7 +1001,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - visit fails
       if (targetIsJailed) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target is in jail. Your visit failed.**`,
           VisibilityFilter.doctorPrivate(agent.id)
         );
@@ -1016,7 +1016,7 @@ export class PhaseRunner extends EventEmitter {
       this.engine.setPendingDoctorProtectTarget(target.id);
 
       // Confirmation message
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You have chosen to protect ${target.name} tonight.**`,
         VisibilityFilter.doctorPrivate(agent.id)
       );
@@ -1035,7 +1035,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - they're not home to watch
       if (this.engine.isAgentJailed(target.id)) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target was in jail.**`,
           VisibilityFilter.lookoutPrivate(agent.id)
         );
@@ -1047,7 +1047,7 @@ export class PhaseRunner extends EventEmitter {
       this.engine.setPendingLookoutWatchTarget(target.id);
 
       // Confirmation message
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You are now watching ${target.name}. You will see anyone who visits them tonight.**`,
         VisibilityFilter.lookoutPrivate(agent.id)
       );
@@ -1066,7 +1066,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - visit fails (don't use bullet)
       if (targetIsJailed) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target is in jail. Your visit failed.**`,
           VisibilityFilter.vigilantePrivate(agent.id)
         );
@@ -1077,7 +1077,7 @@ export class PhaseRunner extends EventEmitter {
       // Use a bullet
       if (!this.engine.useVigilanteBullet()) {
         // No bullets remaining - shouldn't happen, but handle gracefully
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**You have no bullets remaining.**`,
           VisibilityFilter.vigilantePrivate(agent.id)
         );
@@ -1096,7 +1096,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Show remaining bullets
       const bulletsRemaining = this.engine.getVigilanteBulletsRemaining();
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You have ${bulletsRemaining} bullet${bulletsRemaining === 1 ? '' : 's'} remaining.**`,
         VisibilityFilter.vigilantePrivate(agent.id)
       );
@@ -1117,7 +1117,7 @@ export class PhaseRunner extends EventEmitter {
 
       // Check if target is jailed - visit fails (only if not staying home)
       if (targetIsJailed) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**Your target is in jail. Your visit failed.**`,
           VisibilityFilter.werewolfPrivate(agent.id)
         );
@@ -1135,12 +1135,12 @@ export class PhaseRunner extends EventEmitter {
 
       // Feedback based on stay home or attack
       if (isStayingHome) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**You stay home and wait for visitors. Anyone who visits you tonight will be killed.**`,
           VisibilityFilter.werewolfPrivate(agent.id)
         );
       } else {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**You will rampage at ${target.name}'s location, killing them and anyone who visits them.**`,
           VisibilityFilter.werewolfPrivate(agent.id)
         );
@@ -1162,7 +1162,7 @@ export class PhaseRunner extends EventEmitter {
       this.engine.setPendingJailTarget(target.id);
 
       // Feedback
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You have chosen to jail ${target.name}. You will interrogate them privately.**`,
         VisibilityFilter.jailorPrivate(agent.id)
       );
@@ -1183,14 +1183,14 @@ export class PhaseRunner extends EventEmitter {
       this.engine.setPendingJesterHauntTarget(target.id);
 
       // Feedback
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You will haunt ${target.name}. They will meet their doom at dawn.**`,
         VisibilityFilter.jesterPrivate(agent.id)
       );
     } else if (phase === 'TAVERN_KEEPER_CHOICE') {
       // Check if target is jailed - they're already locked up
       if (this.engine.isAgentJailed(target.id)) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**${target.name} was hauled off to jail tonight. You cannot roleblock them.**`,
           VisibilityFilter.tavernKeeperPrivate(agent.id)
         );
@@ -1206,7 +1206,7 @@ export class PhaseRunner extends EventEmitter {
       const isWerewolfOnFullMoon = target.role === 'WEREWOLF' && isFullMoon;
 
       if (targetTraits.roleblock_immune || isWerewolfOnFullMoon) {
-        this.engine.appendNarration(
+        this.engine.appendNotification(
           `**That player cannot be roleblocked tonight.**`,
           VisibilityFilter.tavernKeeperPrivate(agent.id)
         );
@@ -1234,7 +1234,7 @@ export class PhaseRunner extends EventEmitter {
       this.engine.setRoleblockedAgent(target.id);
 
       // Feedback
-      this.engine.appendNarration(
+      this.engine.appendNotification(
         `**You have roleblocked ${target.name}. They cannot perform their night action.**`,
         VisibilityFilter.tavernKeeperPrivate(agent.id)
       );

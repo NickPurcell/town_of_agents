@@ -45,13 +45,13 @@ export function doesAttackSucceed(attack: AttackLevel, defense: DefenseLevel): b
   return attackOrder.indexOf(attack) > defenseOrder.indexOf(defense);
 }
 
-// Narration categorization types
-export type NarrationCategory =
+// Notification categorization types
+export type NotificationCategory =
   | 'critical_death' | 'critical_win' | 'critical_saved' | 'critical_reveal'
   | 'info_transition' | 'info_phase_prompt' | 'info_vote_outcome'
   | 'private_sheriff' | 'private_lookout' | 'private_vigilante' | 'private_doctor';
 
-export type NarrationIcon =
+export type NotificationIcon =
   | 'skull' | 'trophy' | 'shield' | 'crown'
   | 'sun' | 'moon' | 'clock' | 'gavel' | 'eye';
 
@@ -144,18 +144,27 @@ export type Visibility =
 
 // Game event types
 export type GameEvent =
-  | NarrationEvent
+  | NotificationEvent
   | PhaseChangeEvent
   | SpeechEvent
   | VoteEvent
   | ChoiceEvent
   | InvestigationResultEvent
   | DeathEvent
-  | TransitionEvent;
+  | TransitionEvent
+  | RoundTransitionEvent;
 
-export interface NarrationEvent {
-  type: 'NARRATION';
+export interface NotificationEvent {
+  type: 'NOTIFICATION';
   textMarkdown: string;
+  visibility: Visibility;
+  ts: number;
+}
+
+export interface RoundTransitionEvent {
+  type: 'ROUND_TRANSITION';
+  roundName: string;       // "Jailor Round", "Day 2 Round"
+  subtitle?: string;       // optional
   visibility: Visibility;
   ts: number;
 }

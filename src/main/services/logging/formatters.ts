@@ -2,7 +2,7 @@ import {
   GameEvent,
   GameAgent,
   Visibility,
-  NarrationEvent,
+  NotificationEvent,
   PhaseChangeEvent,
   SpeechEvent,
   VoteEvent,
@@ -10,6 +10,7 @@ import {
   InvestigationResultEvent,
   DeathEvent,
   TransitionEvent,
+  RoundTransitionEvent,
 } from '@shared/types';
 
 /**
@@ -66,8 +67,10 @@ export function formatGameEvent(
       return formatTransitionEvent(event, vis);
     case 'PHASE_CHANGE':
       return formatPhaseChangeEvent(event, vis);
-    case 'NARRATION':
-      return formatNarrationEvent(event, vis);
+    case 'NOTIFICATION':
+      return formatNotificationEvent(event, vis);
+    case 'ROUND_TRANSITION':
+      return formatRoundTransitionEvent(event as RoundTransitionEvent, vis);
     case 'SPEECH':
       return formatSpeechEvent(event, agentLookup, vis);
     case 'VOTE':
@@ -91,8 +94,13 @@ function formatPhaseChangeEvent(event: PhaseChangeEvent, vis: string): string {
   return `[PHASE] ${event.phase} (visibility: ${vis})`;
 }
 
-function formatNarrationEvent(event: NarrationEvent, vis: string): string {
-  return `[NARRATION] ${event.textMarkdown} (visibility: ${vis})`;
+function formatNotificationEvent(event: NotificationEvent, vis: string): string {
+  return `[NOTIFICATION] ${event.textMarkdown} (visibility: ${vis})`;
+}
+
+function formatRoundTransitionEvent(event: RoundTransitionEvent, vis: string): string {
+  const subtitle = event.subtitle ? ` - ${event.subtitle}` : '';
+  return `[ROUND] ${event.roundName}${subtitle} (visibility: ${vis})`;
 }
 
 function formatSpeechEvent(

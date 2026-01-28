@@ -1,5 +1,5 @@
-/* Base narration styles */
-.narration {
+/* Base notification styles */
+.notification {
   padding: 14px 18px;
   border-radius: 10px;
   margin-bottom: 14px;
@@ -8,7 +8,7 @@
   animation: fade-in-up 0.4s ease both;
 }
 
-.narration::before {
+.notification::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -17,7 +17,7 @@
   pointer-events: none;
 }
 
-.narration p {
+.notification p {
   margin: 0;
   color: var(--text-primary);
   font-weight: 500;
@@ -25,17 +25,17 @@
   position: relative;
 }
 
-.narration strong {
+.notification strong {
   color: #ffffff;
 }
 
-.narrationContent {
+.notificationContent {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-.narrationIcon {
+.notificationIcon {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -58,145 +58,175 @@
 }
 
 /* Critical styles - prominent with glows */
-.narrationCriticalDeath {
+.notificationCriticalDeath {
   background: linear-gradient(135deg, rgba(229, 57, 53, 0.25), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #e53935;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 24px rgba(229, 57, 53, 0.3);
 }
 
-.narrationCriticalDeath .narrationIcon {
+.notificationCriticalDeath .notificationIcon {
   color: #e53935;
 }
 
-.narrationCriticalWin {
+.notificationCriticalWin {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #ffd700;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 28px rgba(255, 215, 0, 0.35);
 }
 
-.narrationCriticalWin .narrationIcon {
+.notificationCriticalWin .notificationIcon {
   color: #ffd700;
 }
 
-.narrationCriticalWin p {
+.notificationCriticalWin p {
   color: #ffd700;
   font-weight: 600;
 }
 
-.narrationCriticalSaved {
+.notificationCriticalSaved {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #10b981;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.25);
 }
 
-.narrationCriticalSaved .narrationIcon {
+.notificationCriticalSaved .notificationIcon {
   color: #10b981;
 }
 
-.narrationCriticalReveal {
+.notificationCriticalReveal {
   background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #ff9800;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 152, 0, 0.25);
 }
 
-.narrationCriticalReveal .narrationIcon {
+.notificationCriticalReveal .notificationIcon {
   color: #ff9800;
 }
 
 /* Informational styles - muted */
-.narrationInfoTransition {
+.notificationInfoTransition {
   background: linear-gradient(135deg, rgba(100, 100, 120, 0.15), rgba(0, 0, 0, 0.3));
   border-left: 3px solid rgba(150, 150, 170, 0.6);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
-.narrationInfoTransition .narrationIcon {
+.notificationInfoTransition .notificationIcon {
   color: rgba(200, 200, 220, 0.8);
 }
 
-.narrationInfoPhasePrompt {
+.notificationInfoPhasePrompt {
   background: linear-gradient(135deg, rgba(80, 80, 100, 0.12), rgba(0, 0, 0, 0.25));
   border-left: 2px solid rgba(120, 120, 140, 0.5);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
-.narrationInfoPhasePrompt .narrationIcon {
+.notificationInfoPhasePrompt .notificationIcon {
   color: rgba(160, 160, 180, 0.7);
 }
 
-.narrationInfoVoteOutcome {
+.notificationInfoVoteOutcome {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(0, 0, 0, 0.35));
   border-left: 3px solid #f59e0b;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(245, 158, 11, 0.2);
 }
 
-.narrationInfoVoteOutcome .narrationIcon {
+.notificationInfoVoteOutcome .notificationIcon {
   color: #f59e0b;
 }
 
 /* Private intel styles - role-colored */
-.narrationPrivateSheriff {
+.notificationPrivateSheriff {
   background: linear-gradient(135deg, rgba(30, 136, 229, 0.2), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #1e88e5;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(30, 136, 229, 0.25);
 }
 
-.narrationPrivateSheriff .narrationIcon {
+.notificationPrivateSheriff .notificationIcon {
   color: #1e88e5;
 }
 
-.narrationPrivateSheriff .privateBadge {
+.notificationPrivateSheriff .privateBadge {
   background: rgba(30, 136, 229, 0.2);
   border-color: rgba(30, 136, 229, 0.4);
   color: #1e88e5;
 }
 
-.narrationPrivateLookout {
+.notificationPrivateLookout {
   background: linear-gradient(135deg, rgba(156, 39, 176, 0.2), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #9c27b0;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(156, 39, 176, 0.25);
 }
 
-.narrationPrivateLookout .narrationIcon {
+.notificationPrivateLookout .notificationIcon {
   color: #9c27b0;
 }
 
-.narrationPrivateLookout .privateBadge {
+.notificationPrivateLookout .privateBadge {
   background: rgba(156, 39, 176, 0.2);
   border-color: rgba(156, 39, 176, 0.4);
   color: #9c27b0;
 }
 
-.narrationPrivateVigilante {
+.notificationPrivateVigilante {
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #4caf50;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(76, 175, 80, 0.25);
 }
 
-.narrationPrivateVigilante .narrationIcon {
+.notificationPrivateVigilante .notificationIcon {
   color: #4caf50;
 }
 
-.narrationPrivateVigilante .privateBadge {
+.notificationPrivateVigilante .privateBadge {
   background: rgba(76, 175, 80, 0.2);
   border-color: rgba(76, 175, 80, 0.4);
   color: #4caf50;
 }
 
-.narrationPrivateDoctor {
+.notificationPrivateDoctor {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.4));
   border-left: 4px solid #ffffff;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.15);
 }
 
-.narrationPrivateDoctor .narrationIcon {
+.notificationPrivateDoctor .notificationIcon {
   color: #ffffff;
 }
 
-.narrationPrivateDoctor .privateBadge {
+.notificationPrivateDoctor .privateBadge {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
   color: #ffffff;
+}
+
+/* Round transition banners - intermediate style between inline and cinematic */
+.roundTransition {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 0;
+  margin: 12px 0;
+  animation: round-slide-in 0.6s ease-out both;
+}
+
+@keyframes round-slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.roundTransitionName {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.roundTransitionSubtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
 }
 
 /* Phase change banner */

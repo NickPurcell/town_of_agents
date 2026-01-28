@@ -136,12 +136,12 @@ Keep `src/preload/api.d.ts` in sync with `src/preload/index.ts` and any IPC chan
   - **PlayersMenu.tsx**: Player list menu in sidebar
 - Chat components: `src/renderer/components/chat/*`
   - **StreamingSpeech.tsx**: Displays speech content progressively token-by-token during streaming
-  - **GameEventItem.tsx**: Renders game events with visual categorization (narrations, speeches, votes, deaths, transitions)
-  - **NarrationIcons.tsx**: 9 inline SVG icons for narration categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
+  - **GameEventItem.tsx**: Renders game events with visual categorization (notifications, speeches, votes, deaths, transitions, round banners)
+  - **NarrationIcons.tsx**: 9 inline SVG icons for notification categories (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
   - **MessageItem.tsx**: Individual message display component
   - **ThinkingIndicator.tsx**: Shows agent thinking state with streaming reasoning content
 - Utilities: `src/renderer/utils/*`
-  - **narrationCategorizer.ts**: Pattern matching to categorize narrations by urgency (critical/info/private) and visibility. Day/night transitions use TransitionEvent instead.
+  - **notificationCategorizer.ts**: Pattern matching to categorize notifications by urgency (critical/info/private) and visibility. Day/night transitions use TransitionEvent instead.
 - Styles: `src/renderer/styles/global.css` + CSS modules next to components.
 
 ### Shared Types
@@ -158,12 +158,13 @@ Key types in `src/shared/types/game.ts`:
 - **Phases**: 30 phase types (DAY_ONE_DISCUSSION through LOOKOUT_POST_SPEECH, plus MAYOR_REVEAL_CHOICE, JESTER_HAUNT_PRE_SPEECH, JESTER_HAUNT_CHOICE, FRAMER_PRE_SPEECH, FRAMER_CHOICE, CONSIGLIERE_CHOICE, CONSIGLIERE_POST_SPEECH, DOCTOR_PRE_SPEECH, WEREWOLF_PRE_SPEECH, WEREWOLF_CHOICE, JAILOR_CHOICE, JAIL_CONVERSATION, JAILOR_EXECUTE_CHOICE, TAVERN_KEEPER_PRE_SPEECH, TAVERN_KEEPER_CHOICE, POST_GAME_DISCUSSION)
 - **GameAgent**: id, name, role, faction, personality, provider, model, alive, hasRevealedMayor
 - **Visibility**: 15 types with agent-specific variants (includes framer_private, consigliere_private, werewolf_private, jailor_private, jester_private, tavern_keeper_private, jail_conversation)
-- **GameEvent**: NARRATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN, JESTER_HAUNT, TAVERN_KEEPER_ROLEBLOCK), INVESTIGATION_RESULT, DEATH, TRANSITION
+- **GameEvent**: NOTIFICATION, PHASE_CHANGE, SPEECH, VOTE, CHOICE (includes FRAMER_FRAME, CONSIGLIERE_INVESTIGATE, WEREWOLF_KILL, JAILOR_JAIL, JAILOR_EXECUTE, JAILOR_ABSTAIN, JESTER_HAUNT, TAVERN_KEEPER_ROLEBLOCK), INVESTIGATION_RESULT, DEATH, TRANSITION, ROUND_TRANSITION
 - **TransitionEvent**: Day/night cinematic banners with heading, subtitle, and transitionType (DAY/NIGHT)
+- **RoundTransitionEvent**: Intermediate-style banners between night phases (roundName, subtitle, visibility, ts)
 - **GameState**: Current game snapshot with agents, events, phase, day number, pending targets (pendingFramedTarget, persistentFramedTargets, pendingWerewolfKillTarget, vigilanteBulletsRemaining, sheriffIntelQueue, pendingJailTarget, jailorExecutionsRemaining, jailorLostExecutionPower, jailedAgentIds, roleblockedAgentIds, doctorSelfHealUsed, pendingJesterHauntTarget, jesterWhoHaunted, jesterLynchVotes)
 - **StreamingSpeakHeader**: Two-phase streaming protocol header type
-- **NarrationCategory**: Categorizes narrations by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
-- **NarrationIcon**: Icons for narration types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
+- **NotificationCategory**: Categorizes notifications by urgency (critical_death, critical_win, critical_saved, critical_reveal, info_transition, info_phase_prompt, info_vote_outcome, private_sheriff, private_lookout, private_vigilante, private_doctor)
+- **NotificationIcon**: Icons for notification types (skull, trophy, shield, crown, sun, moon, clock, gavel, eye)
 
 ### Shared Constants
 Centralized configuration in `src/shared/constants/*`:

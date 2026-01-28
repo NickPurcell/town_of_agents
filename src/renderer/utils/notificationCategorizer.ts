@@ -1,15 +1,15 @@
-import type { NarrationEvent, NarrationCategory, NarrationIcon } from '@shared/types';
+import type { NotificationEvent, NotificationCategory, NotificationIcon } from '@shared/types';
 
-interface NarrationCategorization {
-  category: NarrationCategory;
-  icon: NarrationIcon;
+interface NotificationCategorization {
+  category: NotificationCategory;
+  icon: NotificationIcon;
 }
 
 /**
- * Categorizes a narration event based on its text content and visibility.
+ * Categorizes a notification event based on its text content and visibility.
  * Returns the appropriate category and icon for styling.
  */
-export function categorizeNarration(event: NarrationEvent): NarrationCategorization {
+export function categorizeNotification(event: NotificationEvent): NotificationCategorization {
   const text = event.textMarkdown;
   const visibility = event.visibility;
 
@@ -31,7 +31,7 @@ export function categorizeNarration(event: NarrationEvent): NarrationCategorizat
     return { category: 'critical_death', icon: 'skull' };
   }
   if (visibility.kind === 'tavern_keeper_private') {
-    // Tavern Keeper private messages - use clock for action-related narrations
+    // Tavern Keeper private messages - use clock for action-related notifications
     return { category: 'info_phase_prompt', icon: 'clock' };
   }
 
@@ -53,7 +53,7 @@ export function categorizeNarration(event: NarrationEvent): NarrationCategorizat
   }
 
   // Informational events
-  // Note: Day/Night transitions now use TransitionEvent type, not Narration
+  // Note: Day/Night transitions now use TransitionEvent type, not Notification
   if (/No majority|could not agree|tie|no consensus/i.test(text)) {
     return { category: 'info_vote_outcome', icon: 'gavel' };
   }
@@ -65,8 +65,8 @@ export function categorizeNarration(event: NarrationEvent): NarrationCategorizat
 /**
  * Maps categories to their CSS class name suffix
  */
-export function getCategoryClassName(category: NarrationCategory): string {
-  const classMap: Record<NarrationCategory, string> = {
+export function getCategoryClassName(category: NotificationCategory): string {
+  const classMap: Record<NotificationCategory, string> = {
     critical_death: 'CriticalDeath',
     critical_win: 'CriticalWin',
     critical_saved: 'CriticalSaved',
@@ -85,7 +85,7 @@ export function getCategoryClassName(category: NarrationCategory): string {
 /**
  * Returns the display label for private intel badges
  */
-export function getPrivateBadgeLabel(category: NarrationCategory): string | null {
+export function getPrivateBadgeLabel(category: NotificationCategory): string | null {
   if (category === 'private_sheriff') return 'Sheriff';
   if (category === 'private_lookout') return 'Lookout';
   if (category === 'private_vigilante') return 'Vigilante';
