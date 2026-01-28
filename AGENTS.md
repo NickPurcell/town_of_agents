@@ -97,6 +97,7 @@ Writes human-readable log files for each game session to `.logs/` directory.
 - **index.ts**: `LoggingService` singleton class
   - `startLogging(agents)`: Create log file on game start
   - `logEvent(event)`: Append formatted event to log (async, non-blocking)
+  - `logPrompt(agent, phase, systemPrompt)`: Log system prompt sent to agent before LLM request
   - `stopLogging(winner)`: Write footer and close log
 - **formatters.ts**: Event formatting utilities
   - `formatVisibility(visibility)`: Convert visibility to readable string (e.g., `sheriff_private:agent-id`)
