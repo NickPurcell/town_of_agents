@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useUIStore } from '../../store/uiStore';
 import { useGameStore } from '../../store/gameStore';
-import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY, AVAILABLE_AVATARS } from '@shared/types';
+import { DEFAULT_GAME_SETTINGS, DEFAULT_PERSONALITY } from '@shared/types';
 import type { Provider, CustomModel } from '@shared/types';
 import styles from './SettingsScreen.module.css';
 
@@ -26,11 +26,24 @@ export function SettingsScreen() {
   const [testing, setTesting] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; error?: string }>>({});
 
+  // Available avatars (loaded dynamically from assets folder)
+  const [availableAvatars, setAvailableAvatars] = useState<string[]>(['user.png']);
+
   // Custom model form state
   const [newModelId, setNewModelId] = useState('');
   const [newModelName, setNewModelName] = useState('');
   const [newModelProvider, setNewModelProvider] = useState<Provider>('openai');
-  const [newModelAvatar, setNewModelAvatar] = useState(AVAILABLE_AVATARS[0]);
+  const [newModelAvatar, setNewModelAvatar] = useState('user.png');
+
+  // Load available avatars on mount
+  useEffect(() => {
+    window.api.getAvatars().then(avatars => {
+      if (avatars.length > 0) {
+        setAvailableAvatars(avatars);
+        setNewModelAvatar(avatars[0]);
+      }
+    });
+  }, []);
 
   // Edit mode state
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
@@ -71,7 +84,7 @@ export function SettingsScreen() {
     setNewModelId('');
     setNewModelName('');
     setNewModelProvider('openai');
-    setNewModelAvatar(AVAILABLE_AVATARS[0]);
+    setNewModelAvatar(availableAvatars[0]);
   };
 
   const handleEditModel = (model: CustomModel) => {
@@ -87,7 +100,7 @@ export function SettingsScreen() {
     setNewModelId('');
     setNewModelName('');
     setNewModelProvider('openai');
-    setNewModelAvatar(AVAILABLE_AVATARS[0]);
+    setNewModelAvatar(availableAvatars[0]);
   };
 
   const handleResetModels = () => {
@@ -234,9 +247,9 @@ export function SettingsScreen() {
                         value={newModelAvatar}
                         onChange={e => setNewModelAvatar(e.target.value)}
                       >
-                        {AVAILABLE_AVATARS.map(avatar => (
+                        {availableAvatars.map(avatar => (
                           <option key={avatar} value={avatar}>
-                            {avatar.replace('.png', '')}
+                            {avatar.replace(/\.(png|jpg|jpeg|svg|gif|webp)$/i, '')}
                           </option>
                         ))}
                       </select>

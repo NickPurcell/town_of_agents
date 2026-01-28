@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('api', {
   saveSettings: (settings: Settings): Promise<boolean> =>
     ipcRenderer.invoke('settings:save', settings),
 
+  // Avatars
+  getAvatars: (): Promise<string[]> => ipcRenderer.invoke('avatars:list'),
+
   // LLM
   testConnection: (provider: string, apiKey: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('llm:testConnection', provider, apiKey),

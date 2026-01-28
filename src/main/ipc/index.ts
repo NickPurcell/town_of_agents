@@ -1,7 +1,9 @@
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow, app } from 'electron';
 import { getSettings, saveSettings } from '../services/storage';
 import { registerGameHandlers } from './gameHandlers';
 import type { Settings } from '@shared/types';
+import { join } from 'path';
+import { readdir } from 'fs/promises';
 
 export function registerIpcHandlers(mainWindow?: BrowserWindow): void {
   // Register game handlers if window provided
@@ -16,6 +18,32 @@ export function registerIpcHandlers(mainWindow?: BrowserWindow): void {
   ipcMain.handle('settings:save', async (_, settings: Settings) => {
     await saveSettings(settings);
     return true;
+  });
+
+  // Get available avatar files from the avatars directory
+  ipcMain.handle('avatars:list', async () => {
+    try {
+      // In production, avatars are in the renderer output directory
+      // In dev, they're in the assets folder
+      const isDev = !app.isPackaged;
+      const avatarsDir = isDev
+        ? join(process.cwd(), 'assets', 'avatars')
+        : join(__dirname, '../renderer/avatars');
+
+      const files = await readdir(avatarsDir);
+      // Filter for image files only
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp'];
+      const avatars = files
+        .filter(file => imageExtensions.some(ext => file.toLowerCase().endsWith(ext)))
+        .filter(file => !file.startsWith('.')) // Exclude hidden files like .gitkeep
+        .sort();
+
+      return avatars;
+    } catch (error) {
+      console.error('Failed to read avatars directory:', error);
+      // Return a default fallback
+      return ['user.png'];
+    }
   });
 
   // LLM test handler

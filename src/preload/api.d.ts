@@ -14,6 +14,9 @@ export interface API {
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<boolean>;
 
+  // Avatars
+  getAvatars(): Promise<string[]>;
+
   // LLM
   testConnection(provider: string, apiKey: string): Promise<{ success: boolean; error?: string }>;
 
