@@ -483,6 +483,9 @@ export class GameController extends EventEmitter {
         state.agents
       );
 
+      // Log the system prompt
+      await getLoggingService().logPrompt(agent, phase, systemPrompt);
+
       console.log(`Day: ${state.dayNumber}, Messages count: ${messages.length}`);
       console.log('-'.repeat(60));
 
@@ -702,6 +705,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(agent, phase, systemPrompt);
+
     if (!this.phaseRunner.isTurnActive(turnId)) {
       return;
     }
@@ -802,6 +808,9 @@ export class GameController extends EventEmitter {
       state.events,
       state.agents
     );
+
+    // Log the system prompt
+    await getLoggingService().logPrompt(agent, phase, systemPrompt);
 
     if (!this.phaseRunner.isTurnActive(turnId)) {
       return;
@@ -911,6 +920,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(agent, 'LAST_WORDS', systemPrompt);
+
     this.emitAgentThinking(agent);
 
     let content = '';
@@ -992,6 +1004,9 @@ export class GameController extends EventEmitter {
       state.events,
       state.agents
     );
+
+    // Log the system prompt
+    await getLoggingService().logPrompt(sheriff, 'SHERIFF_POST_SPEECH', systemPrompt);
 
     this.emitAgentThinking(sheriff);
 
@@ -1079,6 +1094,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(framer, 'FRAMER_PRE_SPEECH', systemPrompt);
+
     this.emitAgentThinking(framer);
 
     let content = '';
@@ -1164,6 +1182,9 @@ export class GameController extends EventEmitter {
       state.events,
       state.agents
     );
+
+    // Log the system prompt
+    await getLoggingService().logPrompt(consigliere, 'CONSIGLIERE_POST_SPEECH', systemPrompt);
 
     this.emitAgentThinking(consigliere);
 
@@ -1251,6 +1272,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(tavernKeeper, 'TAVERN_KEEPER_PRE_SPEECH', systemPrompt);
+
     this.emitAgentThinking(tavernKeeper);
 
     let content = '';
@@ -1337,6 +1361,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(doctor, 'DOCTOR_PRE_SPEECH', systemPrompt);
+
     this.emitAgentThinking(doctor);
 
     let content = '';
@@ -1422,6 +1449,9 @@ export class GameController extends EventEmitter {
       state.events,
       state.agents
     );
+
+    // Log the system prompt
+    await getLoggingService().logPrompt(vigilante, 'VIGILANTE_PRE_SPEECH', systemPrompt);
 
     this.emitAgentThinking(vigilante);
 
@@ -1515,6 +1545,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(werewolf, 'WEREWOLF_PRE_SPEECH', systemPrompt);
+
     this.emitAgentThinking(werewolf);
 
     let content = '';
@@ -1600,6 +1633,9 @@ export class GameController extends EventEmitter {
       state.events,
       state.agents
     );
+
+    // Log the system prompt
+    await getLoggingService().logPrompt(lookout, 'LOOKOUT_POST_SPEECH', systemPrompt);
 
     this.emitAgentThinking(lookout);
 
@@ -1687,6 +1723,9 @@ export class GameController extends EventEmitter {
       state.agents
     );
 
+    // Log the system prompt
+    await getLoggingService().logPrompt(agent, 'MAYOR_REVEAL_CHOICE', systemPrompt);
+
     let content = '';
     let lastError: unknown = null;
 
@@ -1769,6 +1808,9 @@ export class GameController extends EventEmitter {
           state.events,
           state.agents
         );
+
+        // Log the system prompt
+        await getLoggingService().logPrompt(speaker, 'JAIL_CONVERSATION', systemPrompt);
 
         for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
           content = '';
@@ -1860,6 +1902,9 @@ export class GameController extends EventEmitter {
       state.events,
       state.agents
     );
+
+    // Log the system prompt
+    await getLoggingService().logPrompt(jester, 'JESTER_HAUNT_PRE_SPEECH', systemPrompt);
 
     this.emitAgentThinking(jester);
 
@@ -1975,6 +2020,9 @@ export class GameController extends EventEmitter {
         state.events,
         state.agents
       );
+
+      // Log the system prompt
+      await getLoggingService().logPrompt(jailor, 'JAILOR_EXECUTE_CHOICE', systemPrompt);
 
       for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt++) {
         content = '';

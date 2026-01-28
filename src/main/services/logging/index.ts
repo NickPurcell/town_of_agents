@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { app } from 'electron';
-import { GameEvent, GameAgent, Faction } from '@shared/types';
+import { GameEvent, GameAgent, Faction, Phase } from '@shared/types';
 import { formatGameEvent } from './formatters';
 
 class LoggingService {
@@ -90,6 +90,24 @@ class LoggingService {
     } catch (error) {
       console.error('[LoggingService] Error logging event:', error);
       // Don't interrupt gameplay - just log to console
+    }
+  }
+
+  /**
+   * Log a system prompt sent to an agent
+   */
+  async logPrompt(agent: GameAgent, phase: Phase | string, systemPrompt: string): Promise<void> {
+    if (!this.isLogging || !this.logFilePath) {
+      return;
+    }
+
+    try {
+      const separator = '─'.repeat(60);
+      const header = `[PROMPT] ${agent.name}[${agent.role}] - Phase: ${phase}`;
+      const formatted = `${separator}\n${header}\n${separator}\n${systemPrompt}\n${separator}\n`;
+      await fs.appendFile(this.logFilePath, formatted + '\n', 'utf-8');
+    } catch (error) {
+      console.error('[LoggingService] Error logging prompt:', error);
     }
   }
 
