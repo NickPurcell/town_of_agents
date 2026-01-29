@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { useUIStore } from '../../store/uiStore';
-import { ROLE_COLORS } from '@shared/types';
+import { ROLE_COLORS, formatRoleName } from '@shared/types';
 import styles from './PlayersMenu.module.css';
 
 export function PlayersMenu() {
@@ -59,7 +59,7 @@ export function PlayersMenu() {
                   {agent.name}
                 </span>
                 <span className={styles.gameAgentRole}>
-                  {agent.role}
+                  {formatRoleName(agent.role)}
                 </span>
                 {!agent.alive && <span className={styles.deadMarker}>Dead</span>}
               </button>
@@ -93,7 +93,7 @@ export function PlayersMenu() {
                   {agent.name}
                 </span>
                 <span className={styles.gameAgentRole}>
-                  {agent.role}
+                  {formatRoleName(agent.role)}
                 </span>
                 {!agent.alive && <span className={styles.deadMarker}>Dead</span>}
               </button>
